@@ -11,6 +11,18 @@ const nextConfig: NextConfig = {
   // on the client.
   cacheComponents: true,
   partialPrefetching: true,
+  // On the studio's own address, such as a Vercel preview, the root is
+  // outside the base path; send it to the studio rather than a 404.
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/studio",
+        basePath: false,
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
