@@ -1,0 +1,37 @@
+# dependencies
+node_modules
+
+# builds
+.next/
+out/
+build/
+dist/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# Convex: a local deployment's state and the generated env link
+.convex/
+
+# Eve (the storefront's shopping agent)
+.eve/
+.output/
+.nitro/
+
+# env files: commit only the examples
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# testing
+coverage/
+test-results/
+playwright-report/
+
+# misc
+.DS_Store
+*.pem
+certificates
+tmp/
