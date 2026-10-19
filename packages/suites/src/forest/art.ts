@@ -4,7 +4,7 @@ import type { Artwork } from "../suite";
 
 export const art = {
   "forest-painting": {
-    path: "/studio/art/forest/forest-painting.91901bbdfa.webp",
+    path: "/studio/art/forest/forest-painting.1401623b85.webp",
     name: "Pădurea",
     frame: { x: 0, y: 0, width: 133, height: 184 },
   },
