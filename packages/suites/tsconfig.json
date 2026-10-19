@@ -1,0 +1,9 @@
+{
+  "extends": "@jolene/typescript/react-library.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["bun"]
+  },
+  "include": ["src", "preview"]
+}

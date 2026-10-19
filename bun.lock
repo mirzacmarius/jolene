@@ -122,6 +122,22 @@
         "typescript": "^5.9.3",
       },
     },
+    "packages/suites": {
+      "name": "@jolene/suites",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jolene/design": "workspace:*",
+      },
+      "devDependencies": {
+        "@jolene/typescript": "workspace:*",
+        "@types/bun": "^1.4.3",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
+        "react": "19.3.1",
+        "react-dom": "19.3.1",
+        "typescript": "^5.9.3",
+      },
+    },
     "packages/ui": {
       "name": "@jolene/ui",
       "version": "0.1.0",
@@ -328,6 +344,8 @@
     "@jolene/shop": ["@jolene/shop@workspace:apps/shop"],
 
     "@jolene/studio": ["@jolene/studio@workspace:apps/studio"],
+
+    "@jolene/suites": ["@jolene/suites@workspace:packages/suites"],
 
     "@jolene/typescript": ["@jolene/typescript@workspace:tooling/typescript"],
 
