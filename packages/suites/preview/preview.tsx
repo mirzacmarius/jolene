@@ -32,7 +32,9 @@ function SuiteSheet({ suite }: { suite: Suite }) {
       fields: previewFields(suite.occasion, language, suite.sampleFields),
       assets: (key) => {
         const artwork = suite.art[key];
-        return artwork ? { url: artwork.path, recolorable: false } : undefined;
+        return artwork
+          ? { url: artwork.path, recolorable: artwork.recolorable ?? false }
+          : undefined;
       },
       measure,
     }),

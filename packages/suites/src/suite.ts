@@ -16,6 +16,11 @@ export interface Artwork {
   path: string;
   /** What the layers panel calls it. */
   name: string;
+  /**
+   * Line art in one colour, which a layer's tint repaints: in the palette's
+   * art colour, or in foil with the layer's ink.
+   */
+  recolorable?: boolean;
   /** Where it sat on the card it was lifted from, in millimetres. */
   frame: Frame;
 }

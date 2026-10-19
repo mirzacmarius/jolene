@@ -340,8 +340,15 @@ def lift_card(card_recipe: dict, suite: str, catalog: Path, preview: Path | None
             pixels = color[y0:y1, x0:x1]
         else:
             a = np.where(mine, alpha, 0)[y0:y1, x0:x1, None]
-            pixels = np.concatenate([color[y0:y1, x0:x1], a], axis=2)
             composite[y0:y1, x0:x1] = composite[y0:y1, x0:x1] * (1 - a) + color[y0:y1, x0:x1] * a
+            if layer.get("recolorable"):
+                # Line art in one colour: only its shape matters, since a layer's
+                # tint repaints it (in foil, say), so the strokes go fully opaque.
+                core = np.percentile(a[a > 0.1], 90) if (a > 0.1).any() else 1
+                a = (a / core).clip(0, 1)
+                pixels = np.concatenate([np.zeros_like(color[y0:y1, x0:x1]), a], axis=2)
+            else:
+                pixels = np.concatenate([color[y0:y1, x0:x1], a], axis=2)
         data = webp_bytes(pixels, layer.get("quality", card_recipe.get("quality", 82)))
         digest = hashlib.sha256(data).hexdigest()[:10]
         name = f"{layer['key']}.{digest}.webp"
@@ -349,6 +356,7 @@ def lift_card(card_recipe: dict, suite: str, catalog: Path, preview: Path | None
         entries[layer["key"]] = {
             "path": f"/studio/art/{suite}/{name}",
             "name": layer["name"],
+            "recolorable": bool(layer.get("recolorable")),
             "card": card_recipe["id"],
             "frame": {
                 "x": round(x0 / ppmm, 2),
@@ -395,6 +403,7 @@ def write_manifest(suite: str, entries: dict, recipe_name: str):
             f'  "{key}": {{',
             f'    path: "{entry["path"]}",',
             f"    name: {json.dumps(entry['name'], ensure_ascii=False)},",
+            *(["    recolorable: true,"] if entry["recolorable"] else []),
             f"    frame: {{ {box} }},",
             "  },",
         ]
