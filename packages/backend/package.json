@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "convex dev --tail-logs",
-    "setup": "convex dev --once && bun scripts/link-app-env.ts && bun scripts/set-auth-keys.ts http://localhost:3000 && convex run init:seed",
+    "setup": "convex dev --once && bun scripts/link-app-env.ts && bun scripts/set-auth-keys.ts http://localhost:3024/studio && convex run init:seed",
     "seed": "convex run init:seed",
     "typecheck": "tsc --noEmit -p convex",
     "lint": "biome lint"

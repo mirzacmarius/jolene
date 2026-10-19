@@ -12,7 +12,7 @@ export default function NotFound() {
       <Logo />
       <p className="max-w-sm text-muted-foreground">{t("common.notFound")}</p>
       <Link
-        href="/"
+        href="/studio"
         className="text-sm font-medium underline underline-offset-4"
       >
         {t("common.collections")}

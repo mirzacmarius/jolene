@@ -10,7 +10,7 @@ export interface MenuLinkProps {
 }
 
 export function MenuLink({ children, className, onClick, url }: MenuLinkProps) {
-  // The designer is another app behind a rewrite: the browser loads it whole.
+  // The designer is another app on this domain: the browser loads it whole.
   if (url === "/studio" || url.startsWith("/studio/")) {
     return (
       <a className={className} href={url} onClick={onClick}>

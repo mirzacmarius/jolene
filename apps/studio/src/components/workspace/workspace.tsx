@@ -40,7 +40,7 @@ export function Workspace() {
         <Logo />
         <p className="max-w-sm text-muted-foreground">{t("design.notFound")}</p>
         <Button asChild variant="outline">
-          <Link href="/">{t("common.collections")}</Link>
+          <Link href="/studio">{t("common.collections")}</Link>
         </Button>
       </div>
     );
@@ -103,7 +103,7 @@ function Editor({ data }: { data: DesignData }) {
     <div className="flex min-h-dvh flex-col lg:h-dvh">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border/70 bg-background px-3 sm:px-4">
         <Button asChild variant="ghost" size="sm" className="gap-1 px-2.5">
-          <Link href={`/colectii/${data.template.suite.slug}`}>
+          <Link href={`/studio/colectii/${data.template.suite.slug}`}>
             <ChevronLeft aria-hidden />
             <span className="hidden sm:inline">
               {t("design.back", { suite: data.template.suite.name[locale] })}

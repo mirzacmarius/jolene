@@ -93,6 +93,6 @@ function customerHandlers(
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|_next/data|_vercel|eve(?:/|$)|_eve_internal(?:/|$)|studio(?:/|$)|favicon.ico).*)",
+    "/((?!_next/static|_next/image|_next/data|_vercel|eve(?:/|$)|_eve_internal(?:/|$)|favicon.ico).*)",
   ],
 };

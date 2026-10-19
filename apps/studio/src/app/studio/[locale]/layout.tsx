@@ -5,10 +5,10 @@ import { Toaster } from "@jolene/ui/toaster";
 import { cn } from "@jolene/ui/utils";
 import { Cormorant_Garamond, Jost } from "next/font/google";
 import type { ReactNode } from "react";
+import { ConvexClientProvider } from "@/app/convex-client-provider";
 import { I18nProvider } from "@/locales/client";
 import { dictionaries } from "@/locales/dictionaries";
 import { getI18n, getStaticParams } from "@/locales/server";
-import { ConvexClientProvider } from "../convex-client-provider";
 
 // Latin Extended carries Romanian's ă, â, î, ș and ț.
 const sans = Jost({

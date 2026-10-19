@@ -1,12 +1,10 @@
+import { withMicrofrontends } from "@vercel/microfrontends/next/config";
 import { withBotId } from "botid/next/config";
 import { withEve } from "eve/next";
 import type { NextConfig } from "next";
 
 import { shopConfig } from "./lib/config";
 import { withShopConfig } from "./lib/config/server";
-
-// /studio is the designer (apps/studio), a separate deployment served on this domain.
-const studioUrl = process.env.STUDIO_URL ?? "http://localhost:3001";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
@@ -24,12 +22,6 @@ const nextConfig: NextConfig = {
   },
   partialPrefetching: true,
   reactCompiler: true,
-  async rewrites() {
-    return [
-      { destination: `${studioUrl}/studio`, source: "/studio" },
-      { destination: `${studioUrl}/studio/:path*`, source: "/studio/:path*" },
-    ];
-  },
   turbopack: {
     rules: {
       "*.css": {
@@ -43,4 +35,5 @@ const nextConfig: NextConfig = {
 export default withShopConfig(nextConfig, [
   shopConfig.botid.isEnabled && withBotId,
   shopConfig.agent.isEnabled && withEve,
+  withMicrofrontends,
 ]);

@@ -38,7 +38,9 @@ export default async function Home() {
                   <a href="#colectii">{t("home.browse")}</a>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <Link href="/designurile-mele">{t("common.myDesigns")}</Link>
+                  <Link href="/studio/designurile-mele">
+                    {t("common.myDesigns")}
+                  </Link>
                 </Button>
               </div>
             </div>

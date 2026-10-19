@@ -32,7 +32,7 @@ export function MyDesigns() {
       <div className="flex flex-col items-start gap-4 rounded-3xl border border-dashed p-10">
         <p className="text-muted-foreground">{t("myDesigns.empty")}</p>
         <Button asChild>
-          <Link href="/#colectii">{t("home.browse")}</Link>
+          <Link href="/studio#colectii">{t("home.browse")}</Link>
         </Button>
       </div>
     );
@@ -54,7 +54,7 @@ export function MyDesigns() {
         const suite = suites.get(design.templateId);
         return (
           <li key={design._id}>
-            <Link href={`/design/${design._id}`} className="group block">
+            <Link href={`/studio/design/${design._id}`} className="group block">
               <div className="relative aspect-[4/5] rounded-3xl bg-secondary/70 transition-colors group-hover:bg-secondary">
                 <div className="absolute inset-6">
                   <DesignPreview

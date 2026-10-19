@@ -65,7 +65,7 @@ function SuiteCard({
 }) {
   const t = useI18n();
   const locale = useCurrentLocale();
-  const href = `/colectii/${suite.slug}`;
+  const href = `/studio/colectii/${suite.slug}`;
   const lead = suite.lead?.document as DesignDocument | undefined;
   const fields = useMemo(
     () =>

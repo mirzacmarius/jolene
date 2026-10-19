@@ -50,7 +50,7 @@ export function SuiteView() {
   return (
     <>
       <Link
-        href="/#colectii"
+        href="/studio#colectii"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ChevronLeft className="size-4" aria-hidden />

@@ -40,7 +40,7 @@ export function StartDesignButton({
     if (!pending || !isAuthenticated || requested.current) return;
     requested.current = true;
     start({ template })
-      .then((designId) => router.push(`/design/${designId}`))
+      .then((designId) => router.push(`/studio/design/${designId}`))
       .catch(fail);
   });
 

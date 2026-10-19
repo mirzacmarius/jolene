@@ -9,7 +9,7 @@ This storefront is jolene.ro, imported from the Vercel Shop template (its versio
 - Bun runs the workspace: `bun run dev:shop` from the repository root, or `bun run <script>` here. Read `pnpm …` in this file and in the skills as `bun run …` or `bunx …`.
 - The shop keeps the template's oxlint, oxfmt and TypeScript 7; Biome skips this folder.
 - Environment variables are declared in the root `turbo.json`, under the build task's `env`.
-- `/studio` belongs to the designer (`apps/studio`): `next.config.ts` rewrites it to `STUDIO_URL` and `proxy.ts` leaves it alone. Link to it with a plain `<a>`, never `Link`, so the browser loads the other app.
+- `/studio` belongs to the designer (`apps/studio`), another app on this domain: `microfrontends.json` routes it there before this app sees the request. Link to it with a plain `<a>`, never `Link`, so the browser loads the other app.
 
 ## Three owners
 
