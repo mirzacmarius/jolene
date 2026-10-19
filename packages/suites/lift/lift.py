@@ -121,6 +121,75 @@ def fill_vertically(image: np.ndarray, mask: np.ndarray) -> np.ndarray:
     return borrow_grain(out, image, mask, axes=(1,))
 
 
+def fill_by_copying(image: np.ndarray, mask: np.ndarray, sideways: int = 8) -> np.ndarray:
+    """Fills each gap, a band at a time, with the stretch of the artwork above
+    or below it (up to `sideways` pixels across) that best continues what
+    surrounds the gap, so a painting keeps its own brushwork there: trunks run
+    on through, and nothing is smeared."""
+    height, width = mask.shape
+    gap8 = mask.astype(np.uint8)
+    # Never copy from a gap, or from the halo the camera left around words.
+    avoid = cv2.dilate(gap8, np.ones((9, 9), np.uint8)).astype(np.float32)
+    words = cv2.dilate(gap8, np.ones((15, 15), np.uint8))
+    count, _, stats, _ = cv2.connectedComponentsWithStats(words, connectivity=8)
+    band, overlap, ring = 40, 8, 8
+    fill = np.zeros_like(image)
+    weight = np.zeros(mask.shape, np.float32)
+    for index in range(1, count):
+        x, y, w, h, _ = stats[index]
+        y0, y1 = max(y - ring, 0), min(y + h + ring, height)
+        for bx0 in range(max(x - ring, 0), min(x + w + ring, width), band - overlap):
+            bx1 = min(bx0 + band, width)
+            gap = mask[y0:y1, bx0:bx1]
+            if not gap.any():
+                continue
+            # Match on the artwork just around the gap.
+            near = cv2.dilate(gap.astype(np.uint8), np.ones((2 * ring + 1,) * 2, np.uint8)) > 0
+            known = (near & (avoid[y0:y1, bx0:bx1] == 0)).astype(np.float32)
+            if known.sum() < 20:
+                continue
+            sx0, sx1 = max(bx0 - sideways, 0), min(bx1 + sideways, width)
+            templ = np.ascontiguousarray(image[y0:y1, bx0:bx1])
+            window = np.ascontiguousarray(image[:, sx0:sx1])
+            cost = cv2.matchTemplate(window, templ, cv2.TM_SQDIFF, mask=np.dstack([known] * 3))
+            covered = cv2.matchTemplate(avoid[:, sx0:sx1], np.ones(gap.shape, np.float32), cv2.TM_CCORR)
+            cost[covered > 0.5] = np.inf
+            if not np.isfinite(cost).any():
+                continue
+            iy, ix = np.unravel_index(np.argmin(cost), cost.shape)
+            source = window[iy : iy + (y1 - y0), ix : ix + (bx1 - bx0)]
+            # Each band fades out over its overlap with the next.
+            across = np.minimum(np.arange(bx1 - bx0) + 1, np.arange(bx1 - bx0)[::-1] + 1)
+            fade = np.clip(across / overlap, 0, 1)[None, :].astype(np.float32)
+            fill[y0:y1, bx0:bx1] += source * fade[..., None]
+            weight[y0:y1, bx0:bx1] += fade[0][None, :] * np.ones((y1 - y0, 1), np.float32)
+    have = weight > 0
+    copied = np.where(have[..., None], fill / np.maximum(weight, 1e-6)[..., None], image)
+    # Poisson blending evens out light and colour between each copied stretch
+    # and the artwork around it, keeping the copied brushwork.
+    region = (cv2.dilate(gap8, np.ones((7, 7), np.uint8)) > 0) & have
+    if region.any():
+        ys, xs = np.nonzero(region)
+        y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+        pad = 4
+        y0, x0 = max(y0 - pad, 1), max(x0 - pad, 1)
+        y1, x1 = min(y1 + pad, height - 1), min(x1 + pad, width - 1)
+        blend_mask = np.zeros((y1 - y0, x1 - x0), np.uint8)
+        blend_mask[1:-1, 1:-1] = region[y0 + 1 : y1 - 1, x0 + 1 : x1 - 1] * 255
+        source8, image8 = ((a * 255).round().astype(np.uint8) for a in (copied[y0:y1, x0:x1], image))
+        centre = ((x0 + x1) // 2, (y0 + y1) // 2)
+        copied = cv2.seamlessClone(source8, image8, blend_mask, centre, cv2.NORMAL_CLONE).astype(np.float32) / 255
+    soft = cv2.GaussianBlur(cv2.dilate(gap8, np.ones((5, 5), np.uint8)).astype(np.float32), (0, 0), 1.5)
+    soft = np.where(have, soft, 0)[..., None]
+    out = image * (1 - soft) + copied * soft
+    left = mask & ~have
+    if left.any():
+        bgr = cv2.cvtColor((out * 255).astype(np.uint8), cv2.COLOR_RGB2BGR)
+        bgr = cv2.inpaint(bgr, left.astype(np.uint8) * 255, 6, cv2.INPAINT_TELEA)
+        out[left] = (cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB).astype(np.float32) / 255)[left]
+    return out.clip(0, 1)
+
+
 def fill_by_turning(image: np.ndarray, mask: np.ndarray, centre_px) -> np.ndarray:
     """Fills a gap in something round, such as a wood slice, from the same
     ring a turn away, so the rings and grain carry on through it."""
@@ -259,6 +328,8 @@ def lift_card(card_recipe: dict, suite: str, catalog: Path, preview: Path | None
     repaint &= ~erased
     if repaint.any() and card_recipe.get("inpaint") == "vertical":
         card = fill_vertically(card, repaint)
+    elif repaint.any() and card_recipe.get("inpaint") == "copy":
+        card = fill_by_copying(card, repaint)
     elif repaint.any() and card_recipe.get("inpaint") == "turn":
         cx, cy = card_recipe["turnAbout"]
         card = fill_by_turning(card, repaint, (cx * ppmm, cy * ppmm))
