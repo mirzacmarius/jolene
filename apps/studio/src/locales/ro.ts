@@ -1,0 +1,86 @@
+import type { Dictionary } from "./types";
+
+export default {
+  common: {
+    appName: "Studio Jolene",
+    description:
+      "Creați invitația de nuntă, meniurile și place cardurile cu Jolene: hârtie, folio, foaie de calc și sigiliu din ceară, văzute așa cum vor fi tipărite.",
+    collections: "Colecții",
+    myDesigns: "Designurile mele",
+    shop: "Magazin",
+    language: "Limba",
+    soon: "în curând",
+    error: "Ceva n-a mers. Încercați din nou.",
+    notFound: "Nu există nimic la această adresă.",
+  },
+  home: {
+    eyebrow: "Studio Jolene",
+    title: "Papetăria nunții voastre, creată de voi",
+    lead: "Alegeți o colecție, scrieți-vă numele și priviți invitația prinzând viață: hârtie din bumbac, folio auriu, foaie de calc și sigiliu din ceară. Câteva minute în modul simplu sau fiecare detaliu în modul expert, cu un designer AI alături.",
+    browse: "Alegeți o colecție",
+    stepsTitle: "Cum funcționează",
+    step1Title: "Alegeți colecția",
+    step1Body:
+      "Invitația, meniurile, place cardurile și tot ce mai e nevoie în ziua cea mare, din aceeași familie de design.",
+    step2Title: "Personalizați",
+    step2Body:
+      "Numele, data și locurile le scrieți o singură dată și apar pe fiecare piesă. Culori, hârtie, folio și sigiliu dintr-un clic, sau fiecare detaliu de mână.",
+    step3Title: "Comandați",
+    step3Body:
+      "Aprobați dovada online, iar atelierul Jolene tipărește, asamblează și vă trimite totul acasă.",
+    collectionsTitle: "Colecții",
+    collectionsLead:
+      "Fiecare colecție aduce împreună invitația și tot ce o însoțește.",
+    personalise: "Personalizează",
+    viewCollection: "Vezi colecția",
+    pieces: "{count} piese",
+    empty: "Colecțiile apar aici după importul catalogului Jolene.",
+    previewInvitation:
+      "Invitația Eucalipt, cu banderolă din foaie de calc și sigiliu din ceară",
+    previewSaveTheDate: "Save the date-ul Eucalipt",
+    note: {
+      foil: "Folio auriu",
+      vellum: "Foaie de calc",
+      seal: "Sigiliu din ceară",
+    },
+  },
+  suite: {
+    back: "Toate colecțiile",
+    items: "Piesele colecției",
+    size: "{width} × {height} mm",
+    notFound: "Colecția nu există.",
+  },
+  design: {
+    back: "Înapoi la {suite}",
+    details: "Detalii",
+    style: "Stil",
+    detailsLead: "Le scrieți o dată și apar pe toate piesele colecției.",
+    moreDetails: "Alte detalii",
+    example: "ex. {example}",
+    saving: "Se salvează…",
+    saved: "Salvat",
+    together: "Ansamblu",
+    front: "Față",
+    backSide: "Verso",
+    guides: "Margini de tăiere",
+    palette: "Culori",
+    namesInk: "Numele",
+    paper: "Hârtie",
+    seal: "Sigiliu",
+    language: "Limba textului",
+    order: "Comandă",
+    orderSoon: "Comanda online vine în curând.",
+    ai: "Designer AI",
+    notFound: "Designul nu există sau a fost salvat în alt browser.",
+    tooLong: "E mai lung decât încape în acest câmp.",
+    badDate: "Alegeți data din calendar.",
+    badTime: "Scrieți ora ca 18:30.",
+    invalid: "Modificarea nu s-a potrivit cu designul.",
+  },
+  myDesigns: {
+    title: "Designurile mele",
+    lead: "Designurile se păstrează în acest browser. Contul, care le duce pe orice dispozitiv, vine odată cu comanda online.",
+    empty: "Încă nu ați început un design.",
+    edited: "Modificat {date}",
+  },
+} as const satisfies Dictionary;
