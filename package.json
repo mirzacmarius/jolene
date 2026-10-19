@@ -1,0 +1,33 @@
+{
+  "name": "jolene",
+  "private": true,
+  "workspaces": ["packages/*", "apps/*", "tooling/*"],
+  "scripts": {
+    "build": "turbo build",
+    "clean": "git clean -xdf node_modules",
+    "clean:workspaces": "turbo clean",
+    "dev": "turbo dev",
+    "dev:backend": "turbo dev --filter=@jolene/backend",
+    "dev:shop": "turbo dev --filter=@jolene/shop",
+    "dev:studio": "turbo dev --filter=@jolene/studio",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "turbo lint && bun lint:repo",
+    "lint:repo": "sherif --fail-on-warnings",
+    "lint:repo:fix": "sherif --fix --fail-on-warnings",
+    "setup": "bun --filter @jolene/backend setup",
+    "test": "bun test packages",
+    "typecheck": "turbo typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "sherif": "1.13.0",
+    "turbo": "2.11.9",
+    "typescript": "^5.9.3"
+  },
+  "sherif": {
+    "ignoreDependency": ["typescript", "@types/node"]
+  },
+  "packageManager": "bun@1.4.2",
+  "version": "0.0.1"
+}

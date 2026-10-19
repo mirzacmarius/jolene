@@ -1,0 +1,49 @@
+name: Check
+# Every push runs the quick checks, the unit tests and a production build of
+# the studio, so a route that can't render its static shell fails here rather
+# than in a deploy. The shop isn't built: its build reads the Shopify store.
+on:
+  push:
+    paths:
+      - '**'
+
+permissions:
+  contents: read
+
+# A newer push cancels the run still going for the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          # The version Vercel builds and runs both apps with.
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+        with:
+          # The version in package.json's packageManager.
+          bun-version-file: package.json
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Lint
+        run: bun run lint
+      - name: Check formatting
+        run: bun run format:check
+      - name: Check TypeScript
+        run: bun run typecheck
+      - name: Run unit tests
+        run: bun run test
+      - name: Build the studio
+        run: bun run build --filter=@jolene/studio
+        env:
+          # No real secrets: a placeholder passes the studio's env validation
+          # (src/env.ts) and nothing calls it while building.
+          NEXT_PUBLIC_CONVEX_URL: http://127.0.0.1:3210

@@ -1,0 +1,163 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "includes": ["**", "!**/node_modules", "!**/.next"],
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "a11y": {
+        "noSvgWithoutTitle": "off",
+        "noLabelWithoutControl": {
+          "level": "error",
+          "options": {
+            "inputComponents": ["Checkbox", "Input", "Switch"]
+          }
+        }
+      },
+      "complexity": {
+        "noForEach": "off",
+        "noAdjacentSpacesInRegex": "error",
+        "noArguments": "error",
+        "noBannedTypes": "error",
+        "noCommaOperator": "error",
+        "noEmptyTypeParameters": "error",
+        "noExcessiveNestedTestSuites": "error",
+        "noExtraBooleanCast": "error",
+        "noFlatMapIdentity": "error",
+        "noStaticOnlyClass": "error",
+        "noThisInStatic": "error",
+        "noUselessCatch": "error",
+        "noUselessConstructor": "error",
+        "noUselessContinue": "error",
+        "noUselessEmptyExport": "error",
+        "noUselessFragments": "error",
+        "noUselessLabel": "error",
+        "noUselessLoneBlockStatements": "error",
+        "noUselessRename": "error",
+        "noUselessSwitchCase": "error",
+        "noUselessTernary": "error",
+        "noUselessThisAlias": "error",
+        "noUselessTypeConstraint": "error",
+        "useArrowFunction": "error",
+        "useFlatMap": "error",
+        "useLiteralKeys": "error",
+        "useNumericLiterals": "error",
+        "useOptionalChain": "error",
+        "useRegexLiterals": "error",
+        "useSimpleNumberKeys": "error",
+        "useWhile": "error"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "off",
+        "noChildrenProp": "error",
+        "noRenderReturnValue": "error",
+        "noUnusedLabels": "error",
+        "useJsxKeyInIterable": "error"
+      },
+      "performance": {
+        "noImgElement": "off",
+        "noAccumulatingSpread": "error",
+        "noDelete": "error"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "error",
+        "noDangerouslySetInnerHtmlWithChildren": "error"
+      },
+      "style": {
+        "noNonNullAssertion": "off",
+        "noInferrableTypes": "error",
+        "noParameterAssign": "error",
+        "noUnusedTemplateLiteral": "error",
+        "noUselessElse": "error",
+        "useAsConstAssertion": "error",
+        "useConst": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useExponentiationOperator": "error",
+        "useExportType": "error",
+        "useImportType": "error",
+        "useLiteralEnumMembers": "error",
+        "useNodejsImportProtocol": "error",
+        "useNumberNamespace": "error",
+        "useSelfClosingElements": "error",
+        "useShorthandFunctionType": "error",
+        "useSingleVarDeclarator": "error",
+        "useTemplate": "error"
+      },
+      "suspicious": {
+        "noApproximativeNumericConstant": "error",
+        "noArrayIndexKey": "error",
+        "noCatchAssign": "error",
+        "noConfusingLabels": "error",
+        "noConfusingVoidType": "error",
+        "noConstEnum": "error",
+        "noDuplicateTestHooks": "error",
+        "noExplicitAny": "error",
+        "noExportsInTest": "error",
+        "noExtraNonNullAssertion": "error",
+        "noFocusedTests": "error",
+        "noGlobalIsFinite": "error",
+        "noGlobalIsNan": "error",
+        "noPrototypeBuiltins": "error",
+        "noRedundantUseStrict": "error",
+        "noSuspiciousSemicolonInJsx": "error",
+        "noVar": "error",
+        "useDefaultSwitchClauseLast": "error",
+        "useIsArray": "error"
+      }
+    }
+  },
+  "formatter": {
+    "indentStyle": "space"
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    },
+    "linter": {
+      "enabled": false
+    },
+    "formatter": {
+      "enabled": false
+    }
+  },
+  "html": {
+    "linter": {
+      "enabled": false
+    },
+    "formatter": {
+      "enabled": false
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/package.json"],
+      "json": {
+        "formatter": {
+          "expand": "auto"
+        }
+      }
+    }
+  ],
+  "files": {
+    "includes": [
+      "**",
+      "!**/_generated",
+      "!**/.convex",
+      "!**/.next",
+      "!apps/shop"
+    ]
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  }
+}
