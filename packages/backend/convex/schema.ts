@@ -30,7 +30,14 @@ export default defineSchema({
    */
   assets: defineTable({
     key: v.string(),
-    storageId: v.id("_storage"),
+    /** An uploaded file, such as a couple's photo. */
+    storageId: v.optional(v.id("_storage")),
+    /**
+     * A file the studio serves itself, by its path from the studio's root:
+     * Jolene's artwork ships with the studio's code. An asset has a path or a
+     * storageId.
+     */
+    path: v.optional(v.string()),
     kind: v.union(
       v.literal("artwork"),
       v.literal("photo"),
@@ -69,9 +76,18 @@ export default defineSchema({
     /** The Shopify product a finished design is ordered as. */
     shopifyProductHandle: v.optional(v.string()),
     sortOrder: v.number(),
+    /**
+     * Set once its suite no longer lists it: the catalog stops showing it and
+     * no new design starts from it, while designs started from it keep it.
+     */
+    retired: v.optional(v.literal(true)),
   })
     .index("by_slug", ["slug"])
-    .index("by_suiteId_and_sortOrder", ["suiteId", "sortOrder"]),
+    .index("by_suiteId_and_retired_and_sortOrder", [
+      "suiteId",
+      "retired",
+      "sortOrder",
+    ]),
 
   /**
    * A couple's wedding (or a family's christening): the details every one of

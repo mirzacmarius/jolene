@@ -30,18 +30,21 @@ export default {
       "Aprobați dovada online, iar atelierul Jolene tipărește, asamblează și vă trimite totul acasă.",
     collectionsTitle: "Colecții",
     collectionsLead:
-      "Fiecare colecție aduce împreună invitația și tot ce o însoțește.",
+      "Pentru nuntă și pentru botez: fiecare colecție aduce împreună invitația și tot ce o însoțește.",
+    occasion: "Ocazia",
+    allOccasions: "Toate",
+    style: "Stilul",
     personalise: "Personalizează",
     viewCollection: "Vezi colecția",
     pieces: "{count} piese",
     empty: "Colecțiile apar aici după importul catalogului Jolene.",
-    previewInvitation:
-      "Invitația Eucalipt, cu banderolă din foaie de calc și sigiliu din ceară",
-    previewSaveTheDate: "Save the date-ul Eucalipt",
+    previewInvitation: "Invitația Forest, cu pădurea pictată pe față",
+    previewDetails: "Versoul invitației Forest, cu detaliile nunții",
+    previewRsvp: "Cardul de confirmare Forest, cu folio auriu",
     note: {
+      names: "Numele voastre",
+      details: "Detaliile nunții",
       foil: "Folio auriu",
-      vellum: "Foaie de calc",
-      seal: "Sigiliu din ceară",
     },
   },
   suite: {

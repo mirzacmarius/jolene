@@ -16,7 +16,6 @@ import type * as designs_versions from "../designs/versions.js";
 import type * as events from "../events.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
-import type * as seed_eucalipt from "../seed/eucalipt.js";
 import type * as utils_assets from "../utils/assets.js";
 import type * as utils_auth from "../utils/auth.js";
 import type * as utils_errors from "../utils/errors.js";
@@ -37,7 +36,6 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   http: typeof http;
   init: typeof init;
-  "seed/eucalipt": typeof seed_eucalipt;
   "utils/assets": typeof utils_assets;
   "utils/auth": typeof utils_auth;
   "utils/errors": typeof utils_errors;

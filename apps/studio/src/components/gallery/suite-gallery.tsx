@@ -5,16 +5,20 @@ import {
   type DesignDocument,
   type Fields,
   type Occasion,
+  occasionLabels,
+  occasions,
   previewFields,
   suiteStyleLabel,
+  suiteStyles,
 } from "@jolene/design";
 import { Badge } from "@jolene/ui/badge";
 import { Button } from "@jolene/ui/button";
+import { SegmentedControl } from "@jolene/ui/segmented-control";
 import { Skeleton } from "@jolene/ui/skeleton";
 import { useQuery } from "convex/react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { type AssetLink, DesignPreview } from "../design/design-preview";
 import { StartDesignButton } from "../design/start-design-button";
@@ -29,10 +33,30 @@ interface SuiteSummary {
   lead: { slug: string; document: unknown } | null;
 }
 
-/** Jolene's published collections, each previewed by its invitation. */
+const styleOrder: string[] = Object.keys(suiteStyles);
+const styleRank = (style: string) => {
+  const rank = styleOrder.indexOf(style);
+  return rank === -1 ? styleOrder.length : rank;
+};
+
+/** The style words the suites carry, in the order the studio lists them. */
+function stylesOf(suites: { styles: string[] }[]) {
+  const present = new Set(suites.flatMap((suite) => suite.styles));
+  return [...present].sort(
+    (a, b) => styleRank(a) - styleRank(b) || a.localeCompare(b),
+  );
+}
+
+/**
+ * Jolene's published collections, each previewed by its invitation, to browse
+ * by occasion and style.
+ */
 export function SuiteGallery() {
   const t = useI18n();
+  const locale = useCurrentLocale();
   const data = useQuery(api.catalog.suites);
+  const [occasion, setOccasion] = useState<Occasion | "all">("all");
+  const [style, setStyle] = useState<string | null>(null);
   if (data === undefined)
     return (
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -47,12 +71,61 @@ export function SuiteGallery() {
         {t("home.empty")}
       </p>
     );
+
+  const present = occasions.filter((value) =>
+    data.suites.some((suite) => suite.occasion === value),
+  );
+  const forOccasion = data.suites.filter(
+    (suite) => occasion === "all" || suite.occasion === occasion,
+  );
+  const styles = stylesOf(forOccasion);
+  // A style the occasion's suites don't carry shows them all.
+  const chosen = style !== null && styles.includes(style) ? style : null;
+  const shown = chosen
+    ? forOccasion.filter((suite) => suite.styles.includes(chosen))
+    : forOccasion;
   return (
-    <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-      {data.suites.map((suite) => (
-        <SuiteCard key={suite.slug} suite={suite} assets={data.assets} />
-      ))}
-    </div>
+    <>
+      {present.length > 1 || styles.length > 1 ? (
+        <div className="mb-10 flex flex-wrap items-center gap-x-6 gap-y-4">
+          {present.length > 1 ? (
+            <SegmentedControl
+              label={t("home.occasion")}
+              value={occasion}
+              onValueChange={setOccasion}
+              options={[
+                { value: "all", label: t("home.allOccasions") },
+                ...present.map((value) => ({
+                  value,
+                  label: occasionLabels[value][locale],
+                })),
+              ]}
+            />
+          ) : null}
+          {styles.length > 1 ? (
+            <fieldset className="flex flex-wrap gap-1.5">
+              <legend className="sr-only">{t("home.style")}</legend>
+              {styles.map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={value === chosen}
+                  onClick={() => setStyle(value === chosen ? null : value)}
+                  className="rounded-full border border-border px-3 py-1 text-[13px] font-medium text-muted-foreground transition-colors outline-none hover:border-foreground/30 hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/40 aria-pressed:border-foreground aria-pressed:bg-foreground aria-pressed:text-background"
+                >
+                  {suiteStyleLabel(value, locale)}
+                </button>
+              ))}
+            </fieldset>
+          ) : null}
+        </div>
+      ) : null}
+      <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+        {shown.map((suite) => (
+          <SuiteCard key={suite.slug} suite={suite} assets={data.assets} />
+        ))}
+      </div>
+    </>
   );
 }
 

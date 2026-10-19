@@ -1,6 +1,7 @@
 import { forest } from "./forest";
 import type { Suite } from "./suite";
 
+export { forest } from "./forest";
 export {
   type Artwork,
   artLayer,

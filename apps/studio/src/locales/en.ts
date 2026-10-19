@@ -28,18 +28,22 @@ export default {
       "Approve the proof online; Jolene's workshop prints, assembles and sends it all to your door.",
     collectionsTitle: "Collections",
     collectionsLead:
-      "Each collection brings an invitation together with everything that goes with it.",
+      "For weddings and christenings: each collection brings an invitation together with everything that goes with it.",
+    occasion: "Occasion",
+    allOccasions: "All",
+    style: "Style",
     personalise: "Personalise",
     viewCollection: "See the collection",
     pieces: "{count} pieces",
     empty: "Collections appear here once Jolene's catalogue is imported.",
-    previewInvitation:
-      "The Eucalyptus invitation, with its vellum band and wax seal",
-    previewSaveTheDate: "The Eucalyptus save the date",
+    previewInvitation: "The Forest invitation, a painted forest on its front",
+    previewDetails:
+      "The back of the Forest invitation, with the wedding's details",
+    previewRsvp: "The Forest RSVP card, in gold foil",
     note: {
+      names: "Your names",
+      details: "Your wedding's details",
       foil: "Gold foil",
-      vellum: "Vellum",
-      seal: "Wax seal",
     },
   },
   suite: {

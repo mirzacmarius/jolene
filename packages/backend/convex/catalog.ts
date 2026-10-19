@@ -83,8 +83,8 @@ export const suites = query({
       published.map(async (suite) => {
         const lead = await ctx.db
           .query("templates")
-          .withIndex("by_suiteId_and_sortOrder", (q) =>
-            q.eq("suiteId", suite._id),
+          .withIndex("by_suiteId_and_retired_and_sortOrder", (q) =>
+            q.eq("suiteId", suite._id).eq("retired", undefined),
           )
           .first();
         return { ...suiteView(suite), lead: lead ? templateView(lead) : null };
@@ -98,7 +98,7 @@ export const suites = query({
   },
 });
 
-/** One published suite with every item in it, or null. */
+/** One published suite with every item it offers, or null. */
 export const suite = query({
   args: { slug: v.string() },
   returns: v.union(
@@ -118,8 +118,8 @@ export const suite = query({
     const templates = (
       await ctx.db
         .query("templates")
-        .withIndex("by_suiteId_and_sortOrder", (q) =>
-          q.eq("suiteId", suite._id),
+        .withIndex("by_suiteId_and_retired_and_sortOrder", (q) =>
+          q.eq("suiteId", suite._id).eq("retired", undefined),
         )
         .take(24)
     ).map(templateView);

@@ -41,7 +41,7 @@ export const start = mutation({
       .query("templates")
       .withIndex("by_slug", (q) => q.eq("slug", args.template))
       .unique();
-    if (!template) throw new ConvexError(errors.notFound);
+    if (!template || template.retired) throw new ConvexError(errors.notFound);
     const document = documentOf(template);
     const now = Date.now();
     const event = await ctx.db
