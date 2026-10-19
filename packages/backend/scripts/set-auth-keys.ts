@@ -1,13 +1,16 @@
 // Generates a fresh signing key pair for Convex Auth and stores it on the
 // deployment this package is configured for (or the one in CONVEX_DEPLOY_KEY).
-// Usage: bun scripts/set-auth-keys.ts <site-url> [--prod]
-// The secrets are passed straight to `convex env set` and never printed.
+// Usage: bun scripts/set-auth-keys.ts <site-url> [--prod | --preview-name <branch>]
+// The flags choose the deployment for `convex env set`, which gets the secrets
+// straight from here; they are never printed.
 import { execFileSync } from "node:child_process";
 import { exportJWK, exportPKCS8, generateKeyPair } from "jose";
 
 const [siteUrl, ...flags] = process.argv.slice(2);
 if (!siteUrl) {
-  throw new Error("Usage: bun scripts/set-auth-keys.ts <site-url> [--prod]");
+  throw new Error(
+    "Usage: bun scripts/set-auth-keys.ts <site-url> [--prod | --preview-name <branch>]",
+  );
 }
 
 const keys = await generateKeyPair("RS256", { extractable: true });
