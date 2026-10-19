@@ -2,12 +2,11 @@
 
 import {
   type DesignDocument,
-  type Language,
   parseDocument,
   previewFields,
 } from "@jolene/design";
 import { forest } from "@jolene/suites";
-import { useCurrentLocale, useI18n } from "@/locales/client";
+import { useI18n } from "@/locales/client";
 import { type AssetLink, DesignPreview } from "../design/design-preview";
 
 function template(slug: string): DesignDocument {
@@ -18,6 +17,12 @@ function template(slug: string): DesignDocument {
 
 const invitation = template("forest-invitatie");
 const rsvp = template("forest-rsvp");
+// In the invitation's own language, whichever the visitor reads.
+const fields = previewFields(
+  "wedding",
+  invitation.language,
+  forest.sampleFields,
+);
 
 // The studio serves Jolene's artwork itself, so the welcome page shows a
 // finished invitation before (and without) anything loading from the backend.
@@ -41,8 +46,6 @@ const notes = [
  */
 export function HeroPreview() {
   const t = useI18n();
-  const language: Language = useCurrentLocale();
-  const fields = previewFields("wedding", language, forest.sampleFields);
   return (
     <div className="relative mx-auto aspect-[5/6] w-full max-w-[560px]">
       <div
