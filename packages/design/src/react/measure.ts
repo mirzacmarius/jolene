@@ -21,20 +21,23 @@ export function createCanvasMeasure(): Measure {
   return (text, font, sizeMm) => {
     const css = `${font.italic ? "italic " : ""}${font.weight} ${REFERENCE_PX}px ${fontStack(font.family)}`;
     const key = `${css}|${text}`;
-    if (!document.fonts.check(css, text)) {
-      // A web font comes in subsets by alphabet, and the browser fetches one
-      // only for letters it draws. Some letters fall in two subsets, such as
-      // ă in Latin Extended and Vietnamese, and the second is never drawn, so
-      // ask for every face the text needs; "loadingdone" then measures again.
-      if (!requested.has(key)) {
-        requested.add(key);
-        // A face that fails to load keeps the estimate.
-        document.fonts.load(css, text).catch(() => {});
-      }
-      return estimateWidth(text, font, sizeMm);
-    }
     let width = cache.get(key);
+    // Only a text whose fonts have loaded is measured and kept, so asking
+    // the fonts again (which is slow) is needed only for a new text.
     if (width === undefined) {
+      if (!document.fonts.check(css, text)) {
+        // A web font comes in subsets by alphabet, and the browser fetches
+        // one only for letters it draws. Some letters fall in two subsets,
+        // such as ă in Latin Extended and Vietnamese, and the second is never
+        // drawn, so ask for every face the text needs; "loadingdone" then
+        // measures again.
+        if (!requested.has(key)) {
+          requested.add(key);
+          // A face that fails to load keeps the estimate.
+          document.fonts.load(css, text).catch(() => {});
+        }
+        return estimateWidth(text, font, sizeMm);
+      }
       context.font = css;
       width = context.measureText(text).width;
       cache.set(key, width);
