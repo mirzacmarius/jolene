@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { type Palette, resolveColor } from "../color";
 import { resolveText } from "../fields";
 import type {
@@ -54,7 +54,13 @@ function frameTransform(layer: Layer): string {
     : `translate(${x} ${y})`;
 }
 
-export function LayerView(props: LayerProps<Layer>): ReactNode {
+/**
+ * One layer, drawn again only when it or what it is drawn with changes, so
+ * an editor previewing a change to one layer leaves the others be.
+ */
+export const LayerView = memo(function LayerView(
+  props: LayerProps<Layer>,
+): ReactNode {
   const { layer } = props;
   if (layer.hidden) return null;
   let content: ReactNode;
@@ -77,6 +83,19 @@ export function LayerView(props: LayerProps<Layer>): ReactNode {
     >
       {content}
     </g>
+  );
+}, sameDrawing);
+
+function sameDrawing(before: LayerProps<Layer>, after: LayerProps<Layer>) {
+  return (
+    before.layer === after.layer &&
+    before.paper === after.paper &&
+    before.prefix === after.prefix &&
+    before.context === after.context &&
+    // Of the design, a layer reads only its theme, occasion and language.
+    before.document.theme === after.document.theme &&
+    before.document.occasion === after.document.occasion &&
+    before.document.language === after.document.language
   );
 }
 
@@ -105,14 +124,22 @@ function TextLayerView({
     measure: context.measure,
   });
   const sizeMm = ptToMm(layout.size);
+  const trackingMm = (style.tracking / 1000) * sizeMm;
   const top =
     layer.valign === "top"
       ? 0
       : layer.valign === "bottom"
         ? height - layout.height
         : (height - layout.height) / 2;
+  // Browsers space out the last letter of a line too, and centre or
+  // right-align that trailing space with it; shift the line by that space so
+  // its letters sit where the layout measured them.
   const x =
-    layer.align === "left" ? 0 : layer.align === "right" ? width : width / 2;
+    layer.align === "left"
+      ? 0
+      : layer.align === "right"
+        ? width + trackingMm
+        : (width + trackingMm) / 2;
   const anchor =
     layer.align === "left"
       ? "start"
@@ -127,7 +154,7 @@ function TextLayerView({
       fontWeight={style.weight}
       fontStyle={style.italic ? "italic" : undefined}
       fontSize={sizeMm}
-      letterSpacing={(style.tracking / 1000) * sizeMm}
+      letterSpacing={trackingMm}
       textAnchor={anchor}
       dominantBaseline="central"
       fill={fill}

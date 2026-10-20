@@ -13,6 +13,21 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/", destination: "/studio", permanent: false }];
   },
+  // Jolene's artwork: each file's name carries a hash of its content, so a
+  // changed file is a new address and browsers can keep every one for good.
+  async headers() {
+    return [
+      {
+        source: "/studio/art/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 // The shop's domain serves the studio at /studio: Vercel Microfrontends routes

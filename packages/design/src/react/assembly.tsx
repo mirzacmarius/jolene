@@ -3,7 +3,7 @@ import { waxColors } from "../catalog";
 import { type Hex, mix } from "../color";
 import { resolveText } from "../fields";
 import { assemblyBounds, type Box, trimPath } from "../geometry";
-import type { Accessory, DesignDocument } from "../schema";
+import type { Accessory, DesignDocument, Piece } from "../schema";
 import { Defs, defIds } from "./defs";
 import { PieceSurface } from "./face";
 import { fontStack, type RenderContext, svgId } from "./shared";
@@ -186,6 +186,15 @@ function Ribbon({
   );
 }
 
+/** Moves a piece from its own millimetres to its place in the assembly. */
+export function placeTransform(piece: Piece): string {
+  return `translate(${piece.place.x} ${piece.place.y})${
+    piece.place.rotation
+      ? ` rotate(${piece.place.rotation} ${piece.width / 2} ${piece.height / 2})`
+      : ""
+  }`;
+}
+
 export interface AssemblyViewProps {
   document: DesignDocument;
   context: RenderContext;
@@ -234,14 +243,7 @@ export function AssemblyView({
       {title ? <title>{title}</title> : null}
       <Defs prefix={prefix} />
       {document.pieces.map((piece) => (
-        <g
-          key={piece.id}
-          transform={`translate(${piece.place.x} ${piece.place.y})${
-            piece.place.rotation
-              ? ` rotate(${piece.place.rotation} ${piece.width / 2} ${piece.height / 2})`
-              : ""
-          }`}
-        >
+        <g key={piece.id} transform={placeTransform(piece)}>
           <path
             d={trimPath(piece)}
             fill="#ffffff"

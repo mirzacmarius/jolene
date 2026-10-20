@@ -1,0 +1,153 @@
+{
+  "suite": "forest",
+  "cards": [
+    {
+      "id": "invitation-front",
+      "image": "images/invitatie-de-nunta-forest/poza-333-1.jpg",
+      "quad": [[1023, 1837], [2456, 1841], [2628, 3885], [952, 3898]],
+      "size": [133, 184],
+      "opaque": true,
+      "erase": [
+        {
+          "rect": [33, 27, 68, 24],
+          "select": "light",
+          "above": 0.82,
+          "saturation": 0.3,
+          "grow": 7
+        },
+        {
+          "rect": [55, 49, 20, 24],
+          "select": "light",
+          "above": 0.82,
+          "saturation": 0.3,
+          "grow": 7
+        },
+        {
+          "rect": [34, 72, 66, 24],
+          "select": "light",
+          "above": 0.82,
+          "saturation": 0.3,
+          "grow": 7
+        }
+      ],
+      "layers": [
+        {
+          "key": "forest-painting",
+          "name": "Pădurea"
+        }
+      ],
+      "inpaint": "copy"
+    },
+    {
+      "id": "invitation-back",
+      "image": "images/invitatie-de-nunta-forest/invitatie_nunta_forest_back.jpg",
+      "quad": [[396, 210], [1397, 212], [1401, 1641], [384, 1645]],
+      "size": [133, 184],
+      "erase": [
+        {
+          "rect": [22, 4, 86, 106],
+          "select": "all"
+        },
+        {
+          "rect": [35, 110, 71, 9],
+          "select": "all"
+        },
+        {
+          "rect": [39, 119, 67, 18],
+          "select": "all"
+        },
+        {
+          "rect": [114, 0, 19, 26],
+          "select": "all"
+        },
+        {
+          "rect": [106, 94, 6, 8],
+          "select": "dark",
+          "below": 0.38,
+          "fill": "inpaint"
+        }
+      ],
+      "layers": [
+        {
+          "key": "forest-left",
+          "name": "Ferigă și eucalipt, stânga",
+          "rect": [0, 30, 25, 82]
+        },
+        {
+          "key": "forest-ring-box",
+          "name": "Cutia cu verighete",
+          "rect": [0, 112, 42, 72]
+        },
+        {
+          "key": "forest-bottom",
+          "name": "Ferigi, jos",
+          "rect": [42, 130, 66, 54]
+        },
+        {
+          "key": "forest-right",
+          "name": "Ferigă și eucalipt, dreapta",
+          "rect": [105, 30, 28, 154]
+        }
+      ]
+    },
+    {
+      "id": "table-number",
+      "image": "images/numar-masa-forest/numar_de_masa_forest.jpg",
+      "quad": [[327, 188], [1373, 188], [1373, 1640], [327, 1640]],
+      "size": [133, 184],
+      "erase": [
+        {
+          "rect": [40, 60, 56, 56],
+          "select": "dark",
+          "below": 0.3,
+          "grow": 4,
+          "fill": "inpaint"
+        },
+        {
+          "rect": [84, 177, 49, 7],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "forest-slice",
+          "name": "Felie de lemn",
+          "rect": [0, 20, 133, 145],
+          "hue": [12, 42],
+          "saturation": 0.2,
+          "close": 0.6,
+          "shape": "hull"
+        },
+        {
+          "key": "forest-ferns-nw",
+          "name": "Ferigi, stânga sus",
+          "rect": [0, 0, 66, 80]
+        },
+        {
+          "key": "forest-ferns-ne",
+          "name": "Ferigi, dreapta sus",
+          "rect": [70, 0, 63, 60]
+        },
+        {
+          "key": "forest-ferns-se",
+          "name": "Ferigi, dreapta jos",
+          "rect": [70, 110, 63, 74]
+        },
+        {
+          "key": "forest-fern-sw",
+          "name": "Ferigă, stânga jos",
+          "rect": [0, 130, 32, 54]
+        },
+        {
+          "key": "forest-fern-s",
+          "name": "Ferigă, jos",
+          "rect": [32, 145, 40, 39]
+        }
+      ],
+      "paperSample": [2, 2, 12, 12],
+      "quality": 76,
+      "inpaint": "turn",
+      "turnAbout": [67, 93]
+    }
+  ]
+}

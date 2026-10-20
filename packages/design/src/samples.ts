@@ -2,9 +2,8 @@ import type { Fields } from "./fields";
 import type { DesignDocumentInput, Theme } from "./schema";
 
 /**
- * "Eucalipt", a small suite used to seed new deployments and in tests: sage
- * line art, gold-foil names, a vellum overlay closed with a wax seal. Jolene's
- * own designs replace it in the template library.
+ * A small suite for tests: sage line art, gold-foil names, a vellum overlay
+ * closed with a wax seal. Jolene's own collections are in @jolene/suites.
  */
 
 export const EUCALYPTUS_ASSET = "eucalyptus-sprig";
@@ -386,10 +385,7 @@ export const eucaliptFields: Fields = {
   tableName: "7",
 };
 
-/**
- * Line art for the suite, in one colour so layers can tint it. The seed stores
- * it as the EUCALYPTUS_ASSET file; the studio's welcome page draws it inline.
- */
+/** Line art for the suite, in one colour so layers can tint it. */
 export const eucalyptusArtwork = {
   key: EUCALYPTUS_ASSET,
   name: "Ramură de eucalipt",

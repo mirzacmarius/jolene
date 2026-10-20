@@ -1,0 +1,186 @@
+{
+  "suite": "safari",
+  "cards": [
+    {
+      "id": "invitation",
+      "image": "images/invitatie-botez-safari/poza-botez-copil.jpg",
+      "quad": [[136.5, 487.5], [975, 474.5], [991.5, 1088.5], [103.5, 1077]],
+      "size": [184, 133],
+      "erase": [
+        {
+          "rect": [24, 5, 144, 9],
+          "select": "all"
+        },
+        {
+          "rect": [84, 17, 21, 6],
+          "select": "all"
+        },
+        {
+          "rect": [79, 26.5, 29, 10],
+          "select": "dark",
+          "below": 0.55,
+          "grow": 3,
+          "fill": "inpaint"
+        },
+        {
+          "rect": [47, 41.5, 93, 6],
+          "select": "all"
+        },
+        {
+          "rect": [62, 47.5, 64, 21.5],
+          "select": "all"
+        },
+        {
+          "rect": [42, 69, 104, 15],
+          "select": "all"
+        },
+        {
+          "rect": [54, 85, 72, 20],
+          "select": "all"
+        },
+        {
+          "rect": [0, 0, 0.8, 84],
+          "select": "all"
+        },
+        {
+          "rect": [30, 132, 96, 1],
+          "select": "all"
+        },
+        {
+          "rect": [48, 131.4, 78, 1.6],
+          "select": "all"
+        },
+        {
+          "rect": [126, 132.3, 27, 0.7],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "safari-monkey",
+          "name": "Maimuța pe liană",
+          "rect": [0, 0, 50, 68]
+        },
+        {
+          "key": "safari-ribbon",
+          "name": "Panglica",
+          "rect": [56, 17, 76, 25]
+        },
+        {
+          "key": "safari-hibiscus",
+          "name": "Hibiscus și frunze",
+          "rect": [0, 70, 54, 63]
+        },
+        {
+          "key": "safari-lion-giraffe",
+          "name": "Leul și girafa",
+          "rect": [120, 56, 64, 77]
+        }
+      ]
+    },
+    {
+      "id": "menu",
+      "image": "images/meniu-botez-safari/poza-6-6.jpg",
+      "quad": [[331.5, 227], [765.5, 218.5], [786, 1186], [311.5, 1185]],
+      "size": [90, 200],
+      "layers": [
+        {
+          "key": "safari-vine-top",
+          "name": "Liană, sus",
+          "rect": [20, 0, 70, 19]
+        },
+        {
+          "key": "safari-vine-monkey",
+          "name": "Liană cu maimuță",
+          "rect": [0, 30, 90, 42]
+        }
+      ],
+      "erase": [
+        {
+          "rect": [28, 19.2, 37, 12],
+          "select": "all"
+        },
+        {
+          "rect": [30, 52.5, 31, 9],
+          "select": "all"
+        },
+        {
+          "rect": [20, 64.5, 48, 17],
+          "select": "all"
+        },
+        {
+          "rect": [12, 82, 78, 62],
+          "select": "all"
+        },
+        {
+          "rect": [30, 144, 32, 16],
+          "select": "all"
+        }
+      ]
+    },
+    {
+      "id": "table-number",
+      "image": "images/numar-de-masa-safari/poza-7-2-1.jpg",
+      "quad": [[620.5, 115.5], [1046.5, 96.5], [1051.5, 516.5], [619, 523.5]],
+      "size": [130, 130],
+      "layers": [
+        {
+          "key": "safari-vine-wide",
+          "name": "Liană, de-a lungul",
+          "rect": [0, 0, 130, 16]
+        },
+        {
+          "key": "safari-hippo",
+          "name": "Hipopotamul",
+          "rect": [58, 22, 72, 108]
+        }
+      ],
+      "erase": [
+        {
+          "rect": [10, 15.4, 64, 18],
+          "select": "all"
+        },
+        {
+          "rect": [18, 33, 42, 62],
+          "select": "all"
+        }
+      ]
+    },
+    {
+      "id": "money-envelope",
+      "image": "images/numar-de-masa-safari/poza-7-2-1.jpg",
+      "quad": [[205, 950.5], [1031, 948], [1047, 1387.5], [195.5, 1381.5]],
+      "size": [190, 100],
+      "layers": [
+        {
+          "key": "safari-palm-monkey",
+          "name": "Palmier, maimuță și hibiscus",
+          "rect": [0.0, 0, 65.0, 100]
+        }
+      ],
+      "erase": [
+        {
+          "rect": [0.0, 0, 190.0, 1.2],
+          "select": "all"
+        },
+        {
+          "rect": [0.0, 0, 2.5, 7],
+          "select": "all"
+        },
+        {
+          "rect": [59.1, 13, 62.0, 15],
+          "select": "all"
+        },
+        {
+          "rect": [43.3, 29, 100.4, 15],
+          "select": "all"
+        },
+        {
+          "rect": [48.2, 49, 83.7, 11.5],
+          "select": "dark",
+          "below": 0.6
+        }
+      ]
+    }
+  ]
+}

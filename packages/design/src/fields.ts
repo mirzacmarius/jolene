@@ -82,6 +82,11 @@ const shared = {
       en: "With joyful hearts, we invite you to celebrate with us",
     },
   ),
+  menu: field(
+    "multiline",
+    { ro: "Meniu", en: "Menu" },
+    { ro: "Aperitiv\nFel principal\nDesert", en: "Starter\nMain\nDessert" },
+  ),
   guestName: field(
     "text",
     { ro: "Numele invitatului", en: "Guest name" },
@@ -127,11 +132,6 @@ export const occasionFields = {
       "text",
       { ro: "Locul cununiei civile", en: "Civil ceremony venue" },
       { ro: "Primăria Iași", en: "Iasi City Hall" },
-    ),
-    menu: field(
-      "multiline",
-      { ro: "Meniu", en: "Menu" },
-      { ro: "Aperitiv\nFel principal\nDesert", en: "Starter\nMain\nDessert" },
     ),
     ...shared,
   },

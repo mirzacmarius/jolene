@@ -1,4 +1,13 @@
 import { beforeEach, describe, expect, setSystemTime, test } from "bun:test";
+import {
+  eucaliptFields,
+  eucaliptInvitation,
+  eucaliptMenu,
+  eucaliptPlaceCard,
+  eucaliptSaveTheDate,
+  eucalyptusArtwork,
+} from "@jolene/design";
+import { suites } from "@jolene/suites";
 import { Glob } from "bun";
 import { convexTest } from "convex-test";
 import { api, internal } from "./_generated/api";
@@ -12,9 +21,38 @@ const modules = Object.fromEntries(
     .map((path) => [`./${path}`, () => import(`./${path}`)]),
 );
 
+/** A suite made of @jolene/design's sample documents, to design from. */
+const sample = {
+  suite: {
+    slug: "sample",
+    name: { ro: "Eucalipt", en: "Eucalyptus" },
+    description: { ro: "Ramuri de eucalipt.", en: "Eucalyptus sprigs." },
+    occasion: "wedding" as const,
+    styles: ["botanic"],
+    published: true,
+    sortOrder: 0,
+    sampleFields: eucaliptFields as Record<string, string>,
+  },
+  templates: [
+    { slug: "sample-invitation", document: eucaliptInvitation },
+    { slug: "sample-save-the-date", document: eucaliptSaveTheDate },
+    { slug: "sample-menu", document: eucaliptMenu },
+    { slug: "sample-place-card", document: eucaliptPlaceCard },
+  ],
+  art: [
+    {
+      key: eucalyptusArtwork.key,
+      path: "/studio/art/sample/eucalyptus.svg",
+      contentType: eucalyptusArtwork.contentType,
+      recolorable: true,
+      name: eucalyptusArtwork.name,
+    },
+  ],
+};
+
 async function setUp() {
   const t = convexTest(schema, modules);
-  await t.action(internal.init.seed, {});
+  await t.mutation(internal.catalog.save.suite, sample);
   const signIn = async () => {
     const userId = await t.run((ctx) =>
       ctx.db.insert("users", { isAnonymous: true }),
@@ -27,41 +65,106 @@ async function setUp() {
 
 beforeEach(() => setSystemTime());
 
-test("the seed gives the gallery a suite with its artwork", async () => {
-  const { t } = await setUp();
-  const { suites, assets } = await t.query(api.catalog.suites, {});
-  expect(suites.map((suite) => suite.slug)).toEqual(["eucalipt"]);
-  expect(suites[0]?.lead?.slug).toBe("eucalipt-invitatie");
-  expect(assets).toEqual([
-    expect.objectContaining({ key: "eucalyptus-sprig", recolorable: true }),
-  ]);
-  const suite = await t.query(api.catalog.suite, { slug: "eucalipt" });
-  expect(suite?.templates.map((template) => template.kind)).toEqual([
-    "invitation",
-    "save-the-date",
-    "menu",
-    "place-card",
-  ]);
-  // Seeding again updates in place.
-  await t.action(internal.init.seed, {});
-  expect((await t.query(api.catalog.suites, {})).suites).toHaveLength(1);
+describe("the catalog", () => {
+  test("is seeded with Jolene's collections and their artwork", async () => {
+    const t = convexTest(schema, modules);
+    await t.action(internal.init.seed, {});
+    const shown = await t.query(api.catalog.suites, {});
+    expect(shown.suites.map((suite) => suite.slug)).toEqual(
+      suites.map((suite) => suite.slug),
+    );
+    expect(shown.suites.map((suite) => suite.lead?.slug)).toEqual(
+      suites.map((suite) => suite.templates[0]?.slug),
+    );
+    // The studio serves the artwork itself.
+    expect(shown.assets.length).toBeGreaterThan(0);
+    for (const asset of shown.assets)
+      expect(asset.url).toStartWith("/studio/art/");
+
+    const forest = await t.query(api.catalog.suite, { slug: "forest" });
+    expect(forest?.templates.map((template) => template.kind)).toContain(
+      "menu",
+    );
+    // Seeding again updates in place.
+    await t.action(internal.init.seed, {});
+    expect((await t.query(api.catalog.suites, {})).suites).toHaveLength(
+      suites.length,
+    );
+  });
+
+  test("retires the items a suite no longer lists", async () => {
+    const { t, couple } = await setUp();
+    const designId = await couple.mutation(api.designs.start, {
+      template: "sample-place-card",
+    });
+    await t.mutation(internal.catalog.save.suite, {
+      ...sample,
+      templates: sample.templates.slice(0, 3),
+    });
+    const suite = await t.query(api.catalog.suite, { slug: "sample" });
+    expect(suite?.templates.map((template) => template.kind)).toEqual([
+      "invitation",
+      "save-the-date",
+      "menu",
+    ]);
+    await expect(
+      couple.mutation(api.designs.start, { template: "sample-place-card" }),
+    ).rejects.toThrow("not-found");
+    // Designs started from it keep it.
+    const design = await couple.query(api.designs.get, { designId });
+    expect(design?.template.slug).toBe("sample-place-card");
+
+    // Listing it again brings it back.
+    await t.mutation(internal.catalog.save.suite, sample);
+    const again = await t.query(api.catalog.suite, { slug: "sample" });
+    expect(again?.templates).toHaveLength(4);
+  });
+
+  test("keeps an asset to one file", async () => {
+    const { t } = await setUp();
+    const storageId = await t.run((ctx) =>
+      ctx.storage.store(new Blob(["<svg/>"])),
+    );
+    const asset = {
+      key: "sprig",
+      kind: "artwork" as const,
+      contentType: "image/svg+xml",
+      recolorable: true,
+    };
+    await expect(
+      t.mutation(internal.catalog.save.asset, {
+        ...asset,
+        storageId,
+        path: "/studio/art/sprig.svg",
+      }),
+    ).rejects.toThrow("give a storageId or a path");
+    await t.mutation(internal.catalog.save.asset, { ...asset, storageId });
+    // Moving it into the studio deletes the upload.
+    await t.mutation(internal.catalog.save.asset, {
+      ...asset,
+      path: "/studio/art/sprig.svg",
+    });
+    expect(
+      await t.run((ctx) => ctx.db.system.get("_storage", storageId)),
+    ).toBeNull();
+  });
 });
 
 describe("designs", () => {
   test("share the couple's details across a suite", async () => {
     const { couple } = await setUp();
     const invitation = await couple.mutation(api.designs.start, {
-      template: "eucalipt-invitatie",
+      template: "sample-invitation",
     });
     const menu = await couple.mutation(api.designs.start, {
-      template: "eucalipt-meniu",
+      template: "sample-menu",
     });
     const first = await couple.query(api.designs.get, { designId: invitation });
     const second = await couple.query(api.designs.get, { designId: menu });
     expect(first?.event._id).toBe(second?.event._id as never);
     expect(first?.template).toEqual({
-      slug: "eucalipt-invitatie",
-      suite: { slug: "eucalipt", name: { ro: "Eucalipt", en: "Eucalyptus" } },
+      slug: "sample-invitation",
+      suite: { slug: "sample", name: { ro: "Eucalipt", en: "Eucalyptus" } },
     });
 
     await couple.mutation(api.events.setFields, {
@@ -79,7 +182,7 @@ describe("designs", () => {
   test("are private to their owner", async () => {
     const { couple, stranger } = await setUp();
     const designId = await couple.mutation(api.designs.start, {
-      template: "eucalipt-invitatie",
+      template: "sample-invitation",
     });
     expect(await stranger.query(api.designs.get, { designId })).toBeNull();
     expect(
@@ -100,7 +203,7 @@ describe("designs", () => {
   test("refuse details the occasion doesn't have", async () => {
     const { couple } = await setUp();
     const designId = await couple.mutation(api.designs.start, {
-      template: "eucalipt-invitatie",
+      template: "sample-invitation",
     });
     const design = await couple.query(api.designs.get, { designId });
     for (const fields of [{ child: "Sofia" }, { date: "31.12.2027" }] as Record<
@@ -119,7 +222,7 @@ describe("designs", () => {
   test("change by operations, all or nothing", async () => {
     const { couple } = await setUp();
     const designId = await couple.mutation(api.designs.start, {
-      template: "eucalipt-invitatie",
+      template: "sample-invitation",
     });
     const moved = await couple.mutation(api.designs.apply, {
       designId,
@@ -156,7 +259,7 @@ describe("designs", () => {
     const { couple } = await setUp();
     setSystemTime(new Date("2027-01-10T10:00:00Z"));
     const designId = await couple.mutation(api.designs.start, {
-      template: "eucalipt-invitatie",
+      template: "sample-invitation",
     });
     const accent = (value: string) => ({
       designId,
@@ -202,11 +305,11 @@ describe("designs", () => {
     const { couple, stranger } = await setUp();
     setSystemTime(new Date("2027-01-10T10:00:00Z"));
     await couple.mutation(api.designs.start, {
-      template: "eucalipt-invitatie",
+      template: "sample-invitation",
     });
     setSystemTime(new Date("2027-01-10T10:01:00Z"));
     await couple.mutation(api.designs.start, {
-      template: "eucalipt-place-card",
+      template: "sample-place-card",
     });
     const mine = await couple.query(api.designs.mine, {});
     expect(mine.designs.map((design) => design.kind)).toEqual([
@@ -215,8 +318,8 @@ describe("designs", () => {
     ]);
     expect(mine.events).toHaveLength(1);
     expect(mine.templates.map((template) => template.suite.slug)).toEqual([
-      "eucalipt",
-      "eucalipt",
+      "sample",
+      "sample",
     ]);
     expect((await stranger.query(api.designs.mine, {})).designs).toEqual([]);
   });

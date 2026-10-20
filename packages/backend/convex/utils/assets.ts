@@ -10,9 +10,10 @@ export const resolvedAssetValidator = v.object({
 });
 
 /**
- * Links to the files documents draw, found by asset key. A photo resolves only
- * for its owner; a key with no file is left out, and the renderer draws a
- * placeholder where it would go.
+ * Links to the files documents draw, found by asset key: a path on the
+ * studio's own origin for the files it serves, a storage URL for uploads. A
+ * photo resolves only for its owner; a key with no file is left out, and the
+ * renderer draws a placeholder where it would go.
  */
 export async function resolveAssets(
   ctx: QueryCtx,
@@ -26,7 +27,9 @@ export async function resolveAssets(
       .withIndex("by_key", (q) => q.eq("key", key))
       .unique();
     if (!asset || (asset.ownerId && asset.ownerId !== viewerId)) continue;
-    const url = await ctx.storage.getUrl(asset.storageId);
+    const url =
+      asset.path ??
+      (asset.storageId ? await ctx.storage.getUrl(asset.storageId) : null);
     if (!url) continue;
     resolved.push({
       key,

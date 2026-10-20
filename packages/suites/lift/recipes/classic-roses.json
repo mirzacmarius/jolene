@@ -1,0 +1,194 @@
+{
+  "suite": "classic-roses",
+  "cards": [
+    {
+      "id": "invitation",
+      "image": "images/invitatie-de-nunta-classic-roses/157660781_1600332216833557_3259058714657090872_n.jpg",
+      "quad": [[460.2, 229.2], [1084, 344], [932, 1210], [326.2, 1107.2]],
+      "size": [133, 184],
+      "ppmm": 5,
+      "erase": [
+        {
+          "rect": [15, 0, 20, 1.2],
+          "select": "dark",
+          "below": 0.8,
+          "grow": 1
+        },
+        {
+          "rect": [34, 18, 66, 24],
+          "select": "all"
+        },
+        {
+          "rect": [60, 42, 15, 8],
+          "select": "all"
+        },
+        {
+          "rect": [12, 46, 110, 27],
+          "select": "dark",
+          "below": 0.75,
+          "grow": 2
+        },
+        {
+          "rect": [24, 72, 88, 8],
+          "select": "all"
+        },
+        {
+          "rect": [20, 79, 96, 16],
+          "select": "all"
+        },
+        {
+          "rect": [7, 95, 122, 13],
+          "select": "all"
+        },
+        {
+          "rect": [26, 107, 84, 9],
+          "select": "all"
+        },
+        {
+          "rect": [10, 116, 116, 19],
+          "select": "all"
+        },
+        {
+          "rect": [40, 135, 58, 13],
+          "select": "all"
+        },
+        {
+          "rect": [30, 148, 75, 15],
+          "select": "dark",
+          "below": 0.75,
+          "grow": 2
+        }
+      ],
+      "layers": [
+        {
+          "key": "classic-roses-branch",
+          "name": "Ramură, stânga sus",
+          "rect": [0, 0, 32, 60]
+        },
+        {
+          "key": "classic-roses-top",
+          "name": "Trandafiri, sus",
+          "rect": [32, 0, 101, 70]
+        },
+        {
+          "key": "classic-roses-bottom-left",
+          "name": "Trandafiri, stânga jos",
+          "rect": [0, 130, 56, 54]
+        },
+        {
+          "key": "classic-roses-bottom-right",
+          "name": "Trandafiri, dreapta jos",
+          "rect": [56, 130, 77, 54]
+        }
+      ]
+    },
+    {
+      "id": "menu-cover",
+      "image": "images/meniu-nunta-classic-roses/meniu_nunta_clasic_rosess-min.jpg",
+      "quad": [[3370, 925], [4653, 1266], [4138, 3258], [2855, 2937]],
+      "size": [118, 184],
+      "paperSample": [50, 160, 14, 10],
+      "erase": [
+        {
+          "rect": [38, 72, 41, 12],
+          "select": "all"
+        },
+        {
+          "rect": [24, 87, 64, 16],
+          "select": "all"
+        },
+        {
+          "rect": [88, 88, 8, 11],
+          "select": "grey",
+          "below": 0.8
+        }
+      ],
+      "layers": [
+        {
+          "key": "classic-roses-wreath-top",
+          "name": "Coroniță, sus",
+          "rect": [0, 20, 118, 70]
+        },
+        {
+          "key": "classic-roses-wreath-bottom",
+          "name": "Coroniță, jos",
+          "rect": [0, 90, 118, 70]
+        }
+      ]
+    },
+    {
+      "id": "menu-back",
+      "image": "images/meniu-nunta-classic-roses/site-3.jpg",
+      "quad": [[335, 365], [897.5, 364.7], [878, 1172], [320, 1170]],
+      "size": [133, 184],
+      "ppmm": 4.5,
+      "paperWindow": 30,
+      "erase": [
+        {
+          "rect": [20, 56, 90, 16.5],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "classic-roses-bouquet",
+          "name": "Buchet",
+          "rect": [25, 72, 80, 50]
+        }
+      ]
+    },
+    {
+      "id": "seating-chart",
+      "image": "images/tablou-asezare-invitati-classic-roses/panou_1-min.jpg",
+      "quad": [[665, 247], [1818, 247], [1818, 1887], [665, 1887]],
+      "size": [500, 711],
+      "ppmm": 2.3,
+      "paperWindow": 60,
+      "erase": [
+        {
+          "rect": [128, 15, 245, 97],
+          "select": "all"
+        },
+        {
+          "rect": [40, 118, 140, 570],
+          "select": "all"
+        },
+        {
+          "rect": [183, 118, 135, 580],
+          "select": "all"
+        },
+        {
+          "rect": [330, 118, 140, 470],
+          "select": "all"
+        },
+        {
+          "rect": [330, 588, 104, 52],
+          "select": "grey",
+          "below": 0.7
+        },
+        {
+          "rect": [330, 640, 94, 30],
+          "select": "grey",
+          "below": 0.7
+        },
+        {
+          "rect": [330, 670, 89, 6],
+          "select": "grey",
+          "below": 0.7
+        }
+      ],
+      "layers": [
+        {
+          "key": "classic-roses-board-top-left",
+          "name": "Trandafiri, colț stânga sus",
+          "rect": [0, 0, 160, 170]
+        },
+        {
+          "key": "classic-roses-board-bottom-right",
+          "name": "Trandafiri, colț dreapta jos",
+          "rect": [380, 560, 120, 153]
+        }
+      ]
+    }
+  ]
+}

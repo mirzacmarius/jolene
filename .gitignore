@@ -31,6 +31,7 @@ test-results/
 playwright-report/
 
 # misc
+__pycache__/
 .DS_Store
 *.pem
 certificates

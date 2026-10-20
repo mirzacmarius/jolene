@@ -11,15 +11,18 @@
   "exports": {
     "./badge": "./src/components/badge.tsx",
     "./button": "./src/components/button.tsx",
+    "./dropdown-menu": "./src/components/dropdown-menu.tsx",
     "./globals.css": "./src/globals.css",
     "./input": "./src/components/input.tsx",
     "./label": "./src/components/label.tsx",
     "./logo": "./src/components/logo.tsx",
+    "./popover": "./src/components/popover.tsx",
     "./postcss": "./postcss.config.mjs",
     "./segmented-control": "./src/components/segmented-control.tsx",
     "./skeleton": "./src/components/skeleton.tsx",
     "./textarea": "./src/components/textarea.tsx",
     "./toaster": "./src/components/toaster.tsx",
+    "./tooltip": "./src/components/tooltip.tsx",
     "./utils": "./src/utils/index.ts"
   },
   "dependencies": {

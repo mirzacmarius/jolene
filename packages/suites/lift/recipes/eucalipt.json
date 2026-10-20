@@ -1,0 +1,167 @@
+{
+  "suite": "eucalipt",
+  "cards": [
+    {
+      "id": "seating-chart",
+      "image": "images/tablou-asezare-invitati-eucalipt/asezare_masa_eucalipt-min.jpg",
+      "quad": [[731, 489], [2093, 488], [2092, 2303], [730, 2303]],
+      "size": [500, 666],
+      "ppmm": 2.7,
+      "paperSample": [20, 150, 30, 25],
+      "erase": [
+        {
+          "rect": [228, 86, 94, 60],
+          "select": "all"
+        },
+        {
+          "rect": [322, 95, 26, 51],
+          "select": "all"
+        },
+        {
+          "rect": [348, 106, 58, 40],
+          "select": "all"
+        },
+        {
+          "rect": [400, 106, 12, 14],
+          "select": "dark",
+          "below": 0.55,
+          "grow": 2,
+          "fill": "inpaint"
+        },
+        {
+          "rect": [405.5, 111.8, 2.7, 4.6],
+          "select": "all"
+        },
+        {
+          "rect": [426, 0, 35, 39],
+          "select": "all"
+        },
+        {
+          "rect": [460, 0, 40, 95],
+          "select": "all"
+        },
+        {
+          "rect": [475, 122, 25, 30],
+          "select": "all"
+        },
+        {
+          "rect": [481, 0, 19, 160],
+          "select": "all"
+        }
+      ],
+      "inpaint": "copy",
+      "layers": [
+        {
+          "key": "eucalipt-sprig",
+          "name": "Rămurică de eucalipt",
+          "rect": [232, 0, 268, 148]
+        },
+        {
+          "key": "eucalipt-branch-long",
+          "name": "Ramură lungă de eucalipt",
+          "rect": [12, 557, 186.5, 109]
+        }
+      ]
+    },
+    {
+      "id": "place-card",
+      "image": "images/place-card-eucalipt/place_card_eucalipt.jpg",
+      "quad": [[524, 789], [1350, 791], [1357, 1266], [512, 1268]],
+      "size": [90, 55],
+      "ppmm": 9,
+      "paperSample": [55, 42, 15, 8],
+      "erase": [
+        {
+          "rect": [14, 15.5, 62, 15],
+          "select": "dark",
+          "below": 0.55,
+          "grow": 2
+        },
+        {
+          "rect": [35, 33, 20, 7],
+          "select": "dark",
+          "below": 0.6,
+          "grow": 2
+        }
+      ],
+      "layers": [
+        {
+          "key": "eucalipt-branch",
+          "name": "Ramură de eucalipt",
+          "rect": [0, 17, 40, 38]
+        }
+      ]
+    },
+    {
+      "id": "table-number",
+      "image": "images/numar-de-masa-eucalipt/numar_de_masa_eucalipt.jpg",
+      "quad": [[443, 498], [1236, 497], [1236, 1613], [443, 1613]],
+      "size": [131, 184],
+      "ppmm": 6,
+      "paperSample": [10, 140, 30, 30],
+      "erase": [
+        {
+          "rect": [0, 0, 0.7, 184],
+          "select": "all"
+        },
+        {
+          "rect": [38, 66, 56, 54],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "eucalipt-cluster",
+          "name": "Ramuri de eucalipt",
+          "rect": [0, 0, 131, 62]
+        }
+      ]
+    },
+    {
+      "id": "welcome-sign",
+      "image": "images/panou-intampinare-invitati-eucalipt/welcome_1-min.jpg",
+      "quad": [[624, 248], [1853, 247], [1853, 1886], [624, 1888]],
+      "size": [500, 667],
+      "ppmm": 2.4,
+      "paperSample": [30, 300, 40, 40],
+      "erase": [
+        {
+          "rect": [55, 238, 392, 48],
+          "select": "all"
+        },
+        {
+          "rect": [105, 312, 310, 84],
+          "select": "all"
+        },
+        {
+          "rect": [190, 425, 160, 56],
+          "select": "dark",
+          "below": 0.35,
+          "grow": 2
+        }
+      ],
+      "layers": [
+        {
+          "key": "eucalipt-leaves-top",
+          "name": "Frunze de eucalipt, sus",
+          "rect": [0, 0, 500, 205]
+        },
+        {
+          "key": "eucalipt-leaf",
+          "name": "Frunză de eucalipt",
+          "rect": [95, 390, 60, 50]
+        },
+        {
+          "key": "eucalipt-leaf-small",
+          "name": "Frunză mică de eucalipt",
+          "rect": [335, 455, 45, 50]
+        },
+        {
+          "key": "eucalipt-leaves-bottom",
+          "name": "Frunze de eucalipt, jos",
+          "rect": [0, 500, 500, 167]
+        }
+      ]
+    }
+  ]
+}
