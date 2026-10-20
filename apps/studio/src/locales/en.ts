@@ -79,6 +79,15 @@ export default {
     badTime: "Write the time as 18:30.",
     invalid: "That change didn't fit the design.",
   },
+  preview: {
+    showing: "Preview",
+    lifelike: "Lifelike",
+    flat: "Flat",
+    zoom: "Zoom",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
+    fit: "See it all",
+  },
   myDesigns: {
     title: "My designs",
     lead: "Your designs are kept in this browser. Accounts that carry them to any device come with ordering.",

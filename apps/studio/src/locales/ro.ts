@@ -80,6 +80,15 @@ export default {
     badTime: "Scrieți ora ca 18:30.",
     invalid: "Modificarea nu s-a potrivit cu designul.",
   },
+  preview: {
+    showing: "Previzualizare",
+    lifelike: "Realist",
+    flat: "Plat",
+    zoom: "Mărire",
+    zoomIn: "Măriți",
+    zoomOut: "Micșorați",
+    fit: "Vedeți tot",
+  },
   myDesigns: {
     title: "Designurile mele",
     lead: "Designurile se păstrează în acest browser. Contul, care le duce pe orice dispozitiv, vine odată cu comanda online.",

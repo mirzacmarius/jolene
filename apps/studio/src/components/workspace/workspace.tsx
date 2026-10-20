@@ -22,7 +22,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
-import { DesignPreview, type PreviewView } from "../design/design-preview";
+import type { PreviewView } from "../design/design-preview";
+import { usePreviewMode } from "../design/preview-mode";
+import { PreviewStage } from "../design/preview-stage";
 import { FieldsPanel } from "./fields-panel";
 import { StylePanel } from "./style-panel";
 import { useApply, useFieldDrafts, useSaving } from "./use-design";
@@ -67,6 +69,7 @@ function Editor({ data }: { data: DesignData }) {
   const [tab, setTab] = useState<"details" | "style">("details");
   const [viewKey, setViewKey] = useState<ViewKey>("assembly");
   const [guides, setGuides] = useState(false);
+  const [previewMode] = usePreviewMode();
 
   const fields = useMemo(
     () => previewFields(document.occasion, document.language, values),
@@ -141,14 +144,14 @@ function Editor({ data }: { data: DesignData }) {
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <section className="relative flex min-h-[60vh] min-w-0 flex-1 flex-col bg-[radial-gradient(80%_70%_at_50%_45%,var(--color-card),var(--color-secondary))] lg:order-2 lg:min-h-0">
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3">
+          <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 p-3">
             <SegmentedControl
               label={t("design.together")}
               value={viewKey}
               onValueChange={setViewKey}
               options={views}
             />
-            {viewKey !== "assembly" ? (
+            {viewKey !== "assembly" && previewMode === "flat" ? (
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 <input
                   type="checkbox"
@@ -160,16 +163,13 @@ function Editor({ data }: { data: DesignData }) {
               </label>
             ) : null}
           </div>
-          <div className="min-h-0 flex-1 px-6 pb-8 sm:px-12">
-            <DesignPreview
-              document={document}
-              fields={fields}
-              assets={data.assets}
-              view={view}
-              title={title}
-              className="size-full drop-shadow-[0_18px_30px_rgba(43,38,32,0.12)]"
-            />
-          </div>
+          <PreviewStage
+            document={document}
+            fields={fields}
+            assets={data.assets}
+            view={view}
+            title={title}
+          />
         </section>
 
         <aside className="flex w-full shrink-0 flex-col border-border/70 bg-card lg:order-1 lg:w-[380px] lg:border-r">
