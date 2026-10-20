@@ -71,13 +71,50 @@ export default {
     seal: "Wax seal",
     language: "Written in",
     order: "Order",
-    orderSoon: "Online ordering is coming soon.",
     ai: "AI designer",
     notFound: "This design doesn't exist, or it was saved in another browser.",
     tooLong: "That's longer than this field holds.",
     badDate: "Choose a date from the calendar.",
     badTime: "Write the time as 18:30.",
     invalid: "That change didn't fit the design.",
+  },
+  proof: {
+    title: "Proof",
+    back: "Back to the design",
+    heading: "Check it before it prints",
+    lead: "This is your design exactly as it prints, with your details. Read every line: names, date, times and places.",
+    place: "{piece} ({side})",
+    front: "front",
+    backSide: "back",
+    checking: "Checking the design…",
+    clear: "Every line fits its space, inside the margins.",
+    toCheck: "Look at these first",
+    missingDetails: "Not filled in: {fields}. Their lines are left out.",
+    overflow: "“{text}” doesn't fit its space on {place}. Shorten it.",
+    outsideSafeArea:
+      "“{text}” comes too close to the edge on {place}, where the paper is cut.",
+    unusualCharacters:
+      "{characters} on {place} shows in another typeface here and may print differently. Replace it.",
+    missingPhoto: "The photo frame on {place} is empty.",
+    lowResolution:
+      "The photo on {place} will print blurry, at {dpi} dpi. Use a larger one.",
+    missingArtwork:
+      "An image on {place} didn't load here. We check every file before printing.",
+    confirm: "We've read everything and want it printed exactly like this.",
+    approve: "Approve the proof",
+    approving: "Approving…",
+    changed:
+      "The design changed while you were reading. Look at it again, then approve.",
+    approved: "You approved this proof on {date}.",
+    earlier:
+      "You approved an earlier version on {date}. Approve this one to order it.",
+    preparing: "Getting your order ready…",
+    order: "Continue to order",
+    notOnline:
+      "This item can't be ordered online yet. Write to us and we'll take your order; your proof stays approved.",
+    write: "Write to us",
+    mailSubject: "Proof {code}",
+    edit: "Change the design",
   },
   ai: {
     title: "AI designer",

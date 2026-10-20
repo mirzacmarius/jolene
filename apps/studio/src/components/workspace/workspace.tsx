@@ -155,8 +155,10 @@ function Editor({ data }: { data: DesignData }) {
             view={view}
             onOpenChange={setAiOpen}
           />
-          <Button size="sm" disabled title={t("design.orderSoon")}>
-            {t("design.order")}
+          <Button asChild size="sm">
+            <Link href={`/studio/design/${designId}/bun-de-tipar`}>
+              {t("design.order")}
+            </Link>
           </Button>
         </div>
       </header>

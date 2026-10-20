@@ -266,4 +266,24 @@ export default defineSchema({
     ),
     updatedAt: v.number(),
   }).index("by_eventId_and_suiteId", ["eventId", "suiteId"]),
+
+  /**
+   * A design as its couple approved it for print (a proof): the document and
+   * their details as they were, which the workshop prints from. Later changes
+   * to the design or the details make a new proof, never change this one.
+   */
+  proofs: defineTable({
+    designId: v.id("designs"),
+    ownerId: v.id("users"),
+    templateId: v.id("templates"),
+    kind: productKindValidator,
+    /** The design's revision the couple approved. */
+    revision: v.number(),
+    document: documentValidator,
+    /** The event's details, all of them: the monogram reads the names. */
+    fields: fieldsValidator,
+    /** The studio's picture of the proof, shown with the order. */
+    image: v.optional(v.id("_storage")),
+    approvedAt: v.number(),
+  }).index("by_designId", ["designId"]),
 });

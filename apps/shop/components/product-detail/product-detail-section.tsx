@@ -3,7 +3,7 @@ import { MinusIcon, PlusIcon } from "lucide-react";
 import { type ReactNode, Suspense } from "react";
 
 import { BundleComponents, BundleParents } from "@/components/product-detail/bundle-components";
-import { BuyButtons, PurchaseOptions } from "@/components/product-detail/buy-buttons";
+import { PurchaseOptions } from "@/components/product-detail/buy-buttons";
 import { BuyWithShopLogo } from "@/components/product-detail/buy-with-shop-logo";
 import { ComplementaryProducts } from "@/components/product-detail/complementary-products";
 import { GiftCardPurchaseForm } from "@/components/product-detail/gift-card-purchase-form";
@@ -23,6 +23,7 @@ import {
   ProductMedia,
 } from "@/components/product-detail/product-media";
 import { ProductPrice } from "@/components/product-detail/product-price";
+import { ProofBuyButtons } from "@/components/product-detail/proof-buy-buttons";
 import { ProductSchema } from "@/components/product-detail/schema";
 import { BreadcrumbSchema } from "@/components/schema/breadcrumb-schema";
 import { Input } from "@/components/ui/input";
@@ -279,10 +280,11 @@ function ProductInfoContent({
         {product.isGiftCard ? (
           <GiftCardPurchaseForm />
         ) : (
-          <BuyButtons
+          <ProofBuyButtons
             fallbackVariant={fallbackVariant}
             availableForSale={product.availableForSale}
             buyWithShop={shopConfig.pdp.buyWithShop.isEnabled}
+            handle={product.handle}
             quantityPicker={shopConfig.pdp.quantityPicker.isEnabled}
           />
         )}

@@ -72,13 +72,50 @@ export default {
     seal: "Sigiliu",
     language: "Limba textului",
     order: "Comandă",
-    orderSoon: "Comanda online vine în curând.",
     ai: "Designer AI",
     notFound: "Designul nu există sau a fost salvat în alt browser.",
     tooLong: "E mai lung decât încape în acest câmp.",
     badDate: "Alegeți data din calendar.",
     badTime: "Scrieți ora ca 18:30.",
     invalid: "Modificarea nu s-a potrivit cu designul.",
+  },
+  proof: {
+    title: "Bun de tipar",
+    back: "Înapoi la design",
+    heading: "Verificați înainte de tipar",
+    lead: "Acesta este designul vostru exact cum se tipărește, cu detaliile voastre. Citiți fiecare rând: numele, data, orele și locurile.",
+    place: "{piece} ({side})",
+    front: "față",
+    backSide: "verso",
+    checking: "Verificăm designul…",
+    clear: "Fiecare rând încape în spațiul lui, în interiorul marginilor.",
+    toCheck: "Uitați-vă mai întâi la acestea",
+    missingDetails: "Necompletate: {fields}. Rândurile lor nu se tipăresc.",
+    overflow: "„{text}” nu încape în spațiul lui pe {place}. Scurtați-l.",
+    outsideSafeArea:
+      "„{text}” ajunge prea aproape de marginea de tăiere pe {place}.",
+    unusualCharacters:
+      "{characters} de pe {place} apare aici cu alt font și se poate tipări altfel. Înlocuiți-l.",
+    missingPhoto: "Rama foto de pe {place} e goală.",
+    lowResolution:
+      "Fotografia de pe {place} va ieși neclară, la {dpi} dpi. Folosiți una mai mare.",
+    missingArtwork:
+      "O imagine de pe {place} nu s-a încărcat aici. Verificăm fiecare fișier înainte de tipar.",
+    confirm: "Am citit tot și vrem să fie tipărit exact așa.",
+    approve: "Aprobați bunul de tipar",
+    approving: "Se aprobă…",
+    changed:
+      "Designul s-a schimbat cât citeați. Uitați-vă din nou, apoi aprobați.",
+    approved: "Ați aprobat acest bun de tipar pe {date}.",
+    earlier:
+      "Ați aprobat o variantă anterioară pe {date}. Aprobați-o pe aceasta ca să o comandați.",
+    preparing: "Pregătim comanda…",
+    order: "Continuați comanda",
+    notOnline:
+      "Acest articol nu se poate comanda încă online. Scrieți-ne și preluăm noi comanda; bunul de tipar rămâne aprobat.",
+    write: "Scrieți-ne",
+    mailSubject: "Bun de tipar {code}",
+    edit: "Modificați designul",
   },
   ai: {
     title: "Designer AI",

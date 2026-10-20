@@ -31,6 +31,8 @@ import type * as designs_versions from "../designs/versions.js";
 import type * as events from "../events.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
+import type * as proofs from "../proofs.js";
+import type * as proofs_image from "../proofs/image.js";
 import type * as simple from "../simple.js";
 import type * as simple_compose from "../simple/compose.js";
 import type * as simple_tones from "../simple/tones.js";
@@ -69,6 +71,8 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   http: typeof http;
   init: typeof init;
+  proofs: typeof proofs;
+  "proofs/image": typeof proofs_image;
   simple: typeof simple;
   "simple/compose": typeof simple_compose;
   "simple/tones": typeof simple_tones;

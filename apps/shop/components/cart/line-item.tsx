@@ -4,11 +4,14 @@ import type { CartLine as HydrogenCartLine } from "@shopify/hydrogen";
 import { MinusIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import Image from "next/image";
 
+import { ProofImage } from "@/components/proof/proof-card";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import { Link } from "@/components/ui/link";
 import { useCart } from "@/lib/cart/client";
 import type { CartLine } from "@/lib/cart/types";
 import { formatPrice } from "@/lib/money";
+import { getLineProofId } from "@/lib/proof";
+import { useProof } from "@/lib/proof/client";
 
 import { CartLineForm } from "./line-form";
 import { CartWarnings } from "./warnings";
@@ -75,8 +78,12 @@ function CartLineItem({ item }: CartLineItemProps) {
     finalUnitPrice < sellingUnitPrice ? sellingUnitPrice : compareAtUnitPrice;
   const title = merchandise?.product.title || "Cart item";
   const href = merchandise?.product.handle ? `/products/${merchandise.product.handle}` : undefined;
+  const attributes = item.attributes ?? [];
+  const proof = useProof(getLineProofId(attributes));
   const image = merchandise?.image;
-  const imageContent = image?.url ? (
+  const imageContent = proof?.image ? (
+    <ProofImage className="size-full" fit="cover" proof={proof} />
+  ) : image?.url ? (
     <Image
       src={image.url}
       alt={image.altText || title}
@@ -116,6 +123,13 @@ function CartLineItem({ item }: CartLineItemProps) {
                 {merchandise.selectedOptions.map((option) => option.value).join(" / ")}
               </p>
             ) : null}
+            {attributes
+              .filter((attribute) => attribute.value && !attribute.key.startsWith("_"))
+              .map((attribute) => (
+                <p key={attribute.key} className="text-xs text-muted-foreground">
+                  {attribute.key}: {attribute.value}
+                </p>
+              ))}
             {item.sellingPlanAllocation ? (
               <p className="text-xs text-muted-foreground">
                 {item.sellingPlanAllocation.sellingPlan.name || "Subscription"}

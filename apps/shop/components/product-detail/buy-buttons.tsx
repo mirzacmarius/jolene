@@ -16,16 +16,20 @@ import type { ProductFormVariant, SellingPlanAllocation } from "@/lib/product/ty
 import { BuyWithShopLogo } from "./buy-with-shop-logo";
 
 interface BuyButtonsProps {
+  attributes?: Array<{ key: string; value: string }>;
   availableForSale?: boolean;
   buyWithShop?: boolean;
+  disabled?: boolean;
   fallbackVariant: ProductFormVariant | undefined;
   onAddToCart?: () => void;
   quantityPicker?: boolean;
 }
 
 export function BuyButtons({
+  attributes = [],
   availableForSale = true,
   buyWithShop = true,
+  disabled = false,
   fallbackVariant,
   onAddToCart,
   quantityPicker = true,
@@ -70,6 +74,7 @@ export function BuyButtons({
       {...formProps({
         beforeSubmit: (event) => {
           if (
+            disabled ||
             isSelectionUnresolved ||
             isOutOfStock ||
             requiresBundleConfiguration ||
@@ -96,6 +101,9 @@ export function BuyButtons({
       <input type="hidden" name="sellingPlanId" value={selectedPlan?.sellingPlan.id ?? ""} />
       <input type="hidden" {...register("merchandiseId", {})} />
       <input type="hidden" {...register("quantity", { value: quantity })} />
+      {attributes.map((attribute) => (
+        <input key={attribute.key} type="hidden" {...register("attributeValue", attribute)} />
+      ))}
       <div className="flex flex-wrap gap-2.5">
         {quantityPicker ? (
           <div
@@ -134,6 +142,7 @@ export function BuyButtons({
           {...register("addToCart", {})}
           data-selection-unresolved={isSelectionUnresolved && !pending}
           disabled={
+            disabled ||
             isSelectionUnresolved ||
             isOutOfStock ||
             requiresBundleConfiguration ||
