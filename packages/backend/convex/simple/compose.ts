@@ -58,7 +58,7 @@ export async function collectionDesigns(
  * Whether the reply left its own words on the design: a change it made that
  * the couple hasn't undone.
  */
-const wroteDesign = (reply: Doc<"aiMessages"> | null) =>
+export const wroteDesign = (reply: Doc<"aiMessages"> | null) =>
   reply?.changes?.some(
     (change) => change.kind === "design" && change.undoneAt === undefined,
   ) ?? false;

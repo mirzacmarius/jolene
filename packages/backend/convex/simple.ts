@@ -19,7 +19,7 @@ import {
 } from "./ai/reply";
 import { aiErrorValidator, aiStatusValidator } from "./ai/validators";
 import { createDesign, requireOwnDesign } from "./designs";
-import { collectionDesigns, itemName } from "./simple/compose";
+import { collectionDesigns, itemName, wroteDesign } from "./simple/compose";
 import { MAX_LINE_LENGTH, offersTone, toneValidator } from "./simple/tones";
 import { resolveAssets, resolvedAssetValidator } from "./utils/assets";
 import { errors } from "./utils/errors";
@@ -105,6 +105,8 @@ export const progress = query({
       error: v.optional(aiErrorValidator),
       /** The reply writes an item simple mode asked for. */
       composed: v.boolean(),
+      /** It left its own words on the design, not undone since. */
+      wrote: v.boolean(),
       /** It failed for a passing reason, and can run again (ai.retry). */
       canRetry: v.boolean(),
       /** The rendering it waits for (ai.answerRendering). */
@@ -130,6 +132,7 @@ export const progress = query({
               status: reply.status,
               ...(reply.error ? { error: reply.error } : {}),
               composed: reply.composition !== undefined,
+              wrote: wroteDesign(reply),
               canRetry: canRetry(reply),
               ...(reply.rendering ? { rendering: reply.rendering } : {}),
             },

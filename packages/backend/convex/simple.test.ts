@@ -234,6 +234,14 @@ describe("simple mode", () => {
       [saveTheDate]: "done",
       [menu]: "done",
     });
+    const written = await setup.couple.query(api.simple.progress, {
+      designIds: ids,
+    });
+    expect(written.map((each) => [each.composed, each.wrote])).toEqual([
+      [true, true],
+      [true, true],
+      [true, true],
+    ]);
 
     // Each item is written in its own conversation, from the couple's words.
     const conversation = await setup.couple.query(api.ai.messages, {
