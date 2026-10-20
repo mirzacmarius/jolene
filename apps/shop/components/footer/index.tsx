@@ -1,6 +1,5 @@
 // Adapted from Marée by LN (MIT License): see THIRD-PARTY-NOTICES.md.
 import { cn } from "cn";
-import { ArrowUpRightIcon } from "lucide-react";
 import Image from "next/image";
 
 import { Container } from "@/components/ui/container";
@@ -8,6 +7,7 @@ import { Link } from "@/components/ui/link";
 import { shopConfig } from "@/lib/config";
 
 import anpcSal from "./anpc-sal.webp";
+import logo from "./jolene-logo.webp";
 import { type SocialLink, SocialLinks } from "./social-links";
 
 // These pages and articles still live on jolene.ro: they must move here before jolene.ro points at this shop.
@@ -58,12 +58,9 @@ export function Footer() {
           {/* pb-22 clears the fixed agent ActionBar pill when it renders */}
           <div className={cn("grid gap-5 pt-16 pb-6", shopConfig.agent.isEnabled && "pb-22")}>
             <div className="grid gap-10 pb-10 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
-              <Link
-                className="flex items-center gap-5 self-start text-[5rem] leading-none tracking-[-0.075em] sm:col-span-2 lg:col-span-1"
-                href="/"
-              >
-                {shopConfig.site.name}
-                <ArrowUpRightIcon aria-hidden="true" className="size-11 shrink-0 stroke-1" />
+              <Link className="flex self-start sm:col-span-2 lg:col-span-1" href="/">
+                {/* Unoptimized: images.deviceSizes would serve it 1320 px wide; brand/generate.py sizes it. */}
+                <Image alt={shopConfig.site.name} className="h-20 w-auto" src={logo} unoptimized />
               </Link>
               <div className="grid content-start gap-4 text-[0.8125rem] leading-[1.8]">
                 <p className="opacity-80">
