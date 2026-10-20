@@ -59,6 +59,9 @@ const words: Record<string, string> = {
 /** Capitals that stay capitals. */
 const acronyms = new Set(["HP", "RSVP"]);
 
+/** Words that are never a name, so take no capital past a title's first. */
+const small = new Set(["cu", "de", "din", "in", "la", "pe", "pentru", "si"]);
+
 /** A word in capitals, allowing one slip: "NUNTă". */
 function shouts(word: string): boolean {
   const letters = [...word].filter((char) => /\p{L}/u.test(char));
@@ -98,6 +101,7 @@ export function cleanTitle(title: string): string {
         spelled = word === capitalize(word) ? capitalize(known) : known;
       }
       if (index === 0) spelled = capitalize(spelled);
+      else if (small.has(fold(word))) spelled = spelled.toLowerCase();
       return `${before}${spelled}${after}`;
     })
     .join(" ");
