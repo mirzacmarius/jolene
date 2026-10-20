@@ -146,6 +146,16 @@
         "typescript": "^5.9.3",
       },
     },
+    "packages/products": {
+      "name": "@jolene/products",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@jolene/typescript": "workspace:*",
+        "@types/bun": "^1.4.3",
+        "graphql": "17.0.2",
+        "typescript": "^5.9.3",
+      },
+    },
     "packages/suites": {
       "name": "@jolene/suites",
       "version": "0.1.0",
@@ -153,6 +163,7 @@
         "@jolene/design": "workspace:*",
       },
       "devDependencies": {
+        "@jolene/products": "workspace:*",
         "@jolene/typescript": "workspace:*",
         "@types/bun": "^1.4.3",
         "@types/react": "19.3.0",
@@ -369,6 +380,8 @@
     "@jolene/i18n": ["@jolene/i18n@workspace:packages/i18n"],
 
     "@jolene/print": ["@jolene/print@workspace:packages/print"],
+
+    "@jolene/products": ["@jolene/products@workspace:packages/products"],
 
     "@jolene/shop": ["@jolene/shop@workspace:apps/shop"],
 

@@ -1,0 +1,1741 @@
+[
+  {
+    "handle": "auriu-aplicat",
+    "key": "auriu-aplicat",
+    "label": "Auriu aplicat",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără auriu",
+        "price": 0
+      },
+      {
+        "label": "Auriu un colț",
+        "price": 1
+      },
+      {
+        "label": "Auriu 2 colțuri",
+        "price": 1.5
+      },
+      {
+        "label": "Auriu toate colțurile",
+        "price": 2
+      },
+      {
+        "label": "Auriu împrejur",
+        "price": 2.5
+      }
+    ]
+  },
+  {
+    "handle": "auriu-aplicat-2",
+    "key": "auriu-aplicat",
+    "label": "Auriu aplicat",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără auriu",
+        "price": 0
+      },
+      {
+        "label": "Auriu lateral",
+        "price": 1
+      },
+      {
+        "label": "Auriu pe invitație, partea de jos",
+        "price": 1
+      },
+      {
+        "label": "Auriu în două colțuri",
+        "price": 1.5
+      },
+      {
+        "label": "Auriu în cele 4 colțuri",
+        "price": 2
+      },
+      {
+        "label": "Auriu împrejur",
+        "price": 3
+      },
+      {
+        "label": "Auriu pe plic",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "auriu-pe-clapeta",
+    "key": "auriu-pe-clapeta",
+    "label": "Auriu pe clapetă",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Nu doresc",
+        "price": 0
+      },
+      {
+        "label": "Auriu",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "ciucure",
+    "key": "ciucure",
+    "label": "Ciucure",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără ciucure",
+        "price": 0
+      },
+      {
+        "label": "Cu ciucure",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "colturi",
+    "key": "colturi",
+    "label": "Colțuri",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Drepte",
+        "price": 0
+      },
+      {
+        "label": "Rotunjite",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "culoare-panglica",
+    "key": "culoare-panglica",
+    "label": "Culoare panglică",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără panglică",
+        "price": 0
+      },
+      {
+        "label": "Peach (ca cea din poză)",
+        "price": 0
+      },
+      {
+        "label": "Albă",
+        "price": 0
+      },
+      {
+        "label": "Crem",
+        "price": 0
+      },
+      {
+        "label": "Ivory",
+        "price": 0
+      },
+      {
+        "label": "Roz",
+        "price": 0
+      },
+      {
+        "label": "Roșie",
+        "price": 0
+      },
+      {
+        "label": "Blue",
+        "price": 0
+      },
+      {
+        "label": "Albastră",
+        "price": 0
+      },
+      {
+        "label": "Verde",
+        "price": 0
+      },
+      {
+        "label": "Verde olive",
+        "price": 0
+      },
+      {
+        "label": "Neagră",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "culoare-panglica-2",
+    "key": "culoare-panglica",
+    "label": "Culoare panglică",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără panglică",
+        "price": 0
+      },
+      {
+        "label": "Peach",
+        "price": 0
+      },
+      {
+        "label": "Albă",
+        "price": 0
+      },
+      {
+        "label": "Crem",
+        "price": 0
+      },
+      {
+        "label": "Ivory",
+        "price": 0
+      },
+      {
+        "label": "Roz",
+        "price": 0
+      },
+      {
+        "label": "Roșie",
+        "price": 0
+      },
+      {
+        "label": "Blue",
+        "price": 0
+      },
+      {
+        "label": "Albastră",
+        "price": 0
+      },
+      {
+        "label": "Verde",
+        "price": 0
+      },
+      {
+        "label": "Verde olive",
+        "price": 0
+      },
+      {
+        "label": "Neagră",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "culoare-panglica-3",
+    "key": "culoare-panglica",
+    "label": "Culoare panglică",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Albă",
+        "price": 0
+      },
+      {
+        "label": "Crem",
+        "price": 0
+      },
+      {
+        "label": "Roz",
+        "price": 0
+      },
+      {
+        "label": "Roșie",
+        "price": 0
+      },
+      {
+        "label": "Blue",
+        "price": 0
+      },
+      {
+        "label": "Albastră",
+        "price": 0
+      },
+      {
+        "label": "Verde",
+        "price": 0
+      },
+      {
+        "label": "Verde olive",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "culoare-plic",
+    "key": "culoare-plic",
+    "label": "Culoare plic",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Alb",
+        "price": 0
+      },
+      {
+        "label": "Roz",
+        "price": 0
+      },
+      {
+        "label": "Roșu",
+        "price": 0
+      },
+      {
+        "label": "Blue",
+        "price": 0
+      },
+      {
+        "label": "Albastru",
+        "price": 0
+      },
+      {
+        "label": "Verde pădure",
+        "price": 0
+      },
+      {
+        "label": "Verde olive",
+        "price": 0
+      },
+      {
+        "label": "Negru",
+        "price": 0
+      },
+      {
+        "label": "Crem",
+        "price": 0
+      },
+      {
+        "label": "Ivory",
+        "price": 0
+      },
+      {
+        "label": "Craft (maro)",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "culoare-plic-2",
+    "key": "culoare-plic",
+    "label": "Culoare plic",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Alb",
+        "price": 1
+      },
+      {
+        "label": "Roz",
+        "price": 1
+      },
+      {
+        "label": "Roșu",
+        "price": 1
+      },
+      {
+        "label": "Blue",
+        "price": 1
+      },
+      {
+        "label": "Albastru",
+        "price": 1
+      },
+      {
+        "label": "Verde pădure",
+        "price": 1
+      },
+      {
+        "label": "Verde olive",
+        "price": 1
+      },
+      {
+        "label": "Negru",
+        "price": 1
+      },
+      {
+        "label": "Crem",
+        "price": 1
+      },
+      {
+        "label": "Ivory",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "culoare-plic-3",
+    "key": "culoare-plic",
+    "label": "Culoare plic",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Alb",
+        "price": 1.5
+      },
+      {
+        "label": "Roz",
+        "price": 1.5
+      },
+      {
+        "label": "Roșu",
+        "price": 1.5
+      },
+      {
+        "label": "Blue",
+        "price": 1.5
+      },
+      {
+        "label": "Albastru",
+        "price": 1.5
+      },
+      {
+        "label": "Verde pădure",
+        "price": 1.5
+      },
+      {
+        "label": "Verde olive",
+        "price": 1.5
+      },
+      {
+        "label": "Negru",
+        "price": 1.5
+      },
+      {
+        "label": "Crem",
+        "price": 1.5
+      },
+      {
+        "label": "Ivory",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "culoare-plic-4",
+    "key": "culoare-plic",
+    "label": "Culoare plic",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără plic",
+        "price": 0
+      },
+      {
+        "label": "Alb",
+        "price": 1.5
+      },
+      {
+        "label": "Roz",
+        "price": 1.5
+      },
+      {
+        "label": "Roșu",
+        "price": 1.5
+      },
+      {
+        "label": "Blue",
+        "price": 1.5
+      },
+      {
+        "label": "Albastru",
+        "price": 1.5
+      },
+      {
+        "label": "Verde pădure",
+        "price": 1.5
+      },
+      {
+        "label": "Verde olive",
+        "price": 1.5
+      },
+      {
+        "label": "Negru",
+        "price": 1.5
+      },
+      {
+        "label": "Crem",
+        "price": 1.5
+      },
+      {
+        "label": "Ivory",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "culoare-plic-5",
+    "key": "culoare-plic",
+    "label": "Culoare plic",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Alb",
+        "price": 0
+      },
+      {
+        "label": "Roz",
+        "price": 0
+      },
+      {
+        "label": "Roșu",
+        "price": 0
+      },
+      {
+        "label": "Blue",
+        "price": 0
+      },
+      {
+        "label": "Albastru",
+        "price": 0
+      },
+      {
+        "label": "Verde pădure",
+        "price": 0
+      },
+      {
+        "label": "Verde olive",
+        "price": 0
+      },
+      {
+        "label": "Negru",
+        "price": 0
+      },
+      {
+        "label": "Crem",
+        "price": 0
+      },
+      {
+        "label": "Ivory",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "culoare-plic-6",
+    "key": "culoare-plic",
+    "label": "Culoare plic",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără plic",
+        "price": 0
+      },
+      {
+        "label": "Alb",
+        "price": 0
+      },
+      {
+        "label": "Roz",
+        "price": 0
+      },
+      {
+        "label": "Roșu",
+        "price": 0
+      },
+      {
+        "label": "Blue",
+        "price": 0
+      },
+      {
+        "label": "Albastru",
+        "price": 0
+      },
+      {
+        "label": "Verde pădure",
+        "price": 0
+      },
+      {
+        "label": "Verde olive",
+        "price": 0
+      },
+      {
+        "label": "Negru",
+        "price": 0
+      },
+      {
+        "label": "Crem",
+        "price": 0
+      },
+      {
+        "label": "Ivory",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "culoare-plic-7",
+    "key": "culoare-plic",
+    "label": "Culoare plic",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără plic",
+        "price": 0
+      },
+      {
+        "label": "Alb",
+        "price": 1
+      },
+      {
+        "label": "Roz",
+        "price": 1
+      },
+      {
+        "label": "Roșu",
+        "price": 1
+      },
+      {
+        "label": "Blue",
+        "price": 1
+      },
+      {
+        "label": "Albastru",
+        "price": 1
+      },
+      {
+        "label": "Verde pădure",
+        "price": 1
+      },
+      {
+        "label": "Verde olive",
+        "price": 1
+      },
+      {
+        "label": "Negru",
+        "price": 1
+      },
+      {
+        "label": "Crem",
+        "price": 1
+      },
+      {
+        "label": "Ivory",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "culoare-plic-8",
+    "key": "culoare-plic",
+    "label": "Culoare plic",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Nu doresc",
+        "price": 0
+      },
+      {
+        "label": "Alb",
+        "price": 1.5
+      },
+      {
+        "label": "Roz",
+        "price": 1.5
+      },
+      {
+        "label": "Roșu",
+        "price": 1.5
+      },
+      {
+        "label": "Blue",
+        "price": 1.5
+      },
+      {
+        "label": "Albastru",
+        "price": 1.5
+      },
+      {
+        "label": "Verde pădure",
+        "price": 1.5
+      },
+      {
+        "label": "Verde olive",
+        "price": 1.5
+      },
+      {
+        "label": "Negru",
+        "price": 1.5
+      },
+      {
+        "label": "Crem",
+        "price": 1.5
+      },
+      {
+        "label": "Ivory",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "culoare-sigiliu",
+    "key": "culoare-sigiliu",
+    "label": "Culoare sigiliu",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără sigiliu",
+        "price": 0
+      },
+      {
+        "label": "Alb",
+        "price": 1.5
+      },
+      {
+        "label": "Bronz",
+        "price": 1.5
+      },
+      {
+        "label": "Roz",
+        "price": 1.5
+      },
+      {
+        "label": "Roșu",
+        "price": 1.5
+      },
+      {
+        "label": "Blue",
+        "price": 1.5
+      },
+      {
+        "label": "Albastru",
+        "price": 1.5
+      },
+      {
+        "label": "Verde",
+        "price": 1.5
+      },
+      {
+        "label": "Verde olive",
+        "price": 1.5
+      },
+      {
+        "label": "Negru",
+        "price": 1.5
+      },
+      {
+        "label": "Auriu",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "culoare-sigiliu-2",
+    "key": "culoare-sigiliu",
+    "label": "Culoare sigiliu",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Alb",
+        "price": 0
+      },
+      {
+        "label": "Bronz",
+        "price": 0
+      },
+      {
+        "label": "Roz",
+        "price": 0
+      },
+      {
+        "label": "Roșu",
+        "price": 0
+      },
+      {
+        "label": "Blue",
+        "price": 0
+      },
+      {
+        "label": "Albastru",
+        "price": 0
+      },
+      {
+        "label": "Verde",
+        "price": 0
+      },
+      {
+        "label": "Verde olive",
+        "price": 0
+      },
+      {
+        "label": "Negru",
+        "price": 0
+      },
+      {
+        "label": "Auriu",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "culoare-sigiliu-3",
+    "key": "culoare-sigiliu",
+    "label": "Culoare sigiliu",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără sigiliu",
+        "price": 0
+      },
+      {
+        "label": "Alb",
+        "price": 1
+      },
+      {
+        "label": "Bronz",
+        "price": 1
+      },
+      {
+        "label": "Roz",
+        "price": 1
+      },
+      {
+        "label": "Roșu",
+        "price": 1
+      },
+      {
+        "label": "Blue",
+        "price": 1
+      },
+      {
+        "label": "Albastru",
+        "price": 1
+      },
+      {
+        "label": "Verde",
+        "price": 1
+      },
+      {
+        "label": "Verde olive",
+        "price": 1
+      },
+      {
+        "label": "Negru",
+        "price": 1
+      },
+      {
+        "label": "Auriu",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "culoare-sigiliu-4",
+    "key": "culoare-sigiliu",
+    "label": "Culoare sigiliu",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Alb",
+        "price": 1.5
+      },
+      {
+        "label": "Bronz",
+        "price": 1.5
+      },
+      {
+        "label": "Roz",
+        "price": 1.5
+      },
+      {
+        "label": "Roșu",
+        "price": 1.5
+      },
+      {
+        "label": "Blue",
+        "price": 1.5
+      },
+      {
+        "label": "Albastru",
+        "price": 1.5
+      },
+      {
+        "label": "Verde",
+        "price": 1.5
+      },
+      {
+        "label": "Verde olive",
+        "price": 1.5
+      },
+      {
+        "label": "Negru",
+        "price": 1.5
+      },
+      {
+        "label": "Auriu",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "culoare-sigiliu-5",
+    "key": "culoare-sigiliu",
+    "label": "Culoare sigiliu",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Nu doresc",
+        "price": 0
+      },
+      {
+        "label": "Alb",
+        "price": 1.5
+      },
+      {
+        "label": "Bronz",
+        "price": 1.5
+      },
+      {
+        "label": "Roz",
+        "price": 1.5
+      },
+      {
+        "label": "Roșu",
+        "price": 1.5
+      },
+      {
+        "label": "Blue",
+        "price": 1.5
+      },
+      {
+        "label": "Albastru",
+        "price": 1.5
+      },
+      {
+        "label": "Verde",
+        "price": 1.5
+      },
+      {
+        "label": "Verde olive",
+        "price": 1.5
+      },
+      {
+        "label": "Negru",
+        "price": 1.5
+      },
+      {
+        "label": "Auriu",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "culoare-text",
+    "key": "culoare-text",
+    "label": "Culoare text",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Auriu",
+        "price": 0
+      },
+      {
+        "label": "Argintiu",
+        "price": 0
+      },
+      {
+        "label": "Alb",
+        "price": 0
+      },
+      {
+        "label": "Negru",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "cutie-acetofan",
+    "key": "cutie-acetofan",
+    "label": "Cutie acetofan",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Fără cutie",
+        "price": 0
+      },
+      {
+        "label": "Cutie",
+        "price": 2
+      }
+    ]
+  },
+  {
+    "handle": "dantela-invitatie",
+    "key": "dantela-invitatie",
+    "label": "Dantelă invitație",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Cu dantelă brodată",
+        "price": 3
+      },
+      {
+        "label": "Cu dantelă",
+        "price": 2
+      },
+      {
+        "label": "Fără dantelă",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "elemente-sigiliu",
+    "key": "elemente-sigiliu",
+    "label": "Elemente sigiliu",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără elemente",
+        "price": 0
+      },
+      {
+        "label": "Flori criogenate",
+        "price": 1
+      },
+      {
+        "label": "Frunză criogenată",
+        "price": 1
+      },
+      {
+        "label": "Flori naturale mici",
+        "price": 1.5
+      },
+      {
+        "label": "Pană",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "elemente-sigiliu-2",
+    "key": "elemente-sigiliu",
+    "label": "Elemente sigiliu",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Flori criogenate",
+        "price": 1
+      },
+      {
+        "label": "Pană",
+        "price": 1
+      },
+      {
+        "label": "Flori naturale mici",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "eticheta-cu-nume",
+    "key": "eticheta-cu-nume",
+    "label": "Etichetă cu nume",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără",
+        "price": 0
+      },
+      {
+        "label": "Cu nume",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "eticheta-cu-nume-2",
+    "key": "eticheta-cu-nume",
+    "label": "Etichetă cu nume",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Mesaj general",
+        "price": 0.5
+      },
+      {
+        "label": "Cu nume",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "flori-criogenate",
+    "key": "flori-criogenate",
+    "label": "Flori criogenate",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Nu doresc",
+        "price": 0
+      },
+      {
+        "label": "Flori criogenate",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "flori-criogenate-2",
+    "key": "flori-criogenate",
+    "label": "Flori criogenate",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Fără flori",
+        "price": 0
+      },
+      {
+        "label": "Flori ivory",
+        "price": 1.5
+      },
+      {
+        "label": "Flori roz",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "flori-criogenate-3",
+    "key": "flori-criogenate",
+    "label": "Flori criogenate",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Fără flori",
+        "price": 0
+      },
+      {
+        "label": "Flori criogenate",
+        "price": 1
+      },
+      {
+        "label": "Flori mici naturale",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "flori-criogenate-4",
+    "key": "flori-criogenate",
+    "label": "Flori criogenate",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Nu doresc",
+        "price": 0
+      },
+      {
+        "label": "Da",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "impachetare-cadou",
+    "key": "impachetare-cadou",
+    "label": "Împachetare cadou",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Da",
+        "price": 4
+      },
+      {
+        "label": "Nu",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "insertii-aurii",
+    "key": "insertii-aurii",
+    "label": "Inserții aurii",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Fără inserții",
+        "price": 0
+      },
+      {
+        "label": "Inserții pe picioare și urechi",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "lingurita-lemn",
+    "key": "lingurita-lemn",
+    "label": "Linguriță lemn",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Fără linguriță",
+        "price": 0
+      },
+      {
+        "label": "Linguriță lemn",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "margini-invitatie",
+    "key": "margini-invitatie",
+    "label": "Margini invitație",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Margini drepte",
+        "price": 0
+      },
+      {
+        "label": "Margini franjurite",
+        "price": 1.5
+      },
+      {
+        "label": "Colțuri rotunjite",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "mentiuni",
+    "key": "mentiuni",
+    "label": "Mențiuni",
+    "kind": "text",
+    "required": false,
+    "choices": []
+  },
+  {
+    "handle": "numar-de-masa",
+    "key": "numar-de-masa",
+    "label": "Număr de masă",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără",
+        "price": 0
+      },
+      {
+        "label": "Cu număr de masă",
+        "price": 3
+      }
+    ]
+  },
+  {
+    "handle": "nume-pe-verso",
+    "key": "nume-pe-verso",
+    "label": "Nume pe verso",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Nu",
+        "price": 0
+      },
+      {
+        "label": "Da",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "panglica",
+    "key": "panglica",
+    "label": "Panglică",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără panglică",
+        "price": 0
+      },
+      {
+        "label": "Panglică dublu satinată",
+        "price": 1.3
+      },
+      {
+        "label": "Panglică mătase",
+        "price": 1.7
+      },
+      {
+        "label": "Șnur auriu/argintiu",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "panglica-2",
+    "key": "panglica",
+    "label": "Panglică",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără panglică",
+        "price": 0
+      },
+      {
+        "label": "Panglică satinată",
+        "price": 1
+      },
+      {
+        "label": "Panglică dublu satinată",
+        "price": 1.3
+      },
+      {
+        "label": "Panglică catifea",
+        "price": 1.5
+      },
+      {
+        "label": "Panglică mătase",
+        "price": 1.7
+      },
+      {
+        "label": "Șnur auriu/argintiu",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "panglica-3",
+    "key": "panglica",
+    "label": "Panglică",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Albă",
+        "price": 0
+      },
+      {
+        "label": "Ivory",
+        "price": 0
+      },
+      {
+        "label": "Roz",
+        "price": 0
+      },
+      {
+        "label": "Blue",
+        "price": 0
+      },
+      {
+        "label": "Cappuccino",
+        "price": 0
+      },
+      {
+        "label": "Verde închis",
+        "price": 0
+      },
+      {
+        "label": "Verde olive",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "panglica-4",
+    "key": "panglica",
+    "label": "Panglică",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără panglică/ciucure",
+        "price": 0
+      },
+      {
+        "label": "Panglică dublu satinată",
+        "price": 1
+      },
+      {
+        "label": "Panglică voal",
+        "price": 1.5
+      },
+      {
+        "label": "Ciucure",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "panglica-5",
+    "key": "panglica",
+    "label": "Panglică",
+    "hint": "Alegeți tipul de panglică de la gămălie.",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără panglică",
+        "price": 0
+      },
+      {
+        "label": "Panglică dublu satinată",
+        "price": 0
+      },
+      {
+        "label": "Panglică mătase",
+        "price": 0
+      },
+      {
+        "label": "Șnur auriu/argintiu",
+        "price": 0
+      },
+      {
+        "label": "Panglică catifea",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "panglica-6",
+    "key": "panglica",
+    "label": "Panglică",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Nu doresc",
+        "price": 0
+      },
+      {
+        "label": "Personalizată cu text",
+        "price": 2
+      }
+    ]
+  },
+  {
+    "handle": "panglica-7",
+    "key": "panglica",
+    "label": "Panglică",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Albă",
+        "price": 1
+      },
+      {
+        "label": "Ivory",
+        "price": 1
+      },
+      {
+        "label": "Roz",
+        "price": 1
+      },
+      {
+        "label": "Blue",
+        "price": 1
+      },
+      {
+        "label": "Cappuccino",
+        "price": 1
+      },
+      {
+        "label": "Verde închis",
+        "price": 1
+      },
+      {
+        "label": "Verde olive",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "parfum",
+    "key": "parfum",
+    "label": "Parfum",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Fără parfum",
+        "price": 0
+      },
+      {
+        "label": "Parfum floral",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "personalizat",
+    "key": "personalizat",
+    "label": "Personalizat",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "General",
+        "price": 0
+      },
+      {
+        "label": "Nominal",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "poza-glob",
+    "key": "poza-glob",
+    "label": "Poză glob",
+    "hint": "Pentru o calitate mai bună a pozelor, acestea trebuie trimise pe email.",
+    "kind": "email",
+    "required": false,
+    "choices": []
+  },
+  {
+    "handle": "print-interior-plic",
+    "key": "print-interior-plic",
+    "label": "Print interior plic",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără print",
+        "price": 0
+      },
+      {
+        "label": "Cu print în designul invitației",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "print-interior-plic-2",
+    "key": "print-interior-plic",
+    "label": "Print interior plic",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără print",
+        "price": 0
+      },
+      {
+        "label": "Cu print interior",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "sigiliu",
+    "key": "sigiliu",
+    "label": "Sigiliu",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Fără sigiliu",
+        "price": 0
+      },
+      {
+        "label": "Sigiliu roz",
+        "price": 1.5
+      },
+      {
+        "label": "Sigiliu blue",
+        "price": 1.5
+      },
+      {
+        "label": "Sigiliu alb",
+        "price": 1.5
+      },
+      {
+        "label": "Sigiliu bronz",
+        "price": 1.5
+      },
+      {
+        "label": "Sigiliu auriu",
+        "price": 1.5
+      }
+    ]
+  },
+  {
+    "handle": "sigiliu-2",
+    "key": "sigiliu",
+    "label": "Sigiliu",
+    "kind": "select",
+    "required": true,
+    "choices": [
+      {
+        "label": "Fără sigiliu",
+        "price": 0
+      },
+      {
+        "label": "Sigiliu roz",
+        "price": 0
+      },
+      {
+        "label": "Sigiliu blue",
+        "price": 0
+      },
+      {
+        "label": "Sigiliu alb",
+        "price": 0
+      },
+      {
+        "label": "Sigiliu bronz",
+        "price": 0
+      },
+      {
+        "label": "Sigiliu auriu",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "snur",
+    "key": "snur",
+    "label": "Șnur",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără șnur",
+        "price": 0
+      },
+      {
+        "label": "Șnur auriu",
+        "price": 1
+      },
+      {
+        "label": "Șnur argintiu",
+        "price": 1
+      },
+      {
+        "label": "Șnur iută",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "snur-2",
+    "key": "snur",
+    "label": "Șnur",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Auriu",
+        "price": 0
+      },
+      {
+        "label": "Argintiu",
+        "price": 0
+      },
+      {
+        "label": "Iută",
+        "price": 0
+      },
+      {
+        "label": "Alb/Negru/Verde",
+        "price": 0
+      }
+    ]
+  },
+  {
+    "handle": "snur-3",
+    "key": "snur",
+    "label": "Șnur",
+    "kind": "select",
+    "required": false,
+    "choices": [
+      {
+        "label": "Fără șnur",
+        "price": 0
+      },
+      {
+        "label": "Auriu",
+        "price": 1
+      },
+      {
+        "label": "Argintiu",
+        "price": 1
+      }
+    ]
+  },
+  {
+    "handle": "text-personalizat",
+    "key": "text-personalizat",
+    "label": "Text personalizat",
+    "hint": "În acest câmp trebuie scris textul ce urmează să fie în invitație.",
+    "kind": "text",
+    "required": true,
+    "choices": []
+  },
+  {
+    "handle": "text-personalizat-2",
+    "key": "text-personalizat",
+    "label": "Text personalizat",
+    "kind": "textarea",
+    "required": true,
+    "choices": []
+  },
+  {
+    "handle": "text-personalizat-3",
+    "key": "text-personalizat",
+    "label": "Text personalizat",
+    "hint": "Textul ce va apărea pe plic.",
+    "kind": "text",
+    "required": true,
+    "choices": []
+  },
+  {
+    "handle": "text-personalizat-4",
+    "key": "text-personalizat",
+    "label": "Text personalizat",
+    "kind": "text",
+    "required": true,
+    "choices": []
+  },
+  {
+    "handle": "text-personalizat-5",
+    "key": "text-personalizat",
+    "label": "Text personalizat",
+    "hint": "Textul pentru eticheta personalizată.",
+    "kind": "text",
+    "required": false,
+    "choices": []
+  }
+]

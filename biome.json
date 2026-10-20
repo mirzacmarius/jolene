@@ -152,7 +152,8 @@
       "!**/_generated",
       "!**/.convex",
       "!**/.next",
-      "!apps/shop"
+      "!apps/shop",
+      "!packages/products/catalog"
     ]
   },
   "vcs": {
