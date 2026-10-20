@@ -1,0 +1,53 @@
+{
+  "$schema": "https://v2-11-9.turborepo.dev/schema.json",
+  "agentGuidance": false,
+  "globalDependencies": ["**/.env"],
+  "ui": "stream",
+  "tasks": {
+    "topo": {
+      "dependsOn": ["^topo"]
+    },
+    "build": {
+      "env": [
+        "AI_GATEWAY_API_KEY",
+        "CUSTOMER_ACCOUNT_SESSION_SECRET",
+        "DEBUG_SHOPIFY",
+        "EVE_DEV",
+        "NEXT_PUBLIC_CONVEX_URL",
+        "NEXT_PUBLIC_SHOPIFY_SHOP_ID",
+        "NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN",
+        "NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN",
+        "NEXT_PUBLIC_SHOPIFY_STOREFRONT_ID",
+        "SHOPIFY_API_VERSION",
+        "SHOPIFY_CUSTOMER_ACCOUNT_API_CLIENT_ID",
+        "SHOPIFY_CUSTOMER_ACCOUNT_API_CLIENT_SECRET",
+        "SHOPIFY_WEBHOOK_SECRET",
+        "UCP_AGENT_PROFILE_URL",
+        "V0_CALLBACK_URL",
+        "VERCEL_ENV",
+        "VERCEL_PROJECT_PRODUCTION_URL"
+      ],
+      "inputs": ["$TURBO_DEFAULT$", ".env"],
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "next-env.d.ts"]
+    },
+    "start": {
+      "cache": false
+    },
+    "clean": {
+      "cache": false
+    },
+    "dev": {
+      "inputs": ["$TURBO_DEFAULT$", ".env"],
+      "persistent": true,
+      "cache": false
+    },
+    "lint": {
+      "dependsOn": ["^topo"]
+    },
+    "typecheck": {
+      "dependsOn": ["^topo"],
+      "outputs": []
+    }
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "suite": "teddy-in-balon",
+  "cards": [
+    {
+      "id": "menu-cover",
+      "image": "images/meniu-botez-teddy-in-ballon/meniu_botez_teddy_bear-min.jpg",
+      "quad": [[3371, 922], [4656, 1265], [4144, 3265], [2852, 2936]],
+      "size": [135, 210],
+      "ppmm": 10,
+      "paperSample": [4, 4, 16, 16],
+      "erase": [
+        { "rect": [25, 18, 85, 34], "select": "all" },
+        { "rect": [0, 0, 135, 2], "select": "all" },
+        { "rect": [0, 207.5, 135, 2.5], "select": "all" },
+        { "rect": [0, 0, 2, 210], "select": "all" },
+        { "rect": [133, 0, 2, 210], "select": "all" },
+        { "rect": [8, 108, 25, 42], "select": "all" },
+        {
+          "rect": [33, 126, 21, 20],
+          "select": "light",
+          "above": 0.8,
+          "saturation": 0.15,
+          "grow": 1
+        },
+        {
+          "rect": [52, 135, 8, 9],
+          "select": "light",
+          "above": 0.8,
+          "saturation": 0.15,
+          "grow": 1
+        },
+        { "rect": [93, 148, 42, 57], "select": "all" },
+        { "rect": [81, 178, 12, 27], "select": "all" },
+        { "rect": [83, 167, 10, 11], "select": "all" },
+        {
+          "rect": [73, 167, 10, 31],
+          "select": "light",
+          "above": 0.85,
+          "saturation": 0.12,
+          "grow": 0
+        },
+        {
+          "rect": [89, 152, 4, 15],
+          "select": "light",
+          "above": 0.85,
+          "saturation": 0.12,
+          "grow": 1
+        }
+      ],
+      "layers": [
+        {
+          "key": "teddy-in-balon-balloon",
+          "name": "Balonul cu Teddy",
+          "rect": [10, 55, 125, 155]
+        }
+      ]
+    },
+    {
+      "id": "menu-cover-cloud",
+      "image": "images/meniu-botez-teddy-in-ballon/meniu_botez_teddy_bear-min.jpg",
+      "quad": [[3371, 922], [4656, 1265], [4144, 3265], [2852, 2936]],
+      "size": [135, 210],
+      "ppmm": 10,
+      "paperSample": [4, 4, 16, 16],
+      "erase": [
+        { "rect": [0, 0, 135, 148], "select": "all" },
+        { "rect": [0, 148, 77, 62], "select": "all" },
+        { "rect": [77, 140, 13, 27], "select": "all" },
+        { "rect": [90, 140, 1, 14], "select": "all" },
+        { "rect": [77, 167, 6, 11], "select": "all" },
+        {
+          "rect": [86, 144, 12, 10],
+          "select": "dark",
+          "below": 0.88,
+          "grow": 2
+        },
+        {
+          "rect": [77, 155, 9, 30],
+          "select": "dark",
+          "below": 0.88,
+          "grow": 2
+        },
+        { "rect": [0, 207.5, 135, 2.5], "select": "all" },
+        { "rect": [133, 0, 2, 210], "select": "all" }
+      ],
+      "layers": [
+        {
+          "key": "teddy-in-balon-cloud",
+          "name": "Nor",
+          "rect": [77, 148, 58, 62]
+        }
+      ]
+    },
+    {
+      "id": "invitation-front",
+      "image": "images/invitatie-botez-teddy-in-balon/304864291_446899124123598_2802893186854507629_n.jpeg",
+      "quad": [[120, 462], [949, 351], [1139, 1473], [307, 1630]],
+      "size": [133, 184],
+      "paperWindow": 30,
+      "solid": 0.05,
+      "join": 3,
+      "floor": 0.045,
+      "knee": 0.11,
+      "erase": [
+        { "rect": [0, 0, 133, 86], "select": "all" },
+        { "rect": [0, 86, 72, 3], "select": "all" },
+        { "rect": [0, 86, 16, 76], "select": "all" },
+        { "rect": [16, 86, 21, 42], "select": "all" },
+        { "rect": [36, 84, 34, 31], "select": "all" },
+        { "rect": [44, 110, 20, 16], "select": "all" },
+        { "rect": [55, 100, 34, 36], "select": "all" },
+        {
+          "rect": [66, 84, 26, 18],
+          "select": "dark",
+          "below": 0.85,
+          "grow": 2
+        },
+        {
+          "rect": [84, 110, 12, 20],
+          "select": "dark",
+          "below": 0.9,
+          "grow": 2
+        },
+        { "rect": [48, 95, 47, 57], "select": "dark", "below": 0.8, "grow": 2 },
+        { "rect": [92, 124, 41, 38], "select": "all" },
+        { "rect": [0, 162, 133, 22], "select": "all" },
+        { "rect": [122, 86, 11, 76], "select": "all" }
+      ],
+      "layers": [
+        {
+          "key": "teddy-in-balon-cloud-right",
+          "name": "Nor, dreapta",
+          "rect": [70, 86, 52, 38]
+        },
+        {
+          "key": "teddy-in-balon-cloud-left",
+          "name": "Nor, stânga",
+          "rect": [0, 124, 70, 40]
+        }
+      ]
+    },
+    {
+      "id": "invitation-back",
+      "image": "images/invitatie-botez-teddy-in-balon/305194983_446899127456931_2919267413116419004_n.jpeg",
+      "quad": [[214, 404], [995, 370], [1086, 1400], [334, 1513]],
+      "size": [133, 184],
+      "paperWindow": 30,
+      "solid": 0.05,
+      "join": 5,
+      "floor": 0.045,
+      "knee": 0.11,
+      "erase": [
+        { "rect": [48, 0, 85, 184], "select": "all" },
+        { "rect": [0, 43, 48, 141], "select": "all" },
+        {
+          "rect": [16, 33, 17, 5],
+          "select": "dark",
+          "below": 0.8,
+          "fill": "inpaint"
+        }
+      ],
+      "layers": [
+        {
+          "key": "teddy-in-balon-clouds",
+          "name": "Nori",
+          "rect": [0, 0, 48, 43]
+        }
+      ]
+    },
+    {
+      "id": "money-envelope",
+      "image": "images/plic-bani-botez-teddy-in-balon/plic_bani_botez_teddy.jpg",
+      "quad": [[169, 294], [1420, 298], [1430, 1009], [158, 1011]],
+      "size": [177, 100],
+      "paperSample": [96, 8, 12, 12],
+      "erase": [
+        { "rect": [0, 0, 177, 42], "select": "all" },
+        { "rect": [0, 61, 177, 39], "select": "all" },
+        { "rect": [100, 0, 77, 100], "select": "all" }
+      ],
+      "layers": [
+        {
+          "key": "teddy-in-balon-stars",
+          "name": "Ghirlandă de steluțe",
+          "rect": [10, 42, 90, 19]
+        }
+      ]
+    }
+  ]
+}

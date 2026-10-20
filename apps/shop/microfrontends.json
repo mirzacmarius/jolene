@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/microfrontends.json",
+  "applications": {
+    "jolene": {
+      "packageName": "@jolene/shop",
+      "development": {
+        "local": 3000,
+        "fallback": "www.orvibo.it"
+      }
+    },
+    "jolene-studio": {
+      "packageName": "@jolene/studio",
+      "development": {
+        "local": 3001
+      },
+      "routing": [
+        {
+          "paths": ["/studio/:path*"]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* The kit's own components, so their classes are generated in every app. */
+@source "./components";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Jolene's palette: paper and ink, an evergreen for actions, antique gold for
+ * the few things that should shine. Dark mode keeps the warmth of paper.
+ */
+:root {
+  --radius: 0.75rem;
+  --background: #fbf8f3;
+  --foreground: #24201c;
+  --card: #ffffff;
+  --card-foreground: #24201c;
+  --popover: #ffffff;
+  --popover-foreground: #24201c;
+  --primary: #2e3b2f;
+  --primary-foreground: #fbf8f3;
+  --secondary: #f1ece4;
+  --secondary-foreground: #2b2622;
+  --muted: #f1ece4;
+  --muted-foreground: #6e665c;
+  --accent: #efe4d2;
+  --accent-foreground: #2b2622;
+  --gold: #a8823f;
+  --blush: #ecd6cc;
+  --destructive: #b3261e;
+  --border: #e6ded2;
+  --input: #ddd4c6;
+  --ring: #a8823f;
+}
+
+.dark {
+  --background: #161412;
+  --foreground: #f3eee6;
+  --card: #1d1a17;
+  --card-foreground: #f3eee6;
+  --popover: #1d1a17;
+  --popover-foreground: #f3eee6;
+  --primary: #dfe8d9;
+  --primary-foreground: #1b2119;
+  --secondary: #26221e;
+  --secondary-foreground: #f3eee6;
+  --muted: #26221e;
+  --muted-foreground: #b4aa9c;
+  --accent: #2e2822;
+  --accent-foreground: #f3eee6;
+  --gold: #d1ad69;
+  --blush: #4a3631;
+  --destructive: #f2b8b5;
+  --border: #35302a;
+  --input: #403a33;
+  --ring: #d1ad69;
+}
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-gold: var(--gold);
+  --color-blush: var(--blush);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
