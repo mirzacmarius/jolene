@@ -265,14 +265,16 @@ function Issues({
 /**
  * Whether the shop sells an item, which is whether its product has a page:
  * the shop answers each product page in Markdown too, at its address with
- * ".md". Undefined while the shop is asked.
+ * ".md". Undefined while the shop is asked. Asked afresh each time, past the
+ * browser's cache, which would keep a "not sold" for an hour after the shop
+ * starts selling the item.
  */
 function useShopSells(handle: string | null) {
   const [answer, setAnswer] = useState<{ handle: string; sells: boolean }>();
   useEffect(() => {
     if (!handle) return;
     let live = true;
-    fetch(`/products/${encodeURIComponent(handle)}.md`)
+    fetch(`/products/${encodeURIComponent(handle)}.md`, { cache: "no-store" })
       .then((response) => response.ok)
       .catch(() => false)
       .then((sells) => {
