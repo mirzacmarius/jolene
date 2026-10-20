@@ -29,7 +29,11 @@ export {
   moveLight,
 } from "./lifelike";
 export { stockThickness, tabletopColor } from "./materials";
-export { createCanvasMeasure, useCanvasMeasure } from "./measure";
+export {
+  createCanvasBounds,
+  createCanvasMeasure,
+  useCanvasMeasure,
+} from "./measure";
 export {
   type AssetResolver,
   fontStack,

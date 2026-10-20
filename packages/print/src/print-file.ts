@@ -1,23 +1,24 @@
 import {
   type ColorRef,
+  checkDesign,
   type DesignDocument,
   type Face,
   type FaceName,
   type Fields,
   type FontSpec,
   faceNames,
-  fieldKeysUsed,
-  fontCharacters,
+  fontSpecOf,
   type ImageLayer,
   type Ink,
+  imagePlacement,
   inkLabels,
   inks,
   type Layer,
-  layoutText,
   lineMiddles,
   MM_PER_POINT,
   mmToPt,
   type Piece,
+  type PrintIssue,
   ptToMm,
   resolveColor,
   resolveText,
@@ -25,6 +26,7 @@ import {
   stocks,
   type TextLayer,
   type TextLayout,
+  textStyleOf,
   trimPath,
 } from "@jolene/design";
 import PDFDocument from "pdfkit";
@@ -73,51 +75,6 @@ export interface PrintPage {
   plate: Ink | "die";
 }
 
-/** Something the workshop or the couple should look at before printing. */
-export type PrintIssue =
-  /** Details the design uses that the couple hasn't given: they don't print. */
-  | { kind: "missing-details"; fields: string[] }
-  /** Words too long for their frame even at the smallest size allowed. */
-  | { kind: "overflow"; piece: string; face: FaceName; layer: string }
-  /** The couple's words reach past the safe margin, towards the cut. */
-  | { kind: "outside-safe-area"; piece: string; face: FaceName; layer: string }
-  /** A photo frame the couple hasn't filled: it prints empty. */
-  | { kind: "missing-photo"; piece: string; face: FaceName; layer: string }
-  | {
-      kind: "missing-artwork";
-      piece: string;
-      face: FaceName;
-      layer: string;
-      asset: string;
-    }
-  /** An image printed below 300 dpi. */
-  | {
-      kind: "low-resolution";
-      piece: string;
-      face: FaceName;
-      layer: string;
-      dpi: number;
-    }
-  /** Letters neither the typeface nor a symbol face has: empty boxes. */
-  | {
-      kind: "missing-glyphs";
-      piece: string;
-      face: FaceName;
-      layer: string;
-      characters: string;
-    }
-  /**
-   * Letters the studio doesn't load its typefaces for (fontCharacters): the
-   * screen shows them in another font, the print file in the design's.
-   */
-  | {
-      kind: "unusual-characters";
-      piece: string;
-      face: FaceName;
-      layer: string;
-      characters: string;
-    };
-
 export interface PrintFile {
   pdf: Uint8Array;
   pages: PrintPage[];
@@ -125,9 +82,6 @@ export interface PrintFile {
   /** Each text layer's lines, by layer id, as the file sets them. */
   layouts: Record<string, TextLayout>;
 }
-
-/** Images are checked against this resolution, as print shops ask. */
-export const PRINT_DPI = 300;
 
 /** The type of the marks' captions. */
 const CAPTION_FONT: FontSpec = { family: "Jost", weight: 400, italic: false };
@@ -143,15 +97,6 @@ const faceLabels: Record<FaceName, string> = { front: "Față", back: "Verso" };
 /** Room around the trim for the bleed, the marks and their captions. */
 function marginOf(piece: Piece): number {
   return Math.max(piece.bleed, MARK_GAP) + MARK_LENGTH + 4;
-}
-
-function textStyleOf(layer: TextLayer, document: DesignDocument) {
-  return { ...document.theme.text[layer.style], ...layer.overrides };
-}
-
-function fontSpecOf(layer: TextLayer, document: DesignDocument): FontSpec {
-  const style = textStyleOf(layer, document);
-  return { family: style.font, weight: style.weight, italic: style.italic };
 }
 
 interface LayerAt {
@@ -174,106 +119,65 @@ function* layersOf(document: DesignDocument): Generator<LayerAt> {
 /** Builds the print file of a design. */
 export async function makePrintFile(input: PrintFileInput): Promise<PrintFile> {
   const { document, fields, fonts } = input;
-  const issues: PrintIssue[] = [];
-  const resolve = (text: string) =>
-    resolveText(text, {
+
+  // The fonts of every word the file sets, its captions' included.
+  const words = [{ spec: CAPTION_FONT, text: input.title }];
+  for (const { layer } of layersOf(document)) {
+    if (layer.type !== "text") continue;
+    const text = resolveText(layer.text, {
       fields,
       occasion: document.occasion,
       language: document.language,
     });
-
-  const missing = fieldKeysUsed(document).filter(
-    (key) => key !== "monogram" && !fields[key]?.trim(),
-  );
-  if (missing.length > 0)
-    issues.push({ kind: "missing-details", fields: missing });
-
-  // The words, set as the studio sets them, with the fonts they print in.
-  const texts = new Map<string, string>();
-  const words = [{ spec: CAPTION_FONT, text: input.title }];
-  for (const { layer } of layersOf(document)) {
-    if (layer.type !== "text") continue;
-    const text = resolve(layer.text);
-    if (!text.trim()) continue;
-    texts.set(layer.id, text);
-    words.push({ spec: fontSpecOf(layer, document), text });
+    if (text.trim()) words.push({ spec: fontSpecOf(layer, document), text });
   }
   await fonts.load(words);
-  const layouts: Record<string, TextLayout> = {};
-  const sets = new Map<string, SetText>();
-  for (const { piece, face, layer } of layersOf(document)) {
-    const text = texts.get(layer.id);
-    if (layer.type !== "text" || text === undefined) continue;
-    const style = textStyleOf(layer, document);
-    const layout = layoutText({
-      text,
-      style,
-      width: layer.frame.width,
-      height: layer.frame.height,
-      fit: layer.fit,
-      minSize: layer.minSize,
-      measure: fonts.measure,
-    });
-    layouts[layer.id] = layout;
-    const set = setText(layer, layout, document, fonts);
-    sets.set(layer.id, set);
-    const at = { piece: piece.id, face, layer: layer.id };
-    if (layout.overflows) issues.push({ kind: "overflow", ...at });
-    if (outsideSafeArea(layer, set, piece))
-      issues.push({ kind: "outside-safe-area", ...at });
-    const spec = fontSpecOf(layer, document);
-    const letters = [...new Set(text.replace(/\s/g, ""))];
-    const lacking = letters.filter((letter) => !fonts.draws(letter, spec));
-    if (lacking.length > 0)
-      issues.push({
-        kind: "missing-glyphs",
-        ...at,
-        characters: lacking.join(""),
-      });
-    const unusual = letters.filter(
-      (letter) => !fontCharacters.includes(letter),
+
+  // The images, each file read once; null for a file that isn't there.
+  const pictures = new Map<string, LoadedAsset | null>();
+  for (const { layer } of layersOf(document)) {
+    if (layer.type !== "image" || !layer.asset || pictures.has(layer.asset))
+      continue;
+    const file = await input.asset(layer.asset);
+    pictures.set(
+      layer.asset,
+      file
+        ? {
+            picture: await readPicture(file.bytes),
+            recolorable: file.recolorable,
+          }
+        : null,
     );
-    if (unusual.length > 0)
-      issues.push({
-        kind: "unusual-characters",
-        ...at,
-        characters: unusual.join(""),
-      });
   }
 
-  // The images, each file read once.
-  const files = new Map<string, Promise<LoadedAsset | null>>();
-  const pictureOf = (key: string) => {
-    let loaded = files.get(key);
-    if (!loaded) {
-      loaded = input.asset(key).then(async (file) =>
-        file
-          ? {
-              picture: await readPicture(file.bytes),
-              recolorable: file.recolorable,
-            }
-          : null,
+  // The words, set as the studio sets them, checked by the same rules as
+  // the couple's proof, with the letters' own ink and the faces that draw them.
+  const { issues, layouts } = checkDesign(document, fields, {
+    measure: fonts.measure,
+    bounds: (text, font, sizeMm, trackingMm) => {
+      const { ink } = typeset(
+        fonts,
+        text,
+        font,
+        sizeMm,
+        trackingMm,
+        featuresFor(trackingMm),
       );
-      files.set(key, loaded);
-    }
-    return loaded;
-  };
-  const pictures = new Map<string, LoadedAsset>();
-  for (const { piece, face, layer } of layersOf(document)) {
-    if (layer.type !== "image") continue;
-    const at = { piece: piece.id, face, layer: layer.id };
-    if (!layer.asset) {
-      if (layer.replaceable) issues.push({ kind: "missing-photo", ...at });
-      continue;
-    }
-    const loaded = await pictureOf(layer.asset);
-    if (!loaded) {
-      issues.push({ kind: "missing-artwork", ...at, asset: layer.asset });
-      continue;
-    }
-    pictures.set(layer.asset, loaded);
-    const dpi = Math.floor(resolutionOf(layer, loaded.picture));
-    if (dpi < PRINT_DPI) issues.push({ kind: "low-resolution", ...at, dpi });
+      if (!ink) return null;
+      const lift = middleAboveBaseline(fonts.choose(font).font) * sizeMm;
+      return { ...ink, top: ink.top + lift, bottom: ink.bottom + lift };
+    },
+    lacking: (text, font) =>
+      [...new Set(text.replace(/\s/g, ""))]
+        .filter((letter) => !fonts.draws(letter, font))
+        .join(""),
+    picture: (layer) => pictures.get(layer.asset)?.picture ?? null,
+  });
+  const sets = new Map<string, SetText>();
+  for (const { layer } of layersOf(document)) {
+    const layout = layouts[layer.id];
+    if (layer.type === "text" && layout)
+      sets.set(layer.id, setText(layer, layout, document, fonts));
   }
 
   // Which pages there are, so each can say which it is.
@@ -282,7 +186,7 @@ export async function makePrintFile(input: PrintFileInput): Promise<PrintFile> {
     for (const face of faceNames) {
       const side = piece[face];
       if (!side) continue;
-      for (const plate of platesOf(side, texts, pictures))
+      for (const plate of platesOf(side, sets, pictures))
         pages.push({ piece: piece.id, face, plate });
     }
     if (needsDie(piece))
@@ -341,8 +245,8 @@ interface LoadedAsset {
 /** The inks a face uses, in the catalog's order: one plate each. */
 function platesOf(
   side: Face,
-  texts: Map<string, string>,
-  pictures: Map<string, LoadedAsset>,
+  sets: Map<string, SetText>,
+  pictures: Map<string, LoadedAsset | null>,
 ): Ink[] {
   const used = new Set<Ink>();
   if (side.background) used.add("print");
@@ -350,9 +254,9 @@ function platesOf(
     if (layer.hidden) continue;
     const drawn =
       layer.type === "text"
-        ? texts.has(layer.id)
+        ? sets.has(layer.id)
         : layer.type === "image"
-          ? layer.asset !== undefined && pictures.has(layer.asset)
+          ? layer.asset !== undefined && Boolean(pictures.get(layer.asset))
           : layer.fill !== null || layer.stroke !== null;
     if (drawn) used.add(layer.ink);
   }
@@ -383,29 +287,6 @@ function captionOf(
   if (piece.fold) parts.push(`pliere la ${piece.fold.at} mm`);
   parts.push(`pagina ${pageNumber}`);
   return parts.join(" · ");
-}
-
-/**
- * Whether the couple's words reach past the safe margin: the ink of their
- * letters, which a wide frame or a tall line can hide. Jolene's own fixed
- * words are placed by hand and left alone.
- */
-function outsideSafeArea(
-  layer: TextLayer,
-  set: SetText,
-  piece: Piece,
-): boolean {
-  if (layer.locked || layer.rotation !== 0) return false;
-  const margin = piece.safeMargin - 0.05;
-  const { x, y } = layer.frame;
-  return set.lines.some(
-    (line) =>
-      line.ink !== null &&
-      (x + line.x + line.ink.left < margin ||
-        y + line.baseline + line.ink.top < margin ||
-        x + line.x + line.ink.right > piece.width - margin ||
-        y + line.baseline + line.ink.bottom > piece.height - margin),
-  );
 }
 
 /** A text layer's lines in type, in its frame, in millimetres. */
@@ -512,34 +393,6 @@ function typeset(
   return { runs, width: runs.length > 0 ? pen - trackingMm : 0, ink };
 }
 
-/** Where an image goes in its frame, as SVG's preserveAspectRatio puts it. */
-function placement(layer: ImageLayer, picture: Picture) {
-  const { width, height } = layer.frame;
-  if (layer.fit === "fill") return { x: 0, y: 0, width, height };
-  const scale = (layer.fit === "cover" ? Math.max : Math.min)(
-    width / picture.width,
-    height / picture.height,
-  );
-  const drawn = {
-    width: picture.width * scale,
-    height: picture.height * scale,
-  };
-  return {
-    x: (width - drawn.width) / 2,
-    y: (height - drawn.height) / 2,
-    ...drawn,
-  };
-}
-
-/** The image's resolution as printed, in dots per inch. */
-function resolutionOf(layer: ImageLayer, picture: Picture): number {
-  const drawn = placement(layer, picture);
-  return Math.min(
-    picture.width / (drawn.width / 25.4),
-    picture.height / (drawn.height / 25.4),
-  );
-}
-
 /** An image the file holds, drawn with pdfkit's image(). */
 interface EmbeddedImage {
   label: string;
@@ -558,7 +411,7 @@ class Drawing {
     private readonly document: DesignDocument,
     private readonly fonts: FontBook,
     private readonly sets: Map<string, SetText>,
-    private readonly pictures: Map<string, LoadedAsset>,
+    private readonly pictures: Map<string, LoadedAsset | null>,
   ) {}
 
   /** A page the size of the piece and its margin, drawn in millimetres. */
@@ -690,7 +543,7 @@ class Drawing {
       pdf.translate(layer.flipX ? width : 0, layer.flipY ? height : 0);
       pdf.scale(layer.flipX ? -1 : 1, layer.flipY ? -1 : 1);
     }
-    const at = placement(layer, picture);
+    const at = imagePlacement(layer, picture);
     if (paint && "jpeg" in picture) {
       // An opaque image covers all of its place.
       pdf.rect(at.x, at.y, at.width, at.height).fill(paint);

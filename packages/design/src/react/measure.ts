@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { CheckOptions } from "../checks";
 import { estimateWidth, type Measure } from "../text-layout";
 import { fontStack } from "./shared";
 
@@ -57,6 +58,40 @@ export function createCanvasMeasure(): Measure {
       cache.set(key, width);
     }
     return (width / REFERENCE_PX) * sizeMm;
+  };
+}
+
+/**
+ * Where a line's letters reach in the browser's fonts, for the checks before
+ * printing (checkDesign): from where the line starts, on the central baseline
+ * the renderer sets it on, which sits halfway up the font's ascent and
+ * descent. Measure once the fonts have loaded, as with createCanvasMeasure.
+ */
+export function createCanvasBounds(): CheckOptions["bounds"] {
+  if (typeof document === "undefined") return undefined;
+  const context = document.createElement("canvas").getContext("2d");
+  if (!context) return undefined;
+  return (text, font, sizeMm, trackingMm) => {
+    context.font = `${font.italic ? "italic " : ""}${font.weight} ${REFERENCE_PX}px ${fontStack(font.family)}`;
+    context.fontKerning = "normal";
+    context.letterSpacing = `${(trackingMm / sizeMm) * REFERENCE_PX}px`;
+    context.textAlign = "left";
+    context.textBaseline = "alphabetic";
+    const metrics = context.measureText(text);
+    const left = -metrics.actualBoundingBoxLeft;
+    const right = metrics.actualBoundingBoxRight;
+    const top = -metrics.actualBoundingBoxAscent;
+    const bottom = metrics.actualBoundingBoxDescent;
+    if (right <= left || bottom <= top) return null;
+    const middle =
+      (metrics.fontBoundingBoxAscent - metrics.fontBoundingBoxDescent) / 2;
+    const scale = sizeMm / REFERENCE_PX;
+    return {
+      left: left * scale,
+      right: right * scale,
+      top: (top + middle) * scale,
+      bottom: (bottom + middle) * scale,
+    };
   };
 }
 

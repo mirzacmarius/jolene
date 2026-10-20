@@ -1,4 +1,5 @@
 export * from "./catalog";
+export * from "./checks";
 export * from "./color";
 export * from "./editing";
 export * from "./fields";

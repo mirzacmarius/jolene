@@ -19,4 +19,6 @@ export const errors = {
   aiBusy: "ai-busy",
   /** A message to the AI designer that is empty or too long. */
   aiInvalidMessage: "ai-invalid-message",
+  /** A picture that isn't a PNG or a JPEG, or is too large to keep. */
+  invalidImage: "invalid-image",
 } as const;
