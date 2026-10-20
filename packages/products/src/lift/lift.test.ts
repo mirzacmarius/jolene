@@ -19,10 +19,7 @@ describe("cleanTitle", () => {
     ],
     ["RSVP Card  FOREST", "RSVP Card Forest"],
     ["Felicitare Ho-Ho-Ho", "Felicitare Ho-Ho-Ho"],
-    [
-      "INVITAȚIE De NUNTĂ Yellow Flowers",
-      "Invitație de nuntă Yellow Flowers",
-    ],
+    ["INVITAȚIE De NUNTĂ Yellow Flowers", "Invitație de nuntă Yellow Flowers"],
   ])("%s", (title, clean) => {
     expect(cleanTitle(title)).toBe(clean);
   });
