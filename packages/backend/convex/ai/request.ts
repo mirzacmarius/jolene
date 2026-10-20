@@ -48,7 +48,7 @@ export function buildRequest(
       // if one does, the request goes on without it rather than failing.
       block_binding: { prefix_mismatch_behavior: "drop_block" },
     },
-    output_config: { effort: "xhigh" },
+    output_config: { effort: config.effort },
     system: [
       {
         type: "text",
@@ -80,6 +80,8 @@ function hash(text: string): string {
 /**
  * What a thread's requests are made with. A thread goes on only while this
  * stays the same; a deploy that changes it starts the next message afresh.
+ * The effort isn't part of it: the model keeps its earlier thinking at any
+ * effort, and a change costs the thread's cache once.
  */
 export function promptVersion(config: AiConfig): string {
   return hash(

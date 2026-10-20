@@ -8,6 +8,8 @@ import { env } from "../_generated/server";
 export function aiConfig() {
   return {
     model: env.AI_MODEL?.trim() || "claude-opus-5-5",
+    /** How much the model thinks before it answers and between changes. */
+    effort: effortOf(env.AI_EFFORT),
     /** The local stand-in answers instead of the model (standIn.ts). */
     standIn: env.AI_STAND_IN === "1",
     configured:
@@ -18,6 +20,14 @@ export function aiConfig() {
 }
 
 export type AiConfig = ReturnType<typeof aiConfig>;
+
+const efforts = ["low", "medium", "high", "xhigh", "max"] as const;
+
+/** AI_EFFORT, when it names an effort the API knows; xhigh otherwise. */
+function effortOf(value: string | undefined): (typeof efforts)[number] {
+  const named = value?.trim().toLowerCase();
+  return efforts.find((effort) => effort === named) ?? "xhigh";
+}
 
 function count(value: string | undefined, fallback: number): number {
   const parsed = Number(value);

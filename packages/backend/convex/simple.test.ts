@@ -85,6 +85,7 @@ const christening = {
 const aiEnv = [
   "ANTHROPIC_API_KEY",
   "AI_MODEL",
+  "AI_EFFORT",
   "AI_DAILY_LIMIT",
   "AI_DAILY_LIMIT_TOTAL",
   "AI_STAND_IN",

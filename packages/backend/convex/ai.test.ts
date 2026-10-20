@@ -61,6 +61,7 @@ const sample = {
 const aiEnv = [
   "ANTHROPIC_API_KEY",
   "AI_MODEL",
+  "AI_EFFORT",
   "AI_DAILY_LIMIT",
   "AI_DAILY_LIMIT_TOTAL",
   "AI_STAND_IN",
@@ -803,6 +804,14 @@ describe("the AI designer", () => {
         400,
         "Unexpected value(s) `example-2026-01-01` for the `anthropic-beta` header.",
       ),
+      turnedAway(
+        400,
+        "You have reached your specified API usage limits. You will regain access on 2026-11-01 at 00:00 UTC.",
+      ),
+      turnedAway(
+        400,
+        "This API key is not scoped to a workspace, so this request must include the anthropic-workspace-id header.",
+      ),
       turnedAway(402, "There is a problem with billing.", "billing_error"),
       turnedAway(401, "invalid x-api-key", "authentication_error"),
       turnedAway(400, "messages.1.content.0: Input tag 'example' found"),
@@ -811,7 +820,7 @@ describe("the AI designer", () => {
 
     // The key, the account or the settings: nothing the couple can change,
     // and the request can run again once they are fixed.
-    for (const words of ["Unu", "Doi", "Trei", "Patru"]) {
+    for (const words of ["Unu", "Doi", "Trei", "Patru", "Cinci", "Șase"]) {
       await talk(setup, words);
       expect(await replyOf(setup)).toMatchObject({
         status: "failed",
@@ -822,20 +831,39 @@ describe("the AI designer", () => {
 
     // Anything else the API turns away, it would turn away again: the next
     // message starts a new thread.
-    await talk(setup, "Cinci");
+    await talk(setup, "Șapte");
     expect(await replyOf(setup)).toMatchObject({
       status: "failed",
       error: "failed",
       canRetry: false,
     });
-    await talk(setup, "Șase");
+    await talk(setup, "Opt");
     expect(await replyOf(setup)).toMatchObject({ status: "done" });
-    expect(requests[5]?.messages).toHaveLength(1);
+    expect(requests[7]?.messages).toHaveLength(1);
 
     // Requests the API turned away don't count toward the day.
     expect(
       await setup.couple.query(api.ai.availability, { since: 0 }),
     ).toMatchObject({ used: 1 });
+  });
+
+  test("thinks at the effort the deployment sets", async () => {
+    const setup = await setUp();
+    const requests = fakeModel(
+      answer({ content: [text("Bună!")] }),
+      answer({ content: [text("Gata.")] }),
+    );
+    setEnv({ ANTHROPIC_API_KEY: "test-key", AI_EFFORT: " Medium " });
+    await talk(setup, "Verde");
+    // A name the API doesn't know leaves the default.
+    setEnv({ ANTHROPIC_API_KEY: "test-key", AI_EFFORT: "extreme" });
+    await talk(setup, "Albastru");
+    expect(requests.map((request) => request.output_config?.effort)).toEqual([
+      "medium",
+      "xhigh",
+    ]);
+    // The thread goes on: its earlier thinking holds at any effort.
+    expect(requests[1]?.messages).toHaveLength(3);
   });
 
   test("counts a reply the API never answered only when it runs again", async () => {

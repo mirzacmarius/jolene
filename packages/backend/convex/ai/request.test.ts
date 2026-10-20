@@ -19,6 +19,7 @@ import {
 
 const config: AiConfig = {
   model: "claude-opus-5-5",
+  effort: "xhigh",
   standIn: false,
   configured: true,
   dailyLimit: 20,
@@ -82,6 +83,18 @@ describe("the request", () => {
     expect(promptVersion({ ...config, standIn: true })).not.toBe(
       promptVersion(config),
     );
+    // A thread goes on at another effort.
+    expect(promptVersion({ ...config, effort: "medium" })).toBe(
+      promptVersion(config),
+    );
+  });
+
+  test("thinks at the deployment's effort", () => {
+    const request = buildRequest({ ...config, effort: "medium" }, [], {
+      userId: "u1",
+      wrapUp: false,
+    });
+    expect(request.output_config).toEqual({ effort: "medium" });
   });
 });
 

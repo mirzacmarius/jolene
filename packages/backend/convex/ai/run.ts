@@ -231,6 +231,10 @@ export const step = internalAction({
   },
 });
 
+/** What the API says in a 400 that the account, not the request, is wrong. */
+const accountProblem =
+  /credit balance|usage limits?|scoped to a workspace|anthropic-workspace-id|data retention|anthropic-beta/i;
+
 /**
  * How a failed request ends its reply: what the couple is told, and whether
  * its thread can be sent again. Logged for the deployment's owner without
@@ -265,17 +269,19 @@ function failureOf(
     return { error: "busy" };
   }
   // The key, the account or the deployment's settings: no request goes
-  // through until they are fixed. A credit balance too low and a beta the
-  // organization doesn't have come as 400s.
+  // through until they are fixed. Some come as 400s: a credit balance too
+  // low, the usage limit the account set itself, a key made for the whole
+  // organization instead of a workspace, a model that needs data retention
+  // the account turned off, and a beta the organization doesn't have.
   if (
     status === 401 ||
     status === 402 ||
     status === 403 ||
     status === 404 ||
-    (status === 400 && /credit balance|anthropic-beta/i.test(error.message))
+    (status === 400 && accountProblem.test(error.message))
   ) {
     console.error(
-      `AI designer can't make requests until ANTHROPIC_API_KEY, the account's credits or AI_MODEL are fixed: ${said}`,
+      `AI designer can't make requests until ANTHROPIC_API_KEY, the account's credits or limits, or AI_MODEL are fixed: ${said}`,
     );
     return { error: "unavailable" };
   }

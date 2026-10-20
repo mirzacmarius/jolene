@@ -16,6 +16,11 @@ const app = defineApp({
     ANTHROPIC_API_KEY: v.optional(v.string()),
     /** The model the AI designer runs on; ai/config.ts has the default. */
     AI_MODEL: v.optional(v.string()),
+    /**
+     * How much the model thinks: low, medium, high, xhigh or max; xhigh when
+     * unset. Lower costs less and answers sooner.
+     */
+    AI_EFFORT: v.optional(v.string()),
     /** Messages one visitor may send the AI designer a day; 20 when unset. */
     AI_DAILY_LIMIT: v.optional(v.string()),
     /** Messages all visitors together may send it a day; 200 when unset. */
