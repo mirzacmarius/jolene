@@ -9,7 +9,6 @@ import {
   previewFields,
   productKindLabels,
 } from "@jolene/design";
-import { Badge } from "@jolene/ui/badge";
 import { Button } from "@jolene/ui/button";
 import { Logo } from "@jolene/ui/logo";
 import { SegmentedControl } from "@jolene/ui/segmented-control";
@@ -17,11 +16,12 @@ import { Skeleton } from "@jolene/ui/skeleton";
 import { cn } from "@jolene/ui/utils";
 import { useConvexAuth, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { Check, ChevronLeft, LoaderCircle, Sparkles } from "lucide-react";
+import { Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
+import { AiDesigner } from "../ai/ai-designer";
 import { DesignPreview, type PreviewView } from "../design/design-preview";
 import { FieldsPanel } from "./fields-panel";
 import { StylePanel } from "./style-panel";
@@ -100,7 +100,7 @@ function Editor({ data }: { data: DesignData }) {
   const title = `${productKindLabels[document.kind][locale]} · ${data.template.suite.name[locale]}`;
 
   return (
-    <div className="flex min-h-dvh flex-col lg:h-dvh">
+    <div className="flex min-h-dvh flex-col max-lg:pb-(--ai-sheet-height) lg:h-dvh">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border/70 bg-background px-3 sm:px-4">
         <Button asChild variant="ghost" size="sm" className="gap-1 px-2.5">
           <Link href={`/studio/colectii/${data.template.suite.slug}`}>
@@ -123,23 +123,21 @@ function Editor({ data }: { data: DesignData }) {
           {saving ? t("design.saving") : t("design.saved")}
         </span>
         <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled
-            className="hidden sm:inline-flex"
-          >
-            <Sparkles aria-hidden />
-            {t("design.ai")}
-            <Badge variant="gold">{t("common.soon")}</Badge>
-          </Button>
+          <AiDesigner
+            designId={designId}
+            revision={data.design.revision}
+            design={document}
+            fields={fields}
+            assets={data.assets}
+            view={view}
+          />
           <Button size="sm" disabled title={t("design.orderSoon")}>
             {t("design.order")}
           </Button>
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:pr-(--ai-sheet-width)">
         <section className="relative flex min-h-[60vh] min-w-0 flex-1 flex-col bg-[radial-gradient(80%_70%_at_50%_45%,var(--color-card),var(--color-secondary))] lg:order-2 lg:min-h-0">
           <div className="flex flex-wrap items-center justify-between gap-3 p-3">
             <SegmentedControl
