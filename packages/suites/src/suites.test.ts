@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { assetKeys, documentSchema, suiteStyles } from "@jolene/design";
+import { readCatalog } from "@jolene/products";
 import { suites } from "./index";
 
 const publicDir = join(import.meta.dir, "../../../apps/studio/public");
@@ -41,4 +42,13 @@ test("suite and template slugs are unique", () => {
     ...suite.templates.map((template) => template.slug),
   ]);
   expect(new Set(slugs).size).toBe(slugs.length);
+});
+
+test("templates are sold as products of the catalog", async () => {
+  const { products } = await readCatalog();
+  const handles = new Set(products.map((product) => product.handle));
+  for (const suite of suites)
+    for (const template of suite.templates)
+      if (template.shopifyProductHandle)
+        expect(handles).toContain(template.shopifyProductHandle);
 });

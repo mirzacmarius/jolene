@@ -141,3 +141,23 @@ _Avoid_: Preview (any view in the studio), draft
 **Favours** (ro: mărturii):
 Small keepsakes given to guests, sold in the shop alongside the stationery.
 _Avoid_: Gifts, souvenirs
+
+**Category** (ro: categorie):
+A shelf of the shop, such as Invitații nuntă or Mărturii, as jolene.ro had them. Shopify calls it a collection.
+_Avoid_: Collection (a family of designs)
+
+**Order option** (ro: opțiune; code: line option):
+What a couple chooses or writes when they order a product, apart from its paper: the seal's colour, the ribbon, the envelope, a text. It travels with the line in the cart, and products that ask the same share one.
+_Avoid_: Add-on, customization, attribute (how the cart carries it)
+
+**Extras** (ro: opțiuni suplimentare):
+What a line's paid order options add to each one ordered, charged on a line of their own beside it.
+_Avoid_: Add-ons, upsell
+
+**Minimum order** (ro: comandă minimă; code: minQuantity):
+The smallest quantity of a product Jolene takes an order for, such as 30 invitations.
+_Avoid_: MOQ
+
+**Fee** (ro: taxă):
+A one-off charge on an order, such as for diacritics or an urgent order, sold as a product of its own.
+_Avoid_: Surcharge (what a paper adds to a variant's price)
