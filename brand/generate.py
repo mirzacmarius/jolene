@@ -183,7 +183,7 @@ def save_png(image: Image.Image, path: Path) -> None:
 
 
 def save_webp(image: Image.Image, path: Path) -> None:
-    # Drawn at under a third of its size, the watercolour hides any loss at 80.
+    # Drawn at under half its size, the watercolour hides any loss at 80.
     image.save(path, quality=80, alpha_quality=80, method=6)
 
 
@@ -217,6 +217,8 @@ def main() -> None:
     outputs = [
         (save_webp, header, SHOP / "components/nav/jolene-logo.webp"),
         (save_webp, header, ROOT / "packages/ui/src/components/jolene-logo.webp"),
+        # The shop's footer draws the logo 80 px tall: it gets every pixel there is.
+        (save_webp, logo, SHOP / "components/footer/jolene-logo.webp"),
         (save_ico, favicon, SHOP / "app/favicon.ico"),
         (save_png, icon, SHOP / "app/icon.png"),
         (save_png, icon, STUDIO / "src/app/studio/icon.png"),

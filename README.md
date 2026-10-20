@@ -15,7 +15,7 @@ designs and an AI co-designer, then order printed.
 | `packages/backend` | Convex backend: designs, the couple's details, collections, sign-in |
 | `packages/design` | The design document: schema, operations, layout and the React renderer |
 | `packages/i18n` | The languages Jolene speaks and how a visitor's is chosen |
-| `packages/suites` | Jolene's collections as templates, with their artwork (lifted from jolene.ro by `lift/`) and a sheet that draws every template (`bun run preview` there) |
+| `packages/suites` | Jolene's collections as templates, with their artwork (lifted from jolene.ro by `lift/`), a sheet that draws every template (`bun run preview` there) and the invitations the shop's home page shows (`bun run shots` there) |
 | `packages/ui` | Shared UI components (shadcn/Tailwind) |
 | `tooling/typescript` | Shared TypeScript config |
 | `brand` | Jolene's logo, and the script that makes every icon and share image from it |

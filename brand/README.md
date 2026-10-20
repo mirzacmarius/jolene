@@ -7,6 +7,7 @@ every logo, icon and share image the apps use from it:
 | File | What it's for |
 |---|---|
 | `apps/shop/components/nav/jolene-logo.webp`, `packages/ui/src/components/jolene-logo.webp` | The logo in the shop's and the studio's headers: 132 px tall, over three times the 40 px they draw it at |
+| `apps/shop/components/footer/jolene-logo.webp` | The logo in the shop's footer: the whole logo, 181 px tall, for the 80 px the footer draws it at |
 | `apps/shop/app/favicon.ico` (16, 32, 48 px), `apps/shop/app/icon.png`, `apps/studio/src/app/studio/icon.png` (96 px) | Browser tabs, bookmarks and search results: the rose alone, since its leaves turn to noise this small |
 | `apps/shop/app/apple-icon.png`, `apps/studio/src/app/studio/apple-icon.png` (180 px) | Home screens on iPhone and iPad: the rose with its leaves on paper |
 | `apps/shop/public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` | The web app manifest (`apps/shop/app/manifest.ts`); the 512 px icon is also the logo in the shop's Schema.org data |

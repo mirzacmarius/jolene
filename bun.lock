@@ -16,6 +16,8 @@
       "version": "0.1.0",
       "dependencies": {
         "@base-ui/react": "1.9.0",
+        "@jolene/design": "workspace:*",
+        "@jolene/suites": "workspace:*",
         "@shopify/hydrogen": "2026.10.0",
         "@tailwindcss/turbopack": "4.3.3",
         "@tailwindcss/typography": "0.5.20",
@@ -155,6 +157,7 @@
         "@types/bun": "^1.4.3",
         "@types/react": "19.3.0",
         "@types/react-dom": "19.3.0",
+        "playwright-core": "1.56.1",
         "react": "19.3.1",
         "react-dom": "19.3.1",
         "typescript": "^5.9.3",
@@ -1168,6 +1171,8 @@
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 
     "picomatch": ["picomatch@2.3.2", "", {}, "sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA=="],
+
+    "playwright-core": ["playwright-core@1.56.1", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-hutraynyn31F+Bifme+Ps9Vq59hKuUCz7H1kDOcBs+2oGguKkWTU50bBWrtz34OUWmIwpBTWDxaRPXrIXkgvmQ=="],
 
     "png-js": ["png-js@2.0.0", "", { "dependencies": { "fflate": "^0.8.2" } }, "sha512-GdzJuUMc6ZSpxFJWVxtOH1bzYHym+TOnveqUjb+VJIbZWbZzyiRGFiKhbiielfpYbgMlhHVhsJ0FTazfuRFkMA=="],
 

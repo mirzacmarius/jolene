@@ -1,6 +1,6 @@
 import { BotIdClient } from "botid/client";
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Geist_Mono, Jost } from "next/font/google";
+import { DM_Sans, Geist_Mono, Instrument_Serif } from "next/font/google";
 
 import "./globals.css";
 import { Suspense } from "react";
@@ -25,16 +25,18 @@ export const viewport: Viewport = {
   themeColor: "#fbf8f3",
 };
 
-const jost = Jost({
+const dmSans = DM_Sans({
+  axes: ["opsz"],
   subsets: ["latin", "latin-ext"],
-  variable: "--font-jost",
+  variable: "--font-dm-sans",
 });
 
-const cormorant = Cormorant_Garamond({
-  style: ["normal", "italic"],
+// Only Instrument Serif's italic is loaded: font-display is for italic accents.
+const instrumentSerif = Instrument_Serif({
+  style: "italic",
   subsets: ["latin", "latin-ext"],
-  variable: "--font-cormorant",
-  weight: ["400", "500", "600"],
+  variable: "--font-instrument-serif",
+  weight: "400",
 });
 
 const geistMono = Geist_Mono({
@@ -52,7 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <CartStandardActionsScript />
       </head>
       <body
-        className={`${jost.variable} ${cormorant.variable} ${geistMono.variable} flex min-h-dvh flex-col font-sans antialiased`}
+        className={`${dmSans.variable} ${instrumentSerif.variable} ${geistMono.variable} flex min-h-dvh flex-col font-sans antialiased`}
       >
         <a
           href="#main-content"

@@ -8,8 +8,10 @@
   --color-foreground: var(--foreground);
   --color-shop: #5A31F4;
   --color-gold: var(--gold);
-  --font-sans: var(--font-jost);
-  --font-display: var(--font-cormorant);
+  --color-blush: var(--blush);
+  --color-sage: var(--sage);
+  --font-sans: var(--font-dm-sans);
+  --font-display: var(--font-instrument-serif);
   --font-mono: var(--font-geist-mono);
   --text-xxs: 0.625rem;
   /* Headings track tighter as they grow (Geist behavior); attaches to every text-* utility. */
@@ -65,6 +67,8 @@
   --accent: #efe4d2;
   --accent-foreground: #2b2622;
   --gold: #a8823f;
+  --blush: #ecd6cc;
+  --sage: #e6eadf;
   --destructive: #b3261e;
   --destructive-foreground: #fbf8f3;
   --positive: #3f7a4f;
@@ -167,5 +171,92 @@
     animation: none;
     background-image: none;
     -webkit-text-fill-color: currentColor;
+  }
+}
+
+/* The home page's motion, adapted from Marée by LN (MIT License): see THIRD-PARTY-NOTICES.md. */
+@theme {
+  --animate-marquee: marquee 42s linear infinite;
+  --animate-ring: ring 1.8s cubic-bezier(0.1, 0.5, 0.3, 1) both;
+  --animate-rise: rise 1s both;
+  --animate-settle: settle 2s ease-out both;
+  --animate-sundial: sundial 2s ease-out both;
+  --animate-unveil: unveil 0.6s both;
+  --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @keyframes ring {
+    from {
+      opacity: 0.8;
+      scale: 0.3;
+    }
+    to {
+      opacity: 0;
+      scale: 4;
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(1.5rem);
+    }
+  }
+  @keyframes settle {
+    from {
+      transform: scale(1.06);
+    }
+  }
+  @keyframes sundial {
+    from {
+      transform: rotate(-50deg);
+    }
+    to {
+      transform: rotate(45deg);
+    }
+  }
+  @keyframes unveil {
+    from {
+      opacity: 0.65;
+      transform: scale(1.015);
+    }
+  }
+}
+
+/* Hidden only once components/home/motion.tsx marks an element below the fold. */
+@utility reveal {
+  transition:
+    opacity 1s,
+    translate 1.2s var(--ease-soft),
+    filter 1.2s var(--ease-soft),
+    clip-path 1.3s var(--ease-soft);
+  transition-delay: var(--reveal-delay, 0ms);
+
+  &[data-motion="ready"]:not(:focus-within) {
+    opacity: 0;
+    translate: 0 2.25rem;
+  }
+}
+
+@utility reveal-blur {
+  &[data-motion="ready"]:not(:focus-within) {
+    filter: blur(4px);
+  }
+}
+
+@utility reveal-unfold {
+  &[data-motion="ready"]:not(:focus-within) {
+    clip-path: inset(12% 8% 12% 8% round 45% 45% 0 0);
+    translate: none;
+  }
+}
+
+@utility reveal-curtain {
+  &[data-motion="ready"]:not(:focus-within) {
+    clip-path: inset(15% 0 0);
+    translate: none;
   }
 }
