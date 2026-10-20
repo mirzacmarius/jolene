@@ -52,6 +52,10 @@ _Avoid_: Page, side (in code)
 An item shown as it arrives: its pieces stacked in place, with the seal, ribbon or envelope on top.
 _Avoid_: Mockup, composite
 
+**Lifelike preview** (ro: realist; code: lifelike) / **Flat** (ro: plat):
+The two ways the studio shows a design. Lifelike is a photograph of the printed suite on a table: the paper's grain and thickness, foil catching the light, vellum, the seal and the envelope. Flat is the design exactly as it prints, for checking alignment; proofs and print files are always flat.
+_Avoid_: 3D, mockup, render
+
 **Palette** (ro: culori, paletă):
 A design's five colours: ink for text, accent for the names, muted for small print, paper, and art for the illustrations.
 _Avoid_: Theme, colour scheme
