@@ -2,7 +2,7 @@ import type { RibbonMaterial } from "../catalog";
 import { type Hex, mix } from "../color";
 import type { Box } from "../geometry";
 import type { Accessory } from "../schema";
-import { lightX } from "./materials";
+import { followLight } from "./materials";
 
 type RibbonSpec = Extract<Accessory, { kind: "ribbon" }>;
 
@@ -246,10 +246,7 @@ export function RibbonSheen({
           width={length + 160}
           height={w}
           fill={`url(#${id("along")})`}
-          style={{
-            transform: `translateX(calc(var(${lightX}, 0) * 16px))`,
-            transition: "transform 0.5s ease-out",
-          }}
+          {...followLight(16, 0)}
         />
       </g>
     </g>

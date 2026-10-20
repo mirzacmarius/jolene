@@ -17,11 +17,11 @@ import { PieceSurface, paperColor } from "./face";
 import { type GrainKind, grainMm, useGrains } from "./grain";
 import { LayerView } from "./layers";
 import {
+  FOLLOW_LIGHT,
   type FoilInk,
+  followLight,
   foilTones,
   isFoil,
-  lightX,
-  lightY,
   stockThickness,
 } from "./materials";
 import {
@@ -46,10 +46,9 @@ import { LifelikeWaxSeal, SealGlint, sealOutline } from "./wax-seal";
  * still and is drawn once. The second holds only what moves with the light:
  * foil's glint, spot UV's gloss, pearl and vellum's sheen, satin's shine and
  * the glint on the wax, each hidden where something lies over it. The page
- * moves the light on the second alone (moveLight): changing a custom
- * property repaints everything under the element it's set on, and the first
- * SVG, with its shadows and grain, costs too much to repaint as the pointer
- * moves.
+ * moves the light on the second alone (moveLight), which repaints just that
+ * layer: the first SVG, with its shadows and grain, costs too much to repaint
+ * as the pointer moves.
  */
 
 type Seal = Extract<Accessory, { kind: "wax-seal" }>;
@@ -59,16 +58,19 @@ type Ribbon = Extract<Accessory, { kind: "ribbon" }>;
 const LIGHT_LAYER = "data-lifelike-light";
 
 /**
- * Moves the light over every lifelike view inside `container`: from -1 at the
- * left or top to 1 at the right or bottom, 0 0 in the middle. Only the views'
- * light layers change, so nothing else repaints.
+ * Moves the light over every lifelike view inside `container`, at once: from
+ * -1 at the left or top to 1 at the right or bottom, 0 0 in the middle; the
+ * page eases it from frame to frame. Only what moves with the light changes,
+ * each by a transform of its own, so only the views' light layers repaint.
  */
 export function moveLight(container: ParentNode, x: number, y: number) {
-  for (const layer of container.querySelectorAll<SVGElement>(
-    `[${LIGHT_LAYER}]`,
+  for (const element of container.querySelectorAll<SVGElement>(
+    `[${LIGHT_LAYER}] [${FOLLOW_LIGHT}]`,
   )) {
-    layer.style.setProperty(lightX, x.toFixed(3));
-    layer.style.setProperty(lightY, y.toFixed(3));
+    const [across = 0, down = 0] = (element.getAttribute(FOLLOW_LIGHT) ?? "")
+      .split(" ")
+      .map(Number);
+    element.style.transform = `translate(${(x * across).toFixed(4)}px, ${(y * down).toFixed(4)}px)`;
   }
 }
 
@@ -100,14 +102,6 @@ const lifelikeIds = (prefix: string) => ({
   trim: (piece: string) => `${prefix}-trim-${piece}`,
   cover: (name: string) => `${prefix}-cover-${name}`,
 });
-
-/** Moves with the light, `amount` user units at the pointer's furthest. */
-function follow(amount: number): CSSProperties {
-  return {
-    transform: `translate(calc(var(${lightX}, 0) * ${amount}px), calc(var(${lightY}, 0) * ${amount}px))`,
-    transition: "transform 0.45s ease-out",
-  };
-}
 
 /**
  * Foil as polished metal: bands of light and shade across each shape. Each
@@ -193,7 +187,7 @@ function FoilGlint({ id, ink }: { id: string; ink: FoilInk }) {
           width="3"
           height="3"
           fill={`url(#${id}-band)`}
-          style={follow(-0.6)}
+          {...followLight(-0.6)}
         />
       </pattern>
     </>
@@ -225,7 +219,7 @@ function GlossPaint({ id }: { id: string }) {
           width="3"
           height="3"
           fill={`url(#${id}-shine)`}
-          style={follow(-0.6)}
+          {...followLight(-0.6)}
         />
       </pattern>
     </>
@@ -261,7 +255,7 @@ function Sheen({ id, stops }: { id: string; stops: [number, Hex, number][] }) {
           width="3"
           height="3"
           fill={`url(#${id}-bands)`}
-          style={follow(-0.35)}
+          {...followLight(-0.35)}
         />
       </pattern>
     </>

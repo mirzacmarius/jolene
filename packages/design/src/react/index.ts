@@ -17,12 +17,7 @@ export {
   lifelikeFrame,
   moveLight,
 } from "./lifelike";
-export {
-  lightX,
-  lightY,
-  stockThickness,
-  tabletopColor,
-} from "./materials";
+export { stockThickness, tabletopColor } from "./materials";
 export { createCanvasMeasure, useCanvasMeasure } from "./measure";
 export {
   type AssetResolver,

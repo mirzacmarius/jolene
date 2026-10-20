@@ -9,12 +9,18 @@ import { type Hex, hexToRgb, mix, type Palette, rgbToHex } from "../color";
  */
 
 /**
- * The CSS custom properties a preview sets as the pointer moves, from -1 at
- * the left or top to 1 at the right or bottom: foil, gloss and pearl catch
- * the light where the pointer is. Unset, the light stays in the middle.
+ * Marks what moves with the light in a lifelike view: the glint on foil, the
+ * gloss of spot UV, the sheen of pearl, vellum, satin and wax. It holds how
+ * far each moves when the light is furthest right and down, across then
+ * down, in the units it's drawn in; the page moves them all (moveLight). At
+ * rest the light is in the middle, and nothing has moved.
  */
-export const lightX = "--jolene-light-x";
-export const lightY = "--jolene-light-y";
+export const FOLLOW_LIGHT = "data-lifelike-follow";
+
+/** Marks an element to move with the light, by `x` across and `y` down. */
+export function followLight(x: number, y: number = x) {
+  return { [FOLLOW_LIGHT]: `${x} ${y}` } as { "data-lifelike-follow": string };
+}
 
 /**
  * Cubic centimetres per gram: cotton is spongy and stands thick for its

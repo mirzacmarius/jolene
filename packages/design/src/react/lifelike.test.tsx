@@ -11,7 +11,7 @@ import {
   LifelikeFaceView,
   lifelikeFrame,
 } from "./lifelike";
-import { lightX } from "./materials";
+import { FOLLOW_LIGHT } from "./materials";
 import { sealOutline, sealReach } from "./wax-seal";
 
 const invitation = parseDocument(eucaliptInvitation);
@@ -42,7 +42,7 @@ describe("FaceView", () => {
       <FaceView document={invitation} piece="card" context={context} />,
     );
     expect(markup).toContain("feTurbulence");
-    expect(markup).not.toContain(lightX);
+    expect(markup).not.toContain(FOLLOW_LIGHT);
   });
 });
 
@@ -53,7 +53,7 @@ describe("lifelike views", () => {
     );
     expect(markup).toContain("Ana");
     // Foil catches the light where the pointer is.
-    expect(markup).toContain(`var(${lightX}`);
+    expect(markup).toContain(FOLLOW_LIGHT);
     // Tiles are drawn in the browser, so the server's markup has none.
     expect(markup).not.toContain("data:image/png");
   });
@@ -65,9 +65,9 @@ describe("lifelike views", () => {
       <LifelikeAssemblyView document={invitation} context={context} />,
     );
     const [still = "", light = ""] = markup.split("<svg").slice(1);
-    expect(still).not.toContain(lightX);
+    expect(still).not.toContain(FOLLOW_LIGHT);
     expect(light).toContain("data-lifelike-light");
-    expect(light).toContain(lightX);
+    expect(light).toContain(FOLLOW_LIGHT);
     // The card alone, printed in ink only, has nothing to catch the light.
     const card = {
       ...invitation,

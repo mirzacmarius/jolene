@@ -2,7 +2,7 @@ import { waxColors } from "../catalog";
 import { type Hex, luminance, mix } from "../color";
 import type { Accessory } from "../schema";
 import { seededRandom, seedOf } from "./grain";
-import { lightX, lightY } from "./materials";
+import { followLight } from "./materials";
 import { fontStack, type ResolvedAsset } from "./shared";
 
 type WaxSealSpec = Extract<Accessory, { kind: "wax-seal" }>;
@@ -221,10 +221,6 @@ export function SealGlint({
   const r = seal.diameter / 2;
   const pale = luminance(waxColors[seal.color].color as Hex) > 0.45;
   const id = `${prefix}-seal-${seal.id}-glint`;
-  const follow = (amount: number) => ({
-    transform: `translate(calc(var(${lightX}, 0) * ${amount}px), calc(var(${lightY}, 0) * ${amount}px))`,
-    transition: "transform 0.4s ease-out",
-  });
   return (
     <g transform={`translate(${seal.x} ${seal.y})`}>
       <radialGradient id={id}>
@@ -235,23 +231,24 @@ export function SealGlint({
         <path d={sealOutline(seal.id, r)} />
       </clipPath>
       <g clipPath={`url(#${id}-wax)`}>
-        <ellipse
-          cx={-r * 0.5}
-          cy={-r * 0.52}
-          rx={r * 0.3}
-          ry={r * 0.11}
-          transform={`rotate(-42 ${-r * 0.5} ${-r * 0.52})`}
-          fill={`url(#${id})`}
-          opacity={pale ? 0.45 : 0.6}
-          style={follow(r * 0.08)}
-        />
+        <g {...followLight(r * 0.08)}>
+          <ellipse
+            cx={-r * 0.5}
+            cy={-r * 0.52}
+            rx={r * 0.3}
+            ry={r * 0.11}
+            transform={`rotate(-42 ${-r * 0.5} ${-r * 0.52})`}
+            fill={`url(#${id})`}
+            opacity={pale ? 0.45 : 0.6}
+          />
+        </g>
         <circle
           cx={r * 0.3}
           cy={r * 0.62}
           r={r * 0.05}
           fill={`url(#${id})`}
           opacity={0.35}
-          style={follow(r * 0.05)}
+          {...followLight(r * 0.05)}
         />
       </g>
     </g>
