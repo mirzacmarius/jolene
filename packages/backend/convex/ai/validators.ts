@@ -7,11 +7,14 @@ export const aiRoleValidator = v.union(
 );
 
 /**
- * Where a reply stands. "pending" waits for its first request to start,
- * "streaming" is being written or is changing the design, and "rendering"
- * waits for the open studio to show it the design (look_at_design).
+ * Where a reply stands. "waiting" waits for another reply first (a later
+ * item of a composition waits for the first item's), "pending" waits for
+ * its first request to start, "streaming" is being written or is changing
+ * the design, and "rendering" waits for the open studio to show it the
+ * design (look_at_design).
  */
 export const aiStatusValidator = v.union(
+  v.literal("waiting"),
   v.literal("pending"),
   v.literal("streaming"),
   v.literal("rendering"),

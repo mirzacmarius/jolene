@@ -22,6 +22,7 @@ import {
   type MutationCtx,
 } from "../_generated/server";
 import { applyToDesign } from "../designs/apply";
+import { afterReply } from "../simple/compose";
 import {
   aiConfig,
   MAX_ROUNDS,
@@ -31,6 +32,7 @@ import {
 } from "./config";
 import { compactDocument, detailsKey } from "./context";
 import { modelClient } from "./model";
+import type { StoredImage } from "./reply";
 import { layoutReport } from "./report";
 import {
   addUsage,
@@ -354,12 +356,6 @@ class ReplyWriter {
   }
 }
 
-/** A stored image block: the file stands in for its bytes until sent. */
-interface StoredImage {
-  type: "image";
-  source: { type: "stored"; storageId: Id<"_storage"> };
-}
-
 /** A tool result as kept in a thread: its images may be stored files. */
 export type StoredToolResult = Omit<ToolResult, "content"> & {
   content?:
@@ -369,10 +365,6 @@ export type StoredToolResult = Omit<ToolResult, "content"> & {
         | StoredImage
       )[];
 };
-
-export function storedImage(storageId: Id<"_storage">): StoredImage {
-  return { type: "image", source: { type: "stored", storageId } };
-}
 
 /** The image type a file's first bytes show: PNG and JPEG are sent. */
 export function imageType(
@@ -478,6 +470,7 @@ export const fail = internalMutation({
       finishedAt: now,
       updatedAt: now,
     });
+    await afterReply(ctx, message);
     return null;
   },
 });
@@ -496,6 +489,7 @@ export const watchdog = internalMutation({
       finishedAt: now,
       updatedAt: now,
     });
+    await afterReply(ctx, message);
     return null;
   },
 });
@@ -679,6 +673,7 @@ export const finish = internalMutation({
         endsThread: true,
         finishedAt: now,
       });
+      await afterReply(ctx, message);
       return null;
     }
 
@@ -742,6 +737,7 @@ export const finish = internalMutation({
         status: "done",
         finishedAt: now,
       });
+      await afterReply(ctx, message);
       return null;
     }
 
