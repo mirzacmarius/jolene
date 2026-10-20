@@ -359,7 +359,7 @@ const tableNumber: DesignDocumentInput = {
             style: "names",
             overrides: { size: 48 },
             text: "Masa",
-            frame: { x: 45, y: 1, width: 65, height: 19 },
+            frame: { x: 45, y: 2.5, width: 65, height: 19 },
           },
           {
             id: "number",

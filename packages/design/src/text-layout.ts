@@ -71,6 +71,26 @@ export interface LayoutOptions {
   measure?: Measure;
 }
 
+/**
+ * The middle of each line, in millimetres from the top of the frame: lines
+ * sit a line height apart, the block at the frame's top, middle or bottom.
+ */
+export function lineMiddles(
+  layout: TextLayout,
+  valign: "top" | "middle" | "bottom",
+  frameHeight: number,
+): number[] {
+  const top =
+    valign === "top"
+      ? 0
+      : valign === "bottom"
+        ? frameHeight - layout.height
+        : (frameHeight - layout.height) / 2;
+  return layout.lines.map(
+    (_line, index) => top + (index + 0.5) * layout.lineHeight,
+  );
+}
+
 const EPSILON = 0.01;
 
 /**

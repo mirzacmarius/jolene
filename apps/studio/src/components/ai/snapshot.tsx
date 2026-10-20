@@ -8,7 +8,9 @@ import {
   faceNames,
   fontFamilies,
   googleFontsHref,
+  matchWeight,
   resolveText,
+  symbolFonts,
 } from "@jolene/design";
 import {
   AssemblyView,
@@ -129,41 +131,36 @@ function dataUrl(url: string): Promise<string> {
   return cached;
 }
 
-/** The weight a family really has nearest the one asked for. */
-function nearestWeight(family: FontFamilyName, weight: number) {
-  return fontFamilies[family].weights.reduce((best, candidate) =>
-    Math.abs(candidate - weight) < Math.abs(best - weight) ? candidate : best,
-  );
-}
-
 const fontCss = new Map<string, Promise<string>>();
 
 /**
- * The @font-face rules of the typefaces, from Google Fonts, with each file
- * inside as a data: URL: Latin and Latin Extended, which carry Romanian.
+ * The @font-face rules of the typefaces, from Google Fonts, with each face's
+ * file inside as a data: URL: one file a face, holding every letter the
+ * studio asks for (googleFontsHref).
  */
 function embeddedFonts(faces: Typeface[]): Promise<string> {
-  const wanted = faces.map((face) => ({
-    family: face.family,
-    weight: nearestWeight(face.family, face.weight),
-    style:
-      face.italic && fontFamilies[face.family].italic ? "italic" : "normal",
-  }));
+  const wanted: { family: string; weight: number; style: string }[] = [
+    ...faces.map((face) => ({
+      family: face.family,
+      weight: matchWeight(face.family, face.weight),
+      style:
+        face.italic && fontFamilies[face.family].italic ? "italic" : "normal",
+    })),
+    // The symbols the typefaces lack, as the page draws them (fontStack).
+    ...symbolFonts.map((family) => ({ family, weight: 400, style: "normal" })),
+  ];
   const key = JSON.stringify(
     wanted.map((face) => `${face.family}|${face.weight}|${face.style}`).sort(),
   );
   let cached = fontCss.get(key);
   if (!cached) {
-    const families = [...new Set(wanted.map((face) => face.family))];
+    const families = [...new Set(faces.map((face) => face.family))];
     cached = fetch(googleFontsHref(families))
       .then((response) => response.text())
       .then(async (css) => {
         const rules: string[] = [];
-        for (const match of css.matchAll(
-          /\/\*\s*([\w-]+)\s*\*\/\s*@font-face\s*\{([^}]*)\}/g,
-        )) {
-          const [, subset, body = ""] = match;
-          if (subset !== "latin" && subset !== "latin-ext") continue;
+        for (const match of css.matchAll(/@font-face\s*\{([^}]*)\}/g)) {
+          const [, body = ""] = match;
           const family = /font-family:\s*'([^']+)'/.exec(body)?.[1];
           const style = /font-style:\s*(\w+)/.exec(body)?.[1];
           const weights = /font-weight:\s*(\d+)(?:\s+(\d+))?/.exec(body);

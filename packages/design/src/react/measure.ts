@@ -50,6 +50,9 @@ export function createCanvasMeasure(): Measure {
         return estimateWidth(text, font, sizeMm);
       }
       context.font = css;
+      // The renderer draws text kerned (react/layers.tsx), as the print file
+      // does; a canvas left on "auto" measures some pairs unkerned.
+      context.fontKerning = "normal";
       width = context.measureText(text).width;
       cache.set(key, width);
     }
