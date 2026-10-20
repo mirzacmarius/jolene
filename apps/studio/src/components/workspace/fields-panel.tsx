@@ -72,7 +72,8 @@ export function FieldsPanel({
   );
 }
 
-function Field({
+/** One detail's input, with its label and an example in the design's language. */
+export function Field({
   id,
   definition,
   language,

@@ -23,6 +23,8 @@ import { useMemo, useState } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { AiDesigner } from "../ai/ai-designer";
 import { DesignPreview, type PreviewView } from "../design/design-preview";
+import { GuidedStart } from "../simple/guided-start";
+import { SuiteStrip } from "../simple/suite-strip";
 import { ExpertEditor } from "./expert/expert-editor";
 import { ModeSwitch } from "./expert/mode-switch";
 import { useHistory } from "./expert/use-history";
@@ -203,6 +205,7 @@ function Editor({ data }: { data: DesignData }) {
                 className="size-full drop-shadow-[0_18px_30px_rgba(43,38,32,0.12)]"
               />
             </div>
+            <SuiteStrip designId={designId} values={values} />
           </section>
 
           <aside className="flex w-full shrink-0 flex-col border-border/70 bg-card lg:order-1 lg:w-[380px] lg:border-r">
@@ -220,7 +223,9 @@ function Editor({ data }: { data: DesignData }) {
             </div>
             <div className={cn("flex-1 overflow-y-auto p-5")}>
               {tab === "details" ? (
-                details
+                <GuidedStart data={data} values={values} onChange={update}>
+                  {details}
+                </GuidedStart>
               ) : (
                 <StylePanel document={document} apply={history.apply} />
               )}

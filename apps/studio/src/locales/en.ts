@@ -121,6 +121,147 @@ export default {
     notSent: "Your message wasn't sent. Please try again.",
     stillWorking: "The AI designer is still working on your last message.",
     undoFailed: "That change couldn't be undone.",
+    waiting: "Waiting its turn…",
+  },
+  simple: {
+    offer: {
+      title: "Shall we start together?",
+      lead: "Answer a few questions about your day, and the AI designer writes the wording of your whole collection and lays it out.",
+      leadSoon:
+        "Answer a few questions about your day, and every item of your collection starts with your details. The AI designer, who will write the wording for you, isn't available yet.",
+      start: "Let's start",
+      later: "I'll fill in the details myself",
+    },
+    again: "Answer a few questions",
+    progress: "Step {current} of {total}",
+    back: "Back",
+    skip: "Skip",
+    next: "Continue",
+    close: "Close the questions",
+    couple: {
+      title: "Who's getting married?",
+      hint: "Your names, as the invitation should read them.",
+    },
+    child: {
+      title: "Who's being christened?",
+      hint: "The name the invitation is for.",
+    },
+    family: {
+      title: "Who stands beside you?",
+      hint: "Parents and godparents are named on the invitation, as tradition asks.",
+    },
+    ceremony: {
+      title: "The religious ceremony",
+      christening: "The christening",
+      hint: "The day, the time and the church.",
+    },
+    party: {
+      title: "The party",
+      hint: "When it starts, and where.",
+    },
+    civil: {
+      title: "The civil ceremony",
+      hint: "Some couples put it on the invitation too.",
+      show: "Show it on the invitation",
+    },
+    replies: {
+      title: "Replies",
+      hint: "By when your guests should reply, and at which number.",
+    },
+    tone: {
+      title: "How should it sound?",
+      hint: "The AI designer writes every item in the tone you choose.",
+      classic: "Classic",
+      romantic: "Romantic",
+      modern: "Modern and short",
+      tender: "Tender",
+      playful: "Playful",
+      line: "A line of your own",
+      lineHint:
+        "A verse, a quote or a few words about you, to open the invitation. Optional.",
+    },
+    samples: {
+      weddingClassic:
+        "Together with their parents, {partner1} and {partner2} invite you to celebrate their marriage.",
+      weddingRomantic:
+        "Two hearts, one story: {partner1} and {partner2} would love you to celebrate it with them.",
+      weddingModern: "We're getting married! {partner1} & {partner2}",
+      christeningClassic:
+        "With joy we invite you to the holy christening of our child, {child}.",
+      christeningTender:
+        "A small miracle has come into our lives: {child} is being christened.",
+      christeningPlayful:
+        "Come to my christening! I promise not to cry too loudly. {child}",
+    },
+    language: {
+      title: "Which language should your stationery speak?",
+      hint: "The AI designer writes every item in it. The studio stays in yours.",
+    },
+    items: {
+      title: "What should your collection include?",
+      hint: "The item you're on is already in. Each one starts with your details.",
+      here: "You're here",
+      left: "Today the AI designer can write the first {count} of them, the invitation first. The others keep Jolene's wording until you ask it again.",
+      none: "The AI designer has written all it can today, so your items keep Jolene's wording for now. Ask it again tomorrow.",
+    },
+    write: "Let the AI designer write",
+    create: "Create my collection",
+    creating: "Starting your collection…",
+    failed: "Your collection couldn't be started. Please try again.",
+    started: {
+      title: "The AI designer is writing your collection",
+      lead: "The invitation first, then the other items in the same voice. Follow each one under the design, and carry on meanwhile.",
+      some: "Today it writes {count} of them; the others keep Jolene's wording until you ask it again.",
+      soonTitle: "Your collection is ready",
+      soonLead:
+        "Each item has Jolene's wording and your details. The AI designer, who will write the wording for you, isn't available yet.",
+      plainTitle: "Your collection is ready",
+      plainLead: "Each item has Jolene's wording and your details.",
+      done: "Done",
+    },
+    request: {
+      lead: "Write {wording}: {tone}, in {language}.",
+      leadPlain: "Write {wording}, in {language}.",
+      follow:
+        "Write {wording} in the same voice as the rest of the collection, in {language}.",
+      line: "Open it with our own line: “{line}”.",
+      tones: {
+        weddingClassic: "a classic tone, with our parents' blessing",
+        weddingRomantic: "a romantic tone",
+        weddingModern: "modern and short",
+        christeningClassic: "a classic tone, naming the holy christening",
+        christeningTender: "a tender tone",
+        christeningPlayful: "a playful tone, in our child's voice",
+      },
+      languages: {
+        ro: "Romanian",
+        en: "English",
+      },
+      wording: {
+        invitation: "the invitation's wording",
+        saveTheDate: "the save the date's wording",
+        rsvp: "the RSVP card's wording",
+        menu: "the menu's wording",
+        placeCard: "the place cards' wording",
+        tableNumber: "the table numbers' wording",
+        welcomeSign: "the welcome sign's wording",
+        seatingChart: "the seating chart's wording",
+        moneyEnvelope: "the money envelope's wording",
+        favorTag: "the favour tags' wording",
+        thankYou: "the thank-you card's wording",
+        bridalParty: "the bridesmaid and groomsman card's wording",
+      },
+    },
+    strip: {
+      label: "Your collection",
+      waiting: "Waiting",
+      writing: "Writing…",
+      written: "Written",
+      unchanged: "Unchanged",
+      stopped: "Stopped",
+      failed: "Didn't work",
+      retry: "Try again",
+    },
   },
   myDesigns: {
     title: "My designs",

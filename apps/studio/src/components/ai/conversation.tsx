@@ -6,6 +6,7 @@ import { Button } from "@jolene/ui/button";
 import { cn } from "@jolene/ui/utils";
 import type { FunctionReturnType } from "convex/server";
 import {
+  Hourglass,
   LoaderCircle,
   PenLine,
   RotateCcw,
@@ -21,6 +22,7 @@ type Change = Message["changes"][number];
 
 /** A reply still being written, or waiting to be. */
 export const isWorking = (message: Message | undefined) =>
+  message?.status === "waiting" ||
   message?.status === "pending" ||
   message?.status === "streaming" ||
   message?.status === "rendering";
@@ -144,13 +146,15 @@ function Status({
   icon,
   children,
 }: {
-  icon: "spinner" | "sparkles";
+  icon: "spinner" | "sparkles" | "waiting";
   children: string;
 }) {
   return (
     <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
       {icon === "spinner" ? (
         <LoaderCircle className="size-3.5 animate-spin" aria-hidden />
+      ) : icon === "waiting" ? (
+        <Hourglass className="size-3.5" aria-hidden />
       ) : (
         <Sparkles className="size-3.5 animate-pulse text-gold" aria-hidden />
       )}
@@ -215,7 +219,9 @@ function Reply({
           ))}
         </ul>
       ) : null}
-      {message.status === "pending" ? (
+      {message.status === "waiting" ? (
+        <Status icon="waiting">{t("ai.waiting")}</Status>
+      ) : message.status === "pending" ? (
         <Status icon="sparkles">{t("ai.thinking")}</Status>
       ) : message.status === "streaming" ? (
         <Status icon="sparkles">{t("ai.working")}</Status>

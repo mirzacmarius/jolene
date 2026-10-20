@@ -24,6 +24,7 @@ import { useCurrentLocale, useI18n } from "@/locales/client";
 import type { AssetLink, PreviewView } from "../design/design-preview";
 import { Composer } from "./composer";
 import { Conversation, isWorking } from "./conversation";
+import { useAnswerRendering, useUploadImage } from "./rendering";
 import { takeSnapshot, viewName } from "./snapshot";
 
 /**
@@ -38,7 +39,7 @@ const FOLDED_HEIGHT = "3.5rem";
 const FEW_LEFT = 3;
 
 /** The start of today in UTC, when the daily limits start again. */
-function startOfDay() {
+export function startOfDay() {
   const now = new Date();
   return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 }
@@ -88,12 +89,12 @@ export function AiDesigner({
     api.ai.messages,
     open && availability?.configured ? { designId } : "skip",
   );
-  const generateUploadUrl = useMutation(api.ai.generateUploadUrl);
   const send = useMutation(api.ai.send);
   const stop = useMutation(api.ai.stop);
   const retry = useMutation(api.ai.retry);
   const undo = useMutation(api.ai.undo);
-  const answerRendering = useMutation(api.ai.answerRendering);
+  const upload = useUploadImage();
+  const answerRendering = useAnswerRendering();
 
   useEffect(() => setMounted(true), []);
 
@@ -136,23 +137,6 @@ export function AiDesigner({
     return await takeSnapshot({ design, fields, assets, view });
   }, []);
 
-  const upload = useCallback(
-    async (image: Blob) => {
-      const url = await generateUploadUrl();
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": image.type },
-        body: image,
-      });
-      if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
-      const { storageId } = (await response.json()) as {
-        storageId: Id<"_storage">;
-      };
-      return storageId;
-    },
-    [generateUploadUrl],
-  );
-
   const latest = messages?.at(-1);
   const working = isWorking(latest) || sending !== undefined;
   const limitReached =
@@ -192,8 +176,8 @@ export function AiDesigner({
   };
 
   // A reply asked to see the design: while the sheet is open, the studio
-  // draws it once its revision has arrived here, and measures its words.
-  const answered = useRef(new Set<string>());
+  // draws it as it shows it once its revision has arrived here, and measures
+  // its words. Simple mode's view of the collection may answer it instead.
   const asked =
     open &&
     latest?.status === "rendering" &&
@@ -204,29 +188,12 @@ export function AiDesigner({
   const askedId = asked?.toolUseId;
   const askedMessage = asked?.messageId;
   useEffect(() => {
-    if (!askedId || !askedMessage || answered.current.has(askedId)) return;
-    answered.current.add(askedId);
-    void (async () => {
-      let snapshotId: Id<"_storage"> | undefined;
-      let layers: Awaited<ReturnType<typeof snapshot>>["layers"] | undefined;
-      const shown = current.current;
-      try {
-        const shot = await snapshot();
-        layers = shot.layers;
-        snapshotId = await upload(shot.image);
-      } catch (error) {
-        console.warn("The AI designer's rendering failed:", error);
-      }
-      await answerRendering({
-        messageId: askedMessage,
-        toolUseId: askedId,
-        revision: shown.revision,
-        view: viewName(shown.view),
-        snapshot: snapshotId,
-        layers,
-      }).catch(() => {});
-    })();
-  }, [askedId, askedMessage, snapshot, upload, answerRendering]);
+    if (askedId && askedMessage)
+      void answerRendering(
+        { messageId: askedMessage, toolUseId: askedId },
+        current.current,
+      );
+  }, [askedId, askedMessage, answerRendering]);
 
   const onUndo = useCallback(
     async (messageId: Id<"aiMessages">, change: number) => {

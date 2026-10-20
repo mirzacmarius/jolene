@@ -123,6 +123,147 @@ export default {
     notSent: "Mesajul nu a fost trimis. Încercați din nou.",
     stillWorking: "Designerul AI lucrează încă la mesajul anterior.",
     undoFailed: "Schimbarea nu a putut fi anulată.",
+    waiting: "Își așteaptă rândul…",
+  },
+  simple: {
+    offer: {
+      title: "Începem împreună?",
+      lead: "Răspundeți la câteva întrebări despre ziua voastră, iar designerul AI scrie textul întregii colecții și îl așază în pagină.",
+      leadSoon:
+        "Răspundeți la câteva întrebări despre ziua voastră, iar fiecare piesă a colecției pornește cu detaliile voastre. Designerul AI, care vă va scrie textul, nu este disponibil încă.",
+      start: "Să începem",
+      later: "Completez eu detaliile",
+    },
+    again: "Răspundeți la câteva întrebări",
+    progress: "Pasul {current} din {total}",
+    back: "Înapoi",
+    skip: "Săriți peste",
+    next: "Continuați",
+    close: "Închideți întrebările",
+    couple: {
+      title: "Cine se căsătorește?",
+      hint: "Numele voastre, așa cum să apară pe invitație.",
+    },
+    child: {
+      title: "Cine primește botezul?",
+      hint: "Numele pentru care este invitația.",
+    },
+    family: {
+      title: "Cine vă stă alături?",
+      hint: "Părinții și nașii apar pe invitație, cum cere tradiția.",
+    },
+    ceremony: {
+      title: "Cununia religioasă",
+      christening: "Slujba de botez",
+      hint: "Ziua, ora și biserica.",
+    },
+    party: {
+      title: "Petrecerea",
+      hint: "Când începe și unde.",
+    },
+    civil: {
+      title: "Cununia civilă",
+      hint: "Unele cupluri o trec și pe invitație.",
+      show: "Să apară pe invitație",
+    },
+    replies: {
+      title: "Confirmările",
+      hint: "Până când să confirme invitații și la ce număr.",
+    },
+    tone: {
+      title: "Cum să sune?",
+      hint: "Designerul AI scrie fiecare piesă în tonul ales.",
+      classic: "Clasic",
+      romantic: "Romantic",
+      modern: "Modern și scurt",
+      tender: "Tandru",
+      playful: "Jucăuș",
+      line: "Un rând al vostru",
+      lineHint:
+        "Un vers, un citat sau câteva cuvinte despre voi, care să deschidă invitația. Opțional.",
+    },
+    samples: {
+      weddingClassic:
+        "Cu binecuvântarea părinților, {partner1} și {partner2} vă invită să le fiți alături la cununia lor.",
+      weddingRomantic:
+        "Două suflete, o singură poveste: {partner1} și {partner2} vă invită să o sărbătoriți împreună.",
+      weddingModern: "Ne căsătorim! {partner1} & {partner2}",
+      christeningClassic:
+        "Cu bucurie vă invităm la Taina Sfântului Botez a copilului nostru, {child}.",
+      christeningTender:
+        "Un mic miracol a venit în viața noastră: {child} primește Sfântul Botez.",
+      christeningPlayful:
+        "Vă aștept la botezul meu! Promit să nu plâng prea tare. {child}",
+    },
+    language: {
+      title: "În ce limbă să fie papetăria voastră?",
+      hint: "Designerul AI scrie fiecare piesă în această limbă. Studioul rămâne în limba voastră.",
+    },
+    items: {
+      title: "Ce să cuprindă colecția voastră?",
+      hint: "Piesa la care lucrați e deja inclusă. Fiecare pornește cu detaliile voastre.",
+      here: "Sunteți aici",
+      left: "Azi, designerul AI le poate scrie doar pe primele {count}, începând cu invitația. Celelalte păstrează textul Jolene până îi cereți din nou.",
+      none: "Designerul AI a scris tot ce putea azi, așa că piesele păstrează deocamdată textul Jolene. Cereți-i din nou mâine.",
+    },
+    write: "Lăsați designerul AI să scrie",
+    create: "Creați colecția",
+    creating: "Se pregătește colecția…",
+    failed: "Colecția nu a putut fi pornită. Încercați din nou.",
+    started: {
+      title: "Designerul AI scrie colecția voastră",
+      lead: "Întâi invitația, apoi celelalte piese, în același ton. Le urmăriți sub design și puteți continua între timp.",
+      some: "Azi scrie primele {count}; celelalte păstrează textul Jolene până îi cereți din nou.",
+      soonTitle: "Colecția voastră e gata",
+      soonLead:
+        "Fiecare piesă are textul Jolene și detaliile voastre. Designerul AI, care vă va scrie textul, nu este disponibil încă.",
+      plainTitle: "Colecția voastră e gata",
+      plainLead: "Fiecare piesă are textul Jolene și detaliile voastre.",
+      done: "Gata",
+    },
+    request: {
+      lead: "Scrieți {wording}: {tone}, în {language}.",
+      leadPlain: "Scrieți {wording}, în {language}.",
+      follow:
+        "Scrieți {wording} în același ton cu restul colecției, în {language}.",
+      line: "Începeți cu rândul nostru: „{line}”.",
+      tones: {
+        weddingClassic: "ton clasic, cu binecuvântarea părinților",
+        weddingRomantic: "ton romantic",
+        weddingModern: "modern și scurt",
+        christeningClassic: "ton clasic, cu Taina Sfântului Botez",
+        christeningTender: "ton tandru",
+        christeningPlayful: "ton jucăuș, din partea copilului",
+      },
+      languages: {
+        ro: "română",
+        en: "engleză",
+      },
+      wording: {
+        invitation: "textul invitației",
+        saveTheDate: "textul pentru save the date",
+        rsvp: "textul cardului de confirmare",
+        menu: "textul meniului",
+        placeCard: "textul place cardurilor",
+        tableNumber: "textul numerelor de masă",
+        welcomeSign: "textul tabloului de întâmpinare",
+        seatingChart: "textul tabloului de așezare",
+        moneyEnvelope: "textul plicului de bani",
+        favorTag: "textul etichetelor pentru mărturii",
+        thankYou: "textul cardului de mulțumire",
+        bridalParty: "textul invitației pentru domnișoara de onoare și cavaler",
+      },
+    },
+    strip: {
+      label: "Colecția voastră",
+      waiting: "Așteaptă",
+      writing: "Se scrie…",
+      written: "Scris",
+      unchanged: "Neschimbat",
+      stopped: "Oprit",
+      failed: "Nu a mers",
+      retry: "Încercați din nou",
+    },
   },
   myDesigns: {
     title: "Designurile mele",
