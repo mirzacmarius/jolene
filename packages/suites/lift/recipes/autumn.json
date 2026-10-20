@@ -1,0 +1,173 @@
+{
+  "suite": "autumn",
+  "cards": [
+    {
+      "id": "invitation",
+      "image": "images/invitatie-nunta-autumn/304882063_446297454183765_7404799095646341952_n.jpeg",
+      "quad": [[52, 296], [1053, 138], [1297.7, 1512.5], [250.8, 1715.5]],
+      "size": [133, 184],
+      "ppmm": 7.5,
+      "paperWindow": 40,
+      "erase": [
+        {
+          "rect": [18, 54, 85, 21.5],
+          "select": "all"
+        },
+        {
+          "rect": [103, 56, 11, 19],
+          "select": "all"
+        },
+        {
+          "rect": [40, 75.5, 53, 6],
+          "select": "all"
+        },
+        {
+          "rect": [15, 82.5, 103, 7],
+          "select": "all"
+        },
+        {
+          "rect": [14, 89.5, 102, 11],
+          "select": "all"
+        },
+        {
+          "rect": [33, 100.5, 67, 10],
+          "select": "all"
+        },
+        {
+          "rect": [16, 111, 98, 6.8],
+          "select": "all"
+        },
+        {
+          "rect": [114, 111, 4, 5.8],
+          "select": "all"
+        },
+        {
+          "rect": [42, 116.5, 50, 5],
+          "select": "all"
+        },
+        {
+          "rect": [24, 120.8, 87, 5.6],
+          "select": "all"
+        },
+        {
+          "rect": [43, 129, 52, 14],
+          "select": "all"
+        },
+        {
+          "rect": [42, 145, 49, 15],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "autumn-top",
+          "name": "Flori de toamnă, sus",
+          "rect": [0, 0, 90, 56]
+        },
+        {
+          "key": "autumn-heart",
+          "name": "Inimă de lemn",
+          "rect": [90, 0, 43, 58]
+        },
+        {
+          "key": "autumn-lantern-left",
+          "name": "Felinar, stânga jos",
+          "rect": [0, 108, 50, 76]
+        },
+        {
+          "key": "autumn-lantern-right",
+          "name": "Felinar și floarea-soarelui, dreapta jos",
+          "rect": [85, 100, 48, 84]
+        }
+      ]
+    },
+    {
+      "id": "rsvp",
+      "image": "images/invitatie-nunta-autumn/autumn2.jpg",
+      "quad": [[88.5, 165.8], [948.8, 165.8], [955.5, 654.5], [81.5, 655.2]],
+      "size": [140, 80],
+      "ppmm": 6,
+      "paperSample": [55, 72, 30, 6],
+      "erase": [
+        {
+          "rect": [47, 20, 64, 30],
+          "select": "dark",
+          "below": 0.55,
+          "grow": 2
+        },
+        {
+          "rect": [47, 52, 64, 18],
+          "select": "dark",
+          "below": 0.55,
+          "grow": 2
+        }
+      ],
+      "layers": [
+        {
+          "key": "autumn-jar",
+          "name": "Borcan cu flori",
+          "rect": [0, 0, 55, 80]
+        },
+        {
+          "key": "autumn-sunflower-daisy",
+          "name": "Floarea-soarelui și margareta",
+          "rect": [90, 0, 50, 80]
+        }
+      ]
+    },
+    {
+      "id": "table-number",
+      "image": "images/numar-de-masa-autumn/numar_de_masa_rustic.jpg",
+      "quad": [[299.5, 186.5], [866, 186.5], [866, 978], [299.5, 978]],
+      "size": [133, 184],
+      "ppmm": 4.25,
+      "paperSample": [3, 100, 10, 30],
+      "erase": [
+        {
+          "rect": [42, 19.5, 33, 4],
+          "select": "dark",
+          "below": 0.65,
+          "fill": "inpaint"
+        },
+        {
+          "rect": [75, 19.5, 43, 4],
+          "select": "dark",
+          "below": 0.65
+        },
+        {
+          "rect": [114, 19.5, 4, 100],
+          "select": "all"
+        },
+        {
+          "rect": [114, 119.5, 4, 13],
+          "select": "dark",
+          "below": 0.65
+        },
+        {
+          "rect": [16, 53.5, 4, 88],
+          "select": "all"
+        },
+        {
+          "rect": [16, 138, 36, 4],
+          "select": "all"
+        },
+        {
+          "rect": [28, 54, 78, 50],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "autumn-sunflowers",
+          "name": "Floarea-soarelui, colț",
+          "rect": [0, 0, 80, 60]
+        },
+        {
+          "key": "autumn-crate",
+          "name": "Lădiță cu borcane",
+          "rect": [25, 112, 108, 72]
+        }
+      ]
+    }
+  ]
+}
