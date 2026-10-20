@@ -17,6 +17,7 @@ designs and an AI co-designer, then order printed.
 | `packages/i18n` | The languages Jolene speaks and how a visitor's is chosen |
 | `packages/ui` | Shared UI components (shadcn/Tailwind) |
 | `tooling/typescript` | Shared TypeScript config |
+| `brand` | Jolene's logo, and the script that makes every icon and share image from it |
 
 ## Getting started
 

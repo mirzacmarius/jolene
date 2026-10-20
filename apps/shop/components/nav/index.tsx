@@ -1,4 +1,5 @@
 import { PredictiveSearchProvider } from "@shopify/hydrogen/react";
+import Image from "next/image";
 import { Suspense } from "react";
 
 import { Container } from "@/components/ui/container";
@@ -8,6 +9,7 @@ import type { MenuItem } from "@/lib/menu/types";
 
 import { NavAccount, NavAccountFallback } from "./account";
 import { CartIcon, CartIconFallback } from "./cart";
+import logo from "./jolene-logo.webp";
 import { MobileMenu } from "./mobile-menu";
 import { QuickLinks } from "./quick-links";
 import { SearchModal } from "./search-modal";
@@ -26,7 +28,14 @@ export function Nav() {
         <MobileMenu items={items} />
 
         <Link className="flex items-center shrink-0" href="/">
-          <span className="font-display text-2xl leading-4">{shopConfig.site.name}</span>
+          {/* Unoptimized: images.deviceSizes would serve it 1320 px wide; brand/generate.py sizes it. */}
+          <Image
+            alt={shopConfig.site.name}
+            className="h-10 w-auto"
+            loading="eager"
+            src={logo}
+            unoptimized
+          />
         </Link>
 
         <QuickLinks items={items} />
