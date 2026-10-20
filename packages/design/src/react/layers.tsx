@@ -105,14 +105,22 @@ function TextLayerView({
     measure: context.measure,
   });
   const sizeMm = ptToMm(layout.size);
+  const trackingMm = (style.tracking / 1000) * sizeMm;
   const top =
     layer.valign === "top"
       ? 0
       : layer.valign === "bottom"
         ? height - layout.height
         : (height - layout.height) / 2;
+  // Browsers space out the last letter of a line too, and centre or
+  // right-align that trailing space with it; shift the line by that space so
+  // its letters sit where the layout measured them.
   const x =
-    layer.align === "left" ? 0 : layer.align === "right" ? width : width / 2;
+    layer.align === "left"
+      ? 0
+      : layer.align === "right"
+        ? width + trackingMm
+        : (width + trackingMm) / 2;
   const anchor =
     layer.align === "left"
       ? "start"
@@ -127,7 +135,7 @@ function TextLayerView({
       fontWeight={style.weight}
       fontStyle={style.italic ? "italic" : undefined}
       fontSize={sizeMm}
-      letterSpacing={(style.tracking / 1000) * sizeMm}
+      letterSpacing={trackingMm}
       textAnchor={anchor}
       dominantBaseline="central"
       fill={fill}
