@@ -339,6 +339,78 @@ export default {
     empty: "You haven't started a design yet.",
     edited: "Edited {date}",
   },
+  workshop: {
+    title: "Workshop",
+    lead: "The shop's open orders, oldest first: each design's proof, what the customer chose and what to check before printing.",
+    signInLead: "Orders show only to the workshop's Google accounts.",
+    signIn: "Sign in with Google",
+    signingIn: "Opening Google…",
+    signInNote:
+      "Designs started in this browser without an account won't show once you sign in.",
+    signInThere:
+      "The workshop signs in with Google at the studio's own address.",
+    goThere: "Go to {host}",
+    googleNotConfigured:
+      "Google sign-in isn't set up yet: set AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET in Convex's environment.",
+    notAllowed: "{email} isn't on the workshop's list.",
+    signOut: "Sign out",
+    refresh: "Refresh",
+    reading: "Reading the orders from Shopify…",
+    readAt: "Read at {time}",
+    empty:
+      "No open orders. Orders show here until you mark them shipped in Shopify.",
+    more: "More orders are open than the list shows.",
+    allInShopify: "All orders, in Shopify",
+    notConnected:
+      "The workshop isn't connected to the store yet: set SHOPIFY_STORE_DOMAIN, SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET in Convex's environment.",
+    failed: "Shopify didn't give the orders: {message}",
+    openInShopify: "Open in Shopify",
+    test: "Test",
+    quantity: "{count} pcs",
+    extras: "Extras: {amount}",
+    fees: "Fees: {fees}",
+    note: "Customer's note: {note}",
+    proof: "Proof approved on {date}",
+    noPicture: "No picture",
+    toCheck: "To check",
+    payment: {
+      paid: "Paid",
+      partiallyRefunded: "Partly refunded",
+      pending: "Payment pending",
+      authorized: "Payment authorised, not captured",
+      partiallyPaid: "Partly paid",
+      refunded: "Refunded",
+      voided: "Payment voided",
+      expired: "Payment expired",
+      none: "No payment",
+    },
+    fulfillment: {
+      unfulfilled: "To make",
+      partiallyFulfilled: "Partly shipped",
+      inProgress: "In progress",
+      onHold: "On hold",
+      scheduled: "Scheduled",
+      pendingFulfillment: "To prepare",
+      open: "Open",
+      fulfilled: "Shipped",
+      restocked: "Returned",
+      requestDeclined: "Declined",
+    },
+    issues: {
+      notPaid: "Not paid: {status}.",
+      belowMinimum: "Under the minimum order: it's made from {count} pcs.",
+      missingAnswer: 'No answer to "{option}".',
+      unknownChoice:
+        '"{answer}" isn\'t one of the choices for "{option}" today.',
+      extras:
+        "The extras paid come to {paid}; the choices cost {expected} today.",
+      extrasAlone: "Extras paid without their product: {paid}.",
+      feeMissing: 'The fee "{fee}" was chosen but isn\'t on the order.',
+      productGone:
+        "The product is gone from the store, so its options can't be checked.",
+      proofMissing: "Proof {proof} isn't in the studio.",
+    },
+  },
   expert: {
     mode: {
       label: "Way of working",

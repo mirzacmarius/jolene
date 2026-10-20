@@ -1,0 +1,27 @@
+import { SiteHeader } from "@/components/shell/site-header";
+import { Workshop } from "@/components/workshop/workshop";
+import { getI18n } from "@/locales/server";
+
+export async function generateMetadata() {
+  const t = await getI18n();
+  return { title: t("workshop.title"), robots: { index: false } };
+}
+
+/** Jolene's workshop: the shop's open orders, for its Google accounts. */
+export default async function Page() {
+  const t = await getI18n();
+  return (
+    <>
+      <SiteHeader />
+      <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+        <h1 className="font-display text-5xl">{t("workshop.title")}</h1>
+        <p className="mt-3 max-w-2xl text-muted-foreground">
+          {t("workshop.lead")}
+        </p>
+        <div className="mt-10">
+          <Workshop />
+        </div>
+      </main>
+    </>
+  );
+}
