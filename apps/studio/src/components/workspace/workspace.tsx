@@ -25,6 +25,8 @@ import { AiDesigner } from "../ai/ai-designer";
 import type { PreviewView } from "../design/design-preview";
 import { usePreviewMode } from "../design/preview-mode";
 import { PreviewStage } from "../design/preview-stage";
+import { GuidedStart } from "../simple/guided-start";
+import { SuiteStrip } from "../simple/suite-strip";
 import { ExpertEditor } from "./expert/expert-editor";
 import { ModeSwitch } from "./expert/mode-switch";
 import { useHistory } from "./expert/use-history";
@@ -176,33 +178,36 @@ function Editor({ data }: { data: DesignData }) {
         />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:pr-(--ai-sheet-width)">
-          <section className="relative flex min-h-[60vh] min-w-0 flex-1 flex-col bg-[radial-gradient(80%_70%_at_50%_45%,var(--color-card),var(--color-secondary))] lg:order-2 lg:min-h-0">
-            <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 p-3">
-              <SegmentedControl
-                label={t("design.together")}
-                value={viewKey}
-                onValueChange={setViewKey}
-                options={views}
+          <section className="flex min-h-[60vh] min-w-0 flex-1 flex-col bg-[radial-gradient(80%_70%_at_50%_45%,var(--color-card),var(--color-secondary))] lg:order-2 lg:min-h-0">
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 p-3">
+                <SegmentedControl
+                  label={t("design.together")}
+                  value={viewKey}
+                  onValueChange={setViewKey}
+                  options={views}
+                />
+                {viewKey !== "assembly" && previewMode === "flat" ? (
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={guides}
+                      onChange={(event) => setGuides(event.target.checked)}
+                      className="size-3.5 accent-[var(--color-primary)]"
+                    />
+                    {t("design.guides")}
+                  </label>
+                ) : null}
+              </div>
+              <PreviewStage
+                document={document}
+                fields={fields}
+                assets={data.assets}
+                view={view}
+                title={title}
               />
-              {viewKey !== "assembly" && previewMode === "flat" ? (
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={guides}
-                    onChange={(event) => setGuides(event.target.checked)}
-                    className="size-3.5 accent-[var(--color-primary)]"
-                  />
-                  {t("design.guides")}
-                </label>
-              ) : null}
             </div>
-            <PreviewStage
-              document={document}
-              fields={fields}
-              assets={data.assets}
-              view={view}
-              title={title}
-            />
+            <SuiteStrip designId={designId} values={values} />
           </section>
 
           <aside className="flex w-full shrink-0 flex-col border-border/70 bg-card lg:order-1 lg:w-[380px] lg:border-r">
@@ -220,7 +225,9 @@ function Editor({ data }: { data: DesignData }) {
             </div>
             <div className={cn("flex-1 overflow-y-auto p-5")}>
               {tab === "details" ? (
-                details
+                <GuidedStart data={data} values={values} onChange={update}>
+                  {details}
+                </GuidedStart>
               ) : (
                 <StylePanel document={document} apply={history.apply} />
               )}

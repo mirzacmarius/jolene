@@ -64,6 +64,18 @@ _Avoid_: Basic, advanced, pro
 The studio's co-designer, which changes a design by the same operations a person makes.
 _Avoid_: Bot, assistant, chat
 
+**Wording** (ro: textul):
+The words of an item around the couple's details: the invitation's opening lines, a verse, the closing. In simple mode the AI designer writes the wording of each item the couple chose, the invitation first, in the language and tone they chose.
+_Avoid_: Copy, content, text (in code, a text layer's words)
+
+**Tone** (ro: ton):
+How the wording sounds: classic, romantic, or modern and short for a wedding; classic, tender or playful for a christening. It stays on the event with the cards' language and any line of the couple's own.
+_Avoid_: Style (a collection's look), voice, mood
+
+**Composition** (code only):
+Simple mode's request that the AI designer write several items of a collection: one reply in each item's conversation, the invitation's first and the others after it, in its voice.
+_Avoid_: Batch, job
+
 ### Paper and finishes
 
 **Paper** (ro: hârtie, carton; code: stock):

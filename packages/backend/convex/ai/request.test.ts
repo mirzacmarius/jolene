@@ -7,6 +7,7 @@ import type { AiConfig } from "./config";
 import {
   addUsage,
   buildRequest,
+  droppedThinking,
   echoable,
   INTERRUPTED,
   progressNotes,
@@ -106,6 +107,31 @@ describe("the answer", () => {
     const plain = [thinking("a"), toolUse("toolu_c"), text("b")];
     expect(echoable(plain)).toEqual(plain);
     expect(toolCalls(plain)).toHaveLength(1);
+  });
+
+  test("tells which thinking the API dropped from the thread", () => {
+    const answer = (input_transformations?: unknown) =>
+      ({ content: [], input_transformations }) as unknown as BetaMessage;
+    expect(droppedThinking(answer(undefined))).toEqual([]);
+    expect(droppedThinking(answer([]))).toEqual([]);
+    expect(
+      droppedThinking(
+        answer([
+          {
+            type: "thinking_dropped",
+            path: "messages[3].content[0]",
+            reason: "prefix_binding_mismatch",
+            extra: "not kept",
+          },
+        ]),
+      ),
+    ).toEqual([
+      {
+        type: "thinking_dropped",
+        path: "messages[3].content[0]",
+        reason: "prefix_binding_mismatch",
+      },
+    ]);
   });
 
   test("shows the couple its words and its notes", () => {

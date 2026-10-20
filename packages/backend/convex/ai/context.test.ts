@@ -7,6 +7,7 @@ import {
   detailsKey,
   messageContext,
   recap,
+  wordingOf,
 } from "./context";
 
 const invitation = parseDocument(eucaliptInvitation);
@@ -78,6 +79,50 @@ describe("the context of a message", () => {
     expect(context).not.toContain('"pieces"');
     expect(context).toContain("since your last reply: Softer greens.");
     expect(context).toContain("The couple: Hello");
+  });
+
+  test("asks for the wording the couple chose, and a composition's place", () => {
+    const wording = {
+      tone: { id: "romantic", brief: "romantic and warm" },
+      line: 'Iubirea "nu" cere nimic',
+      language: "en" as const,
+    };
+    const first = messageContext({
+      ...input,
+      wording,
+      composition: { items: ["Invitation", "Menu"], item: "Invitation" },
+    });
+    expect(first).toContain(
+      '<wording language="en" tone="romantic">The couple chose how their collection\'s words should read: romantic and warm, written in English.',
+    );
+    expect(first).toContain(
+      'as they wrote it: "Iubirea \\"nu\\" cere nimic".</wording>',
+    );
+    expect(first).toContain('<composition item="Invitation" first="true">');
+    expect(first).toContain("in this order: Invitation, Menu.");
+    expect(first).toContain("It is written first");
+    expect(first.indexOf("<composition")).toBeLessThan(
+      first.indexOf("</context>"),
+    );
+
+    const later = messageContext({
+      ...input,
+      composition: {
+        items: ["Invitation", "Menu"],
+        item: "Menu",
+        follows: wordingOf(invitation),
+      },
+    });
+    expect(later).not.toContain("<wording");
+    expect(later).toContain('<composition item="Menu" first="false">');
+    expect(later).toContain(
+      '- Invitația, front, names: "{{partner1}} & {{partner2}}"',
+    );
+    const alone = messageContext({
+      ...input,
+      composition: { items: ["Invitation", "Menu"], item: "Menu" },
+    });
+    expect(alone).toContain("its wording wasn't finished");
   });
 
   test("describes the assembly and the faces", () => {

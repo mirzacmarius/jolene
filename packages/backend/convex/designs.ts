@@ -1,7 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { assetKeys, type DesignDocument } from "@jolene/design";
 import { ConvexError, v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { type MutationCtx, mutation, query } from "./_generated/server";
 import { applyToDesign } from "./designs/apply";
 import { saveRevision } from "./designs/versions";
@@ -28,6 +28,43 @@ export async function requireOwnDesign(
 }
 
 /**
+ * A new design of the event, a copy of the template, whose first version is
+ * the template itself.
+ */
+export async function createDesign(
+  ctx: MutationCtx,
+  {
+    ownerId,
+    eventId,
+    template,
+  }: {
+    ownerId: Id<"users">;
+    eventId: Id<"events">;
+    template: Doc<"templates">;
+  },
+) {
+  const document = documentOf(template);
+  const now = Date.now();
+  const designId = await ctx.db.insert("designs", {
+    ownerId,
+    eventId,
+    templateId: template._id,
+    kind: template.kind,
+    document,
+    revision: 1,
+    updatedAt: now,
+  });
+  await ctx.db.insert("designVersions", {
+    designId,
+    revision: 1,
+    document,
+    author: "template",
+    updatedAt: now,
+  });
+  return designId;
+}
+
+/**
  * Starts a design from a template. The couple's details carry over from their
  * latest event of the same occasion, so a save-the-date started after the
  * invitation already has their names; their first design starts the event.
@@ -42,12 +79,11 @@ export const start = mutation({
       .withIndex("by_slug", (q) => q.eq("slug", args.template))
       .unique();
     if (!template || template.retired) throw new ConvexError(errors.notFound);
-    const document = documentOf(template);
-    const now = Date.now();
+    const { occasion } = documentOf(template);
     const event = await ctx.db
       .query("events")
       .withIndex("by_ownerId_and_occasion", (q) =>
-        q.eq("ownerId", ownerId).eq("occasion", document.occasion),
+        q.eq("ownerId", ownerId).eq("occasion", occasion),
       )
       .order("desc")
       .first();
@@ -55,27 +91,11 @@ export const start = mutation({
       event?._id ??
       (await ctx.db.insert("events", {
         ownerId,
-        occasion: document.occasion,
+        occasion,
         fields: {},
-        updatedAt: now,
+        updatedAt: Date.now(),
       }));
-    const designId = await ctx.db.insert("designs", {
-      ownerId,
-      eventId,
-      templateId: template._id,
-      kind: template.kind,
-      document,
-      revision: 1,
-      updatedAt: now,
-    });
-    await ctx.db.insert("designVersions", {
-      designId,
-      revision: 1,
-      document,
-      author: "template",
-      updatedAt: now,
-    });
-    return designId;
+    return await createDesign(ctx, { ownerId, eventId, template });
   },
 });
 

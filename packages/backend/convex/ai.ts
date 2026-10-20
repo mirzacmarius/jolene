@@ -1,20 +1,22 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { type DesignDocument, faceNames, fieldKeysUsed } from "@jolene/design";
+import type { DesignDocument } from "@jolene/design";
 import { ConvexError, type Infer, v } from "convex/values";
 import { internal } from "./_generated/api";
-import type { Doc, Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import { type MutationCtx, mutation, query } from "./_generated/server";
+import { aiConfig, MAX_MESSAGE_LENGTH, MAX_SNAPSHOT_BYTES } from "./ai/config";
+import { describeView } from "./ai/context";
+import { checkLimits } from "./ai/limits";
 import {
-  type AiConfig,
-  aiConfig,
-  MAX_MESSAGE_LENGTH,
-  MAX_SNAPSHOT_BYTES,
-  startOfDay,
-  THREAD_TOKEN_LIMIT,
-} from "./ai/config";
-import { describeView, detailsKey, messageContext, recap } from "./ai/context";
-import { promptVersion } from "./ai/request";
-import { closeRendering, resumeWithRendering, storedImage } from "./ai/run";
+  beginReply,
+  canRetry,
+  isWorking,
+  latestMessage,
+  queueReply,
+  shownView,
+  storedImage,
+} from "./ai/reply";
+import { closeRendering, resumeWithRendering } from "./ai/run";
 import {
   aiChangeValidator,
   aiErrorValidator,
@@ -23,6 +25,7 @@ import {
 } from "./ai/validators";
 import { requireOwnDesign } from "./designs";
 import { saveRevision } from "./designs/versions";
+import { afterReply } from "./simple/compose";
 import { requireUser } from "./utils/auth";
 import { errors } from "./utils/errors";
 import { languageValidator } from "./utils/validators";
@@ -38,23 +41,8 @@ type Change = Infer<typeof aiChangeValidator>;
 /** Messages the studio shows; older ones stay stored but out of view. */
 const SHOWN_MESSAGES = 30;
 
-/** Earlier messages a thread that starts afresh is told about. */
-const RECAP_MESSAGES = 24;
-
 /** Replies whose changes one undo looks through. */
 const UNDO_REPLIES = 60;
-
-const isWorking = (message: Doc<"aiMessages">) =>
-  message.status === "pending" ||
-  message.status === "streaming" ||
-  message.status === "rendering";
-
-/** A reply that failed for a passing reason can run its request again. */
-const canRetry = (message: Doc<"aiMessages">) =>
-  message.role === "designer" &&
-  message.status === "failed" &&
-  message.error !== "refused" &&
-  !message.endsThread;
 
 /** One of the signed-in visitor's messages; anyone else's reads as not found. */
 async function requireOwnMessage(
@@ -66,14 +54,6 @@ async function requireOwnMessage(
   if (!message || message.ownerId !== ownerId)
     throw new ConvexError(errors.notFound);
   return message;
-}
-
-async function latestMessage(ctx: MutationCtx, designId: Id<"designs">) {
-  return await ctx.db
-    .query("aiMessages")
-    .withIndex("by_designId", (q) => q.eq("designId", designId))
-    .order("desc")
-    .first();
 }
 
 /**
@@ -91,54 +71,6 @@ async function imageFile(ctx: MutationCtx, storageId: Id<"_storage">) {
   )
     return undefined;
   return storageId;
-}
-
-/** The view the studio named, if the design has it: "assembly" or "piece:face". */
-function shownView(view: string | undefined, document: DesignDocument) {
-  if (!view || view === "assembly") return "assembly";
-  const [piece, face] = view.split(":");
-  const known = document.pieces.find((candidate) => candidate.id === piece);
-  return known && faceNames.some((name) => name === face && known[name])
-    ? view
-    : "assembly";
-}
-
-/** Today's messages, the visitor's own and everyone's, within the limits. */
-async function checkLimits(
-  ctx: MutationCtx,
-  ownerId: Id<"users">,
-  config: AiConfig,
-  now: number,
-) {
-  const since = startOfDay(now);
-  const sent = await ctx.db
-    .query("aiMessages")
-    .withIndex("by_ownerId_and_role", (q) =>
-      q.eq("ownerId", ownerId).eq("role", "couple").gte("_creationTime", since),
-    )
-    .take(config.dailyLimit);
-  if (sent.length >= config.dailyLimit) throw new ConvexError(errors.aiLimit);
-  const everyone = await ctx.db
-    .query("aiMessages")
-    .withIndex("by_role", (q) =>
-      q.eq("role", "couple").gte("_creationTime", since),
-    )
-    .take(config.totalDailyLimit);
-  if (everyone.length >= config.totalDailyLimit)
-    throw new ConvexError(errors.aiLimitTotal);
-}
-
-/**
- * Earlier exchanges for a thread that starts afresh, oldest first. A request
- * the model declined is left out, so it isn't asked again.
- */
-function recapOf(messages: Doc<"aiMessages">[]) {
-  return recap(
-    messages.filter((message, index) => {
-      const reply = message.role === "couple" ? messages[index + 1] : message;
-      return reply?.error !== "refused";
-    }),
-  );
 }
 
 const shownMessage = v.object({
@@ -256,106 +188,19 @@ export const send = mutation({
     const text = args.text.trim();
     if (!text || text.length > MAX_MESSAGE_LENGTH)
       throw new ConvexError(errors.aiInvalidMessage);
-    const recent = (
-      await ctx.db
-        .query("aiMessages")
-        .withIndex("by_designId", (q) => q.eq("designId", design._id))
-        .order("desc")
-        .take(RECAP_MESSAGES)
-    ).reverse();
-    const latest = recent.at(-1);
+    const latest = await latestMessage(ctx, design._id);
     if (latest && isWorking(latest)) throw new ConvexError(errors.aiBusy);
-    const now = Date.now();
-    await checkLimits(ctx, design.ownerId, config, now);
-
-    const event = await ctx.db.get("events", design.eventId);
-    const template = await ctx.db.get("templates", design.templateId);
-    const suite = template && (await ctx.db.get("suites", template.suiteId));
-    if (!event || !suite) throw new ConvexError(errors.notFound);
-    const document = design.document as DesignDocument;
+    await checkLimits(ctx, design.ownerId, config, Date.now());
     const snapshot = args.snapshot && (await imageFile(ctx, args.snapshot));
-    const prompt = promptVersion(config);
-    const details = detailsKey(event.fields);
-
-    // A thread goes on while the API can read it whole and as it was.
-    const goesOn =
-      latest?.role === "designer" &&
-      !latest.endsThread &&
-      latest.prompt === prompt &&
-      (latest.contextTokens ?? 0) <= THREAD_TOKEN_LIMIT;
-    const thread = goesOn ? latest.thread : (latest?.thread ?? 0) + 1;
-    const lastSent = [...recent]
-      .reverse()
-      .find((message) => message.role === "couple");
-    const undone = recent.flatMap((message) =>
-      (message.changes ?? []).flatMap((change) =>
-        change.undoneAt !== undefined &&
-        change.undoneAt > (lastSent?._creationTime ?? 0)
-          ? [change.note]
-          : [],
-      ),
-    );
-    const context = messageContext({
-      locale: args.locale,
-      view: shownView(args.view, document),
-      revision: design.revision,
-      document,
-      designChanged: !goesOn || latest.seen?.revision !== design.revision,
-      occasion: event.occasion,
-      details: event.fields,
-      detailsChanged: !goesOn || latest.seen?.details !== details,
-      used: fieldKeysUsed(document),
-      collection: {
-        name:
-          suite.name.en === suite.name.ro
-            ? suite.name.en
-            : `${suite.name.en} (in Romanian: ${suite.name.ro})`,
-        styles: suite.styles,
-      },
-      undone,
-      recap: goesOn || recent.length === 0 ? undefined : recapOf(recent),
-      snapshot: Boolean(snapshot),
-    });
-
-    const sentId = await ctx.db.insert("aiMessages", {
-      designId: design._id,
-      ownerId: design.ownerId,
-      role: "couple",
+    const reply = await queueReply(ctx, {
+      design,
       text,
-      status: "done",
-      thread,
       locale: args.locale,
       ...(snapshot ? { snapshot } : {}),
-      finishedAt: now,
-      updatedAt: now,
-    });
-    await ctx.db.insert("aiTurns", {
-      designId: design._id,
-      thread,
-      messageId: sentId,
-      role: "user",
-      content: JSON.stringify([
-        { type: "text", text: context },
-        ...(snapshot ? [storedImage(snapshot)] : []),
-        { type: "text", text },
-      ]),
-    });
-    const replyId = await ctx.db.insert("aiMessages", {
-      designId: design._id,
-      ownerId: design.ownerId,
-      role: "designer",
-      text: "",
       status: "pending",
-      thread,
-      locale: args.locale,
-      prompt,
-      seen: { revision: design.revision, details },
-      updatedAt: now,
     });
-    await ctx.scheduler.runAfter(0, internal.ai.run.step, {
-      messageId: replyId,
-    });
-    return replyId;
+    await beginReply(ctx, reply, { view: args.view });
+    return reply._id;
   },
 });
 
@@ -378,6 +223,7 @@ export const stop = mutation({
       finishedAt: now,
       updatedAt: now,
     });
+    await afterReply(ctx, message);
     return null;
   },
 });

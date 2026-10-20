@@ -22,6 +22,7 @@ import {
   type MutationCtx,
 } from "../_generated/server";
 import { applyToDesign } from "../designs/apply";
+import { afterReply } from "../simple/compose";
 import {
   aiConfig,
   MAX_ROUNDS,
@@ -31,10 +32,12 @@ import {
 } from "./config";
 import { compactDocument, detailsKey } from "./context";
 import { modelClient } from "./model";
+import type { StoredImage } from "./reply";
 import { layoutReport } from "./report";
 import {
   addUsage,
   buildRequest,
+  droppedThinking,
   echoable,
   progressNotes,
   replyText,
@@ -353,12 +356,6 @@ class ReplyWriter {
   }
 }
 
-/** A stored image block: the file stands in for its bytes until sent. */
-interface StoredImage {
-  type: "image";
-  source: { type: "stored"; storageId: Id<"_storage"> };
-}
-
 /** A tool result as kept in a thread: its images may be stored files. */
 export type StoredToolResult = Omit<ToolResult, "content"> & {
   content?:
@@ -368,10 +365,6 @@ export type StoredToolResult = Omit<ToolResult, "content"> & {
         | StoredImage
       )[];
 };
-
-export function storedImage(storageId: Id<"_storage">): StoredImage {
-  return { type: "image", source: { type: "stored", storageId } };
-}
 
 /** The image type a file's first bytes show: PNG and JPEG are sent. */
 export function imageType(
@@ -477,6 +470,7 @@ export const fail = internalMutation({
       finishedAt: now,
       updatedAt: now,
     });
+    await afterReply(ctx, message);
     return null;
   },
 });
@@ -495,6 +489,7 @@ export const watchdog = internalMutation({
       finishedAt: now,
       updatedAt: now,
     });
+    await afterReply(ctx, message);
     return null;
   },
 });
@@ -646,6 +641,17 @@ export const finish = internalMutation({
     if (!inRound(message, round)) return null;
     const answer = JSON.parse(json) as BetaMessage;
     const now = Date.now();
+    // Thinking the API had to drop (or would have) means the thread didn't go
+    // back exactly as it was: a bug in how it is kept, unless the only cause
+    // is a change of model, which a server-side fallback brings.
+    const dropped = droppedThinking(answer);
+    if (dropped.length > 0)
+      (dropped.every((entry) => entry.reason === "model_binding_mismatch")
+        ? console.warn
+        : console.error)(
+        `AI designer request dropped thinking (design ${message.designId}, thread ${message.thread}, round ${round}):`,
+        JSON.stringify(dropped),
+      );
     const { usage, contextTokens, servedBy } = usageOf(answer);
     const accounted = {
       usage: addUsage(message.usage, usage),
@@ -667,6 +673,7 @@ export const finish = internalMutation({
         endsThread: true,
         finishedAt: now,
       });
+      await afterReply(ctx, message);
       return null;
     }
 
@@ -730,6 +737,7 @@ export const finish = internalMutation({
         status: "done",
         finishedAt: now,
       });
+      await afterReply(ctx, message);
       return null;
     }
 

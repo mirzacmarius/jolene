@@ -8,6 +8,7 @@ import {
   aiStatusValidator,
   aiUsageValidator,
 } from "./ai/validators";
+import { toneValidator } from "./simple/tones";
 import {
   authorValidator,
   documentValidator,
@@ -105,6 +106,18 @@ export default defineSchema({
     ownerId: v.id("users"),
     occasion: occasionValidator,
     fields: fieldsValidator,
+    /**
+     * How the couple wants their collection's wording, from simple mode's
+     * questions: its tone, a line of their own and the cards' language. The
+     * AI designer reads it with every message, so later items follow it.
+     */
+    wording: v.optional(
+      v.object({
+        tone: v.optional(toneValidator),
+        line: v.optional(v.string()),
+        language: languageValidator,
+      }),
+    ),
     updatedAt: v.number(),
   }).index("by_ownerId_and_occasion", ["ownerId", "occasion"]),
 
@@ -165,6 +178,8 @@ export default defineSchema({
     usage: v.optional(aiUsageValidator),
     /** The model that answered when a server-side fallback stood in. */
     servedBy: v.optional(v.string()),
+    /** The composition a reply writes an item of, for simple mode. */
+    composition: v.optional(v.id("compositions")),
     /** Requests the reply has made; a reply makes at most a few. */
     rounds: v.optional(v.number()),
     /** Input tokens of the reply's latest request: how long the thread is. */
@@ -212,4 +227,24 @@ export default defineSchema({
     /** The content blocks as JSON; images refer to stored files. */
     content: v.string(),
   }).index("by_designId_and_thread", ["designId", "thread"]),
+
+  /**
+   * Simple mode's AI flow over one event's collection: the AI designer writes
+   * the wording of each item the couple chose and lays it out, each in its
+   * design's own conversation. The first item (the invitation, when chosen)
+   * is written first; the others then begin with its wording to follow.
+   */
+  compositions: defineTable({
+    ownerId: v.id("users"),
+    eventId: v.id("events"),
+    suiteId: v.id("suites"),
+    /**
+     * The items the AI designer writes, first item first, each with the
+     * reply writing it. Items the day's messages didn't cover aren't here.
+     */
+    items: v.array(
+      v.object({ designId: v.id("designs"), replyId: v.id("aiMessages") }),
+    ),
+    updatedAt: v.number(),
+  }).index("by_eventId_and_suiteId", ["eventId", "suiteId"]),
 });

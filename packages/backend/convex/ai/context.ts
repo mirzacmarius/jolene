@@ -1,5 +1,6 @@
 import {
   type DesignDocument,
+  faceNames,
   type Language,
   type Occasion,
   productKindLabels,
@@ -165,6 +166,101 @@ export interface ContextInput {
   /** The conversation so far, for a thread that starts afresh. */
   recap?: string;
   snapshot: boolean;
+  /** How the couple wants their collection's wording, when they've said. */
+  wording?: WordingContext;
+  /** The item's place in a composition, when simple mode asked for it. */
+  composition?: CompositionContext;
+}
+
+export interface WordingContext {
+  /** The tone's id and what it asks of the words (simple/tones.ts). */
+  tone?: { id: string; brief: string };
+  /** A line of the couple's own: a verse, a quote, something about them. */
+  line?: string;
+  /** The language they chose for their cards. */
+  language: Language;
+}
+
+export interface CompositionContext {
+  /** The items written together, first item first, by their English names. */
+  items: string[];
+  /** This message's item. */
+  item: string;
+  /**
+   * For the items after the first: the first item's wording, once the AI
+   * designer has written it (a first item that failed leaves none).
+   */
+  follows?: string;
+}
+
+const languageNames: Record<Language, string> = {
+  ro: "Romanian",
+  en: "English",
+};
+
+/** Wording this long is cut, so a crowded item can't fill the context. */
+const MAX_WORDING = 4000;
+
+/**
+ * A design's words as the AI designer reads them, face by face: each text
+ * layer with its tokens, for the items that follow it.
+ */
+export function wordingOf(document: DesignDocument): string {
+  const lines: string[] = [];
+  for (const piece of document.pieces)
+    for (const face of faceNames)
+      for (const layer of piece[face]?.layers ?? [])
+        if (layer.type === "text" && !layer.hidden && layer.text.trim())
+          lines.push(
+            `- ${piece.name ?? piece.id}, ${face}, ${layer.style}: ${JSON.stringify(layer.text)}`,
+          );
+  const wording = lines.join("\n");
+  return wording.length > MAX_WORDING
+    ? `${wording.slice(0, MAX_WORDING)}…`
+    : wording;
+}
+
+function wordingSection(wording: WordingContext): string[] {
+  const attributes = `language="${wording.language}"${wording.tone ? ` tone="${wording.tone.id}"` : ""}`;
+  const sentences = [
+    "The couple chose how their collection's words should read:",
+    wording.tone
+      ? `${wording.tone.brief}, written in ${languageNames[wording.language]}.`
+      : `written in ${languageNames[wording.language]}, in the tone that suits the collection.`,
+    "Follow it whenever you write words for one of their items, unless they ask otherwise.",
+  ];
+  if (wording.line)
+    sentences.push(
+      `Their own line, to use where it fits best (usually the invitation's opening) and as they wrote it: ${JSON.stringify(wording.line)}.`,
+    );
+  return [`<wording ${attributes}>${sentences.join(" ")}</wording>`];
+}
+
+function compositionSection(composition: CompositionContext): string[] {
+  const [lead] = composition.items;
+  const first = composition.item === lead;
+  const lines = [
+    `<composition item="${composition.item}" first="${first}">`,
+    `The couple answered simple mode's questions and asked you to write the wording of these items of their collection and lay each one out, each in its own conversation, in this order: ${composition.items.join(", ")}. This message is about the ${composition.item}.`,
+    "Write its words in the language the couple chose for their cards (setLanguage first when the design is in another), keep their details as tokens, and arrange the faces so everything fits with calm space, as Jolene's taste asks. Then say in a sentence or two what you wrote.",
+  ];
+  if (first)
+    lines.push(
+      composition.items.length > 1
+        ? "It is written first: the other items will follow its wording, so it sets the collection's voice."
+        : "It is the only item the couple asked for.",
+    );
+  else if (composition.follows)
+    lines.push(
+      `The ${lead} was written first. Its wording, which this item should echo (the same voice and the same turns of phrase where they fit) so the collection speaks with one voice:`,
+      composition.follows,
+    );
+  else
+    lines.push(
+      `The ${lead} was to be written first, but its wording wasn't finished: write this item in the chosen tone on its own.`,
+    );
+  lines.push("</composition>");
+  return lines;
 }
 
 /** The context block that opens each of the couple's messages. */
@@ -205,6 +301,8 @@ export function messageContext(input: ContextInput): string {
     lines.push(
       `<details unchanged="true">The couple's details are as you last knew them.</details>`,
     );
+  if (input.wording) lines.push(...wordingSection(input.wording));
+  if (input.composition) lines.push(...compositionSection(input.composition));
   lines.push("</context>");
   return lines.join("\n");
 }

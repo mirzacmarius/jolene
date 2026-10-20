@@ -132,6 +132,21 @@ export function replyText(content: BetaContentBlock[]): string {
     .join("\n\n");
 }
 
+/**
+ * The thinking blocks the API didn't read as sent back (block_binding
+ * drop_block): each entry of input_transformations, with where the block
+ * was in the request and why. The array is empty when the thread was intact.
+ */
+export function droppedThinking(
+  answer: BetaMessage,
+): { type: string; path: string; reason: string }[] {
+  return (answer.input_transformations ?? []).map(({ type, path, reason }) => ({
+    type,
+    path,
+    reason,
+  }));
+}
+
 /** The model's short notes between tool calls (non-empty thinking blocks). */
 export function progressNotes(content: BetaContentBlock[]): string[] {
   return content.flatMap((block) =>
