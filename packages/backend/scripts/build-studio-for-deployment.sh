@@ -7,7 +7,9 @@ if [ "${VERCEL_ENV:-}" = "preview" ]; then
   # `convex deploy` names a preview after its branch, and the preview deploy key
   # in CONVEX_DEPLOY_KEY reaches it by that name.
   deployment=(--preview-name "$VERCEL_GIT_COMMIT_REF")
-  site_url="https://$VERCEL_BRANCH_URL/studio"
+  # Vercel also builds a preview of main, and gives it no branch URL: that one
+  # signs in at its deployment's own URL.
+  site_url="https://${VERCEL_BRANCH_URL:-$VERCEL_URL}/studio"
 else
   deployment=()
   site_url="https://$VERCEL_PROJECT_PRODUCTION_URL/studio"
