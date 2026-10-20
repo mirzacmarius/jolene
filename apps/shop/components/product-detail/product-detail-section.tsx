@@ -7,6 +7,7 @@ import { PurchaseOptions } from "@/components/product-detail/buy-buttons";
 import { BuyWithShopLogo } from "@/components/product-detail/buy-with-shop-logo";
 import { ComplementaryProducts } from "@/components/product-detail/complementary-products";
 import { GiftCardPurchaseForm } from "@/components/product-detail/gift-card-purchase-form";
+import { LineOptionsFields, LineOptionsProvider } from "@/components/product-detail/line-options";
 import { ProductOpenGraph } from "@/components/product-detail/open-graph";
 import {
   ProductForm,
@@ -31,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { shopConfig } from "@/lib/config";
+import type { ProductLineOptions } from "@/lib/line-options/types";
 import {
   getProductPurchaseOptions,
   getSelectedColorImage,
@@ -43,10 +45,12 @@ import { type SelectedOptions } from "@/lib/product/types";
 import type { ProductDetails, ProductVariant } from "@/lib/product/types";
 
 export function ProductDetailSection({
+  lineOptions,
   product,
   selectedOptionsPromise,
   variantPromise,
 }: {
+  lineOptions: ProductLineOptions;
   product: ProductDetails;
   selectedOptionsPromise: Promise<SelectedOptions>;
   variantPromise: Promise<ProductVariant | undefined>;
@@ -79,7 +83,11 @@ export function ProductDetailSection({
       />
       <div className="grid gap-10 lg:grid-cols-10 lg:items-start lg:gap-5">
         <ProductMediaArea product={product} selectedOptionsPromise={selectedOptionsPromise} />
-        <ProductInfoArea product={product} variantPromise={variantPromise} />
+        <ProductInfoArea
+          lineOptions={lineOptions}
+          product={product}
+          variantPromise={variantPromise}
+        />
       </div>
     </>
   );
@@ -159,9 +167,11 @@ async function ResolvedColorImageCarousel({
 }
 
 function ProductInfoArea({
+  lineOptions,
   product,
   variantPromise,
 }: {
+  lineOptions: ProductLineOptions;
   product: ProductDetails;
   variantPromise: Promise<ProductVariant | undefined>;
 }) {
@@ -190,6 +200,7 @@ function ProductInfoArea({
 
         {singleVariant ? (
           <ProductInfoContent
+            lineOptions={lineOptions}
             priceSlot={
               !product.hasUniformPricing ? (
                 <Suspense fallback={<div className="h-7" aria-hidden />}>
@@ -206,12 +217,17 @@ function ProductInfoArea({
               <ProductInfoFallback
                 allInStock={allInStock}
                 hasOptions={hasOptions}
+                lineOptions={lineOptions}
                 product={product}
                 showLabel={showBuyLabel}
               />
             }
           >
-            <ResolvedProductInfo product={product} variantPromise={variantPromise} />
+            <ResolvedProductInfo
+              lineOptions={lineOptions}
+              product={product}
+              variantPromise={variantPromise}
+            />
           </Suspense>
         )}
       </div>
@@ -245,21 +261,31 @@ async function ResolvedProductPrice({
 }
 
 async function ResolvedProductInfo({
+  lineOptions,
   product,
   variantPromise,
 }: {
+  lineOptions: ProductLineOptions;
   product: ProductDetails;
   variantPromise: Promise<ProductVariant | undefined>;
 }) {
-  return <ProductInfoContent product={product} selectedVariant={await variantPromise} />;
+  return (
+    <ProductInfoContent
+      lineOptions={lineOptions}
+      product={product}
+      selectedVariant={await variantPromise}
+    />
+  );
 }
 
 // The store is seeded from the URL-resolved variant so server HTML and client state agree on first paint.
 function ProductInfoContent({
+  lineOptions,
   priceSlot,
   product,
   selectedVariant,
 }: {
+  lineOptions: ProductLineOptions;
   priceSlot?: ReactNode;
   product: ProductDetails;
   selectedVariant: ProductVariant | undefined;
@@ -270,25 +296,30 @@ function ProductInfoContent({
 
   return (
     <ProductForm product={formProduct}>
-      <div className="grid gap-10">
-        {!product.hasUniformPricing ? (
-          <div data-slot="product-info-price">
-            {priceSlot ?? <ProductFormPrice fallbackVariant={fallbackVariant} />}
-          </div>
-        ) : null}
-        {hasOptions ? <ProductFormOptions handle={product.handle} /> : null}
-        {product.isGiftCard ? (
-          <GiftCardPurchaseForm />
-        ) : (
-          <ProofBuyButtons
-            fallbackVariant={fallbackVariant}
-            availableForSale={product.availableForSale}
-            buyWithShop={shopConfig.pdp.buyWithShop.isEnabled}
-            handle={product.handle}
-            quantityPicker={shopConfig.pdp.quantityPicker.isEnabled}
-          />
-        )}
-      </div>
+      <LineOptionsProvider currencyCode={product.currencyCode} lineOptions={lineOptions}>
+        <div className="grid gap-10">
+          {!product.hasUniformPricing ? (
+            <div data-slot="product-info-price">
+              {priceSlot ?? <ProductFormPrice fallbackVariant={fallbackVariant} />}
+            </div>
+          ) : null}
+          {hasOptions ? <ProductFormOptions handle={product.handle} /> : null}
+          {product.isGiftCard ? (
+            <GiftCardPurchaseForm />
+          ) : (
+            <>
+              <LineOptionsFields />
+              <ProofBuyButtons
+                fallbackVariant={fallbackVariant}
+                availableForSale={product.availableForSale}
+                buyWithShop={shopConfig.pdp.buyWithShop.isEnabled}
+                handle={product.handle}
+                quantityPicker={shopConfig.pdp.quantityPicker.isEnabled}
+              />
+            </>
+          )}
+        </div>
+      </LineOptionsProvider>
     </ProductForm>
   );
 }
@@ -297,10 +328,12 @@ function ProductInfoFallback({
   showLabel,
   allInStock,
   hasOptions,
+  lineOptions,
   product,
 }: {
   allInStock: boolean;
   hasOptions: boolean;
+  lineOptions: ProductLineOptions;
   product: ProductDetails;
   showLabel: boolean;
 }) {
@@ -313,11 +346,22 @@ function ProductInfoFallback({
       {product.isGiftCard ? (
         <GiftCardPurchaseFormFallback />
       ) : (
-        <BuyButtonsFallback
-          allInStock={allInStock}
-          showLabel={showLabel}
-          variant={product.defaultVariant}
-        />
+        <>
+          <LineOptionsProvider currencyCode={product.currencyCode} lineOptions={lineOptions}>
+            <LineOptionsFields disabled />
+          </LineOptionsProvider>
+          <BuyButtonsFallback
+            allInStock={allInStock}
+            buyWithShop={
+              shopConfig.pdp.buyWithShop.isEnabled &&
+              !lineOptions.options.length &&
+              !lineOptions.fees.length
+            }
+            minQuantity={lineOptions.minQuantity}
+            showLabel={showLabel}
+            variant={product.defaultVariant}
+          />
+        </>
       )}
     </div>
   );
@@ -366,17 +410,17 @@ function GiftCardPurchaseFormFallback() {
   );
 }
 
-function QuantityPickerFallback() {
+function QuantityPickerFallback({ minQuantity }: { minQuantity?: number }) {
   return (
     <div
       aria-hidden="true"
-      className="grid h-12 w-32 shrink-0 grid-cols-[3rem_2rem_3rem] rounded-lg bg-background ring-1 ring-border ring-inset"
+      className="grid h-12 w-38 shrink-0 grid-cols-[3rem_3.5rem_3rem] rounded-lg bg-background ring-1 ring-border ring-inset"
     >
       <span className="flex size-12 items-center justify-center opacity-50">
         <MinusIcon className="size-4 shrink-0" />
       </span>
-      <span className="flex h-12 w-8 items-center justify-center text-sm font-medium tabular-nums">
-        1
+      <span className="flex h-12 w-14 items-center justify-center text-sm font-medium tabular-nums">
+        {minQuantity}
       </span>
       <span className="flex size-12 items-center justify-center">
         <PlusIcon className="size-4 shrink-0" />
@@ -387,10 +431,14 @@ function QuantityPickerFallback() {
 
 function BuyButtonsFallback({
   allInStock,
+  buyWithShop,
+  minQuantity,
   showLabel,
   variant,
 }: {
   allInStock: boolean;
+  buyWithShop: boolean;
+  minQuantity: number;
   showLabel: boolean;
   variant: ProductVariant | undefined;
 }) {
@@ -407,12 +455,17 @@ function BuyButtonsFallback({
         />
       ) : null}
       <div className="flex flex-wrap gap-2.5">
-        {shopConfig.pdp.quantityPicker.isEnabled ? <QuantityPickerFallback /> : null}
+        {shopConfig.pdp.quantityPicker.isEnabled ? (
+          <QuantityPickerFallback minQuantity={minQuantity} />
+        ) : null}
         <div className="flex h-12 min-w-40 flex-1 items-center justify-center rounded-lg bg-primary text-sm font-medium text-primary-foreground">
-          {showLabel ? (allInStock ? "Add to Cart" : "Out of Stock") : null}
+          {showLabel ? (allInStock ? "Adaugă în coș" : "Stoc epuizat") : null}
         </div>
       </div>
-      {shopConfig.pdp.buyWithShop.isEnabled && !selectedPlan && !variant?.requiresSellingPlan ? (
+      {minQuantity > 1 ? (
+        <p className="text-sm text-muted-foreground">Comandă minimă: {minQuantity} buc.</p>
+      ) : null}
+      {buyWithShop && !selectedPlan && !variant?.requiresSellingPlan ? (
         <div
           className={cn(
             "flex h-12 items-center justify-center rounded-lg bg-shop px-4 text-white",

@@ -7,6 +7,7 @@ import { useEffect, useId, useState } from "react";
 
 import { useCartDrawer } from "@/components/cart/context";
 import { Button } from "@/components/ui/button";
+import { MAX_QUANTITY } from "@/lib/line-options";
 import { formatPrice } from "@/lib/money";
 import type { Money } from "@/lib/money/types";
 import { getProductPurchaseOptions } from "@/lib/product";
@@ -21,6 +22,7 @@ interface BuyButtonsProps {
   buyWithShop?: boolean;
   disabled?: boolean;
   fallbackVariant: ProductFormVariant | undefined;
+  minQuantity?: number;
   onAddToCart?: () => void;
   quantityPicker?: boolean;
 }
@@ -31,6 +33,7 @@ export function BuyButtons({
   buyWithShop = true,
   disabled = false,
   fallbackVariant,
+  minQuantity = 1,
   onAddToCart,
   quantityPicker = true,
 }: BuyButtonsProps) {
@@ -38,7 +41,8 @@ export function BuyButtons({
   const selectedVariant = storeVariant ?? fallbackVariant;
   const isSelectionUnresolved = !storeVariant;
   const [isBuyingNow, setIsBuyingNow] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [draftQuantity, setDraftQuantity] = useState(String(minQuantity));
+  const quantity = clampQuantity(draftQuantity, minQuantity);
   const [purchaseOption, setPurchaseOption] = useState("");
   const { plans, selectedPlan } = getProductPurchaseOptions(selectedVariant, purchaseOption);
   const missingRequiredPlan = Boolean(selectedVariant?.requiresSellingPlan && !selectedPlan);
@@ -62,12 +66,12 @@ export function BuyButtons({
     variants: [{ id: selectedVariant.id, quantity }],
   });
   const getButtonText = () => {
-    if (pending) return "Adding to Cart...";
-    if (isSelectionUnresolved) return "Add to Cart";
-    if (requiresBundleConfiguration) return "Choose bundle items";
-    if (missingRequiredPlan) return "Subscription unavailable";
-    if (isOutOfStock) return "Out of Stock";
-    return "Add to Cart";
+    if (pending) return "Se adaugă…";
+    if (isSelectionUnresolved) return "Adaugă în coș";
+    if (requiresBundleConfiguration) return "Alege produsele din pachet";
+    if (missingRequiredPlan) return "Abonament indisponibil";
+    if (isOutOfStock) return "Stoc epuizat";
+    return "Adaugă în coș";
   };
   return (
     <form
@@ -107,32 +111,36 @@ export function BuyButtons({
       <div className="flex flex-wrap gap-2.5">
         {quantityPicker ? (
           <div
-            aria-label="Item quantity"
-            className="grid h-12 w-32 shrink-0 grid-cols-[3rem_2rem_3rem] rounded-lg bg-background ring-1 ring-border ring-inset"
+            aria-label="Cantitate"
+            className="grid h-12 w-38 shrink-0 grid-cols-[3rem_3.5rem_3rem] rounded-lg bg-background ring-1 ring-border ring-inset"
             role="group"
           >
             <button
               type="button"
-              aria-label="Decrease quantity"
+              aria-label="Scade cantitatea"
               className="flex size-12 cursor-pointer items-center justify-center p-0 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={quantity === 1}
-              onClick={() => setQuantity((currentQuantity) => Math.max(1, currentQuantity - 1))}
+              disabled={quantity <= minQuantity}
+              onClick={() => setDraftQuantity(String(clampQuantity(quantity - 1, minQuantity)))}
             >
               <MinusIcon className="size-4 shrink-0" />
             </button>
-            <span
-              aria-live="polite"
-              className="flex h-12 w-8 items-center justify-center text-sm font-medium tabular-nums"
-              role="status"
-            >
-              {quantity}
-            </span>
+            <input
+              aria-label="Cantitate"
+              className="h-12 w-14 [appearance:textfield] bg-transparent text-center text-sm font-medium tabular-nums outline-none focus-visible:ring-3 focus-visible:ring-ring/50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              inputMode="numeric"
+              max={MAX_QUANTITY}
+              min={minQuantity}
+              onBlur={() => setDraftQuantity(String(quantity))}
+              onChange={(event) => setDraftQuantity(event.target.value)}
+              type="number"
+              value={draftQuantity}
+            />
             <button
               type="button"
-              aria-label="Increase quantity"
+              aria-label="Crește cantitatea"
               className="flex size-12 cursor-pointer items-center justify-center p-0 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={quantity === 99}
-              onClick={() => setQuantity((currentQuantity) => Math.min(99, currentQuantity + 1))}
+              disabled={quantity >= MAX_QUANTITY}
+              onClick={() => setDraftQuantity(String(clampQuantity(quantity + 1, minQuantity)))}
             >
               <PlusIcon className="size-4 shrink-0" />
             </button>
@@ -154,11 +162,14 @@ export function BuyButtons({
           {getButtonText()}
         </Button>
       </div>
+      {minQuantity > 1 ? (
+        <p className="text-sm text-muted-foreground">Comandă minimă: {minQuantity} buc.</p>
+      ) : null}
       {buyWithShop && !selectedPlan && !selectedVariant.requiresSellingPlan ? (
         <a
           aria-busy={isBuyingNow || undefined}
           aria-disabled={buyNowUrl ? undefined : true}
-          aria-label="Buy with Shop Pay"
+          aria-label="Cumpără cu Shop Pay"
           className={cn(
             "flex h-12 w-full cursor-pointer items-center justify-center rounded-lg bg-shop px-4 text-white transition-colors hover:bg-shop/85 aria-busy:pointer-events-none aria-disabled:cursor-not-allowed aria-disabled:opacity-50 data-[selection-unresolved=true]:aria-disabled:opacity-100",
             !availableForSale && "invisible",
@@ -178,7 +189,7 @@ export function BuyButtons({
             <Loader2 className="size-4 animate-spin" />
           ) : (
             <>
-              <span className="sr-only">Buy with</span>
+              <span className="sr-only">Cumpără cu</span>
               <BuyWithShopLogo aria-hidden="true" className="h-auto w-24.5" />
             </>
           )}
@@ -210,9 +221,9 @@ export function PurchaseOptions({
 
   return (
     <fieldset className="grid gap-2.5" disabled={disabled}>
-      <legend className="pb-2.5 text-sm font-medium">Purchase options</legend>
+      <legend className="pb-2.5 text-sm font-medium">Cum cumperi</legend>
       {[
-        ...(!requiresSellingPlan ? [{ id: "", name: "One-time purchase", price }] : []),
+        ...(!requiresSellingPlan ? [{ id: "", name: "O singură dată", price }] : []),
         ...plans.map((allocation) => ({
           id: allocation.sellingPlan.id,
           name: allocation.sellingPlan.name,
@@ -240,10 +251,17 @@ export function PurchaseOptions({
       ))}
       {selectedPlan ? (
         <p className="text-sm text-muted-foreground">
-          Recurring purchase.{" "}
-          {selectedPlan.sellingPlan.description || "Subscription details are shown at checkout."}
+          Cumpărare recurentă.{" "}
+          {selectedPlan.sellingPlan.description || "Detaliile abonamentului apar la plată."}
         </p>
       ) : null}
     </fieldset>
   );
+}
+
+function clampQuantity(value: number | string, minQuantity: number): number {
+  const quantity = Math.floor(Number(value));
+  return Number.isFinite(quantity)
+    ? Math.min(MAX_QUANTITY, Math.max(minQuantity, quantity))
+    : minQuantity;
 }

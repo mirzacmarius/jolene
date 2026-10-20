@@ -43,7 +43,7 @@ function CartWarningMessages({ group }: { group: CartErrorGroup }) {
         <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
         <div className="grid flex-1 gap-1">
           <p className="font-medium">
-            {group.userErrors.length ? "We couldn't update your cart" : "Your cart was updated"}
+            {group.userErrors.length ? "Nu am putut actualiza coșul" : "Coșul a fost actualizat"}
           </p>
           <ul className="grid gap-0.5 text-amber-800 dark:text-amber-200/90">
             {messages.map((message, index) => (
@@ -54,7 +54,7 @@ function CartWarningMessages({ group }: { group: CartErrorGroup }) {
         <button
           type="button"
           onClick={() => setDismissed(true)}
-          aria-label="Dismiss"
+          aria-label="Închide"
           className="inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md hover:bg-amber-100 dark:hover:bg-amber-900/40"
         >
           <X className="size-4" aria-hidden="true" />

@@ -13,6 +13,7 @@ import { Container } from "@/components/ui/container";
 import { Page } from "@/components/ui/page";
 import { Sections } from "@/components/ui/sections";
 import { shopConfig } from "@/lib/config";
+import { getLineOptions } from "@/lib/line-options/server";
 import { defaultSelectedOptions, parseSelectedOptions, toSelectedOptionList } from "@/lib/product";
 import { getProduct, getSearchIndexProducts } from "@/lib/product/server";
 import { type SelectedOptions } from "@/lib/product/types";
@@ -95,9 +96,12 @@ async function ProductPageContent({
 }: Pick<PageProps<"/products/[handle]">, "params" | "searchParams">) {
   const { handle } = await params;
   if (handle === PLACEHOLDER_HANDLE) notFound();
-  const product = await getProduct({
-    handle,
-  });
+  const [product, lineOptions] = await Promise.all([
+    getProduct({
+      handle,
+    }),
+    getLineOptions({ handle }),
+  ]);
   if (!product) notFound();
 
   // Keep selection separate from the variant query so the static shell stays coherent and the picker never waits on Shopify.
@@ -147,6 +151,7 @@ async function ProductPageContent({
         }}
       />
       <ProductDetailSection
+        lineOptions={lineOptions}
         product={product}
         selectedOptionsPromise={selectedOptionsPromise}
         variantPromise={variantPromise}
