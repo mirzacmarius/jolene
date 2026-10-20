@@ -35,6 +35,7 @@ import { layoutReport } from "./report";
 import {
   addUsage,
   buildRequest,
+  droppedThinking,
   echoable,
   progressNotes,
   replyText,
@@ -646,6 +647,17 @@ export const finish = internalMutation({
     if (!inRound(message, round)) return null;
     const answer = JSON.parse(json) as BetaMessage;
     const now = Date.now();
+    // Thinking the API had to drop (or would have) means the thread didn't go
+    // back exactly as it was: a bug in how it is kept, unless the only cause
+    // is a change of model, which a server-side fallback brings.
+    const dropped = droppedThinking(answer);
+    if (dropped.length > 0)
+      (dropped.every((entry) => entry.reason === "model_binding_mismatch")
+        ? console.warn
+        : console.error)(
+        `AI designer request dropped thinking (design ${message.designId}, thread ${message.thread}, round ${round}):`,
+        JSON.stringify(dropped),
+      );
     const { usage, contextTokens, servedBy } = usageOf(answer);
     const accounted = {
       usage: addUsage(message.usage, usage),
