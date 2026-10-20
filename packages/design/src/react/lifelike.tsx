@@ -1,5 +1,11 @@
-import { type CSSProperties, Fragment, type ReactNode, useId } from "react";
-import { type Ink, paperTextures, stocks } from "../catalog";
+import {
+  type CSSProperties,
+  Fragment,
+  memo,
+  type ReactNode,
+  useId,
+} from "react";
+import { type Ink, stocks } from "../catalog";
 import { type Hex, mix, resolveColor } from "../color";
 import { resolveText } from "../fields";
 import { assemblyBounds, type Box, trimPath } from "../geometry";
@@ -331,12 +337,37 @@ function ReliefFilters({ emboss, deboss }: { emboss: string; deboss: string }) {
   );
 }
 
+/**
+ * A paper's grain as a pattern, empty until its tile is drawn. It follows the
+ * tiles itself, so a tile arriving redraws the pattern and nothing else.
+ */
+function GrainPattern({
+  id,
+  kind,
+  pixelsPerMm,
+}: {
+  id: string;
+  kind: GrainKind;
+  pixelsPerMm?: number;
+}) {
+  const url = useGrains([kind], pixelsPerMm)(kind);
+  const mm = grainMm(kind);
+  return (
+    <pattern id={id} patternUnits="userSpaceOnUse" width={mm} height={mm}>
+      {url ? <image href={url} width={mm} height={mm} /> : null}
+    </pattern>
+  );
+}
+
 function LifelikeDefs({
   prefix,
   grains,
+  pixelsPerMm,
 }: {
   prefix: string;
-  grains: (kind: GrainKind) => string | undefined;
+  /** The kinds of grain the view draws. */
+  grains: readonly GrainKind[];
+  pixelsPerMm?: number;
 }) {
   const ids = defIds(prefix);
   const own = lifelikeIds(prefix);
@@ -346,21 +377,14 @@ function LifelikeDefs({
         <FoilMetal key={ink} id={ids.ink(ink)} ink={ink} />
       ))}
       <ReliefFilters emboss={ids.emboss} deboss={ids.deboss} />
-      {paperTextures.map((kind) => {
-        const url = grains(kind);
-        const mm = grainMm(kind);
-        return url ? (
-          <pattern
-            key={kind}
-            id={own.grain(kind)}
-            patternUnits="userSpaceOnUse"
-            width={mm}
-            height={mm}
-          >
-            <image href={url} width={mm} height={mm} />
-          </pattern>
-        ) : null;
-      })}
+      {[...new Set(grains)].map((kind) => (
+        <GrainPattern
+          key={kind}
+          id={own.grain(kind)}
+          kind={kind}
+          pixelsPerMm={pixelsPerMm}
+        />
+      ))}
       {/* Daylight from the top left, falling off across each sheet. */}
       <linearGradient id={own.light} x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stopColor="#ffffff" stopOpacity="0.09" />
@@ -408,7 +432,6 @@ interface PieceProps {
   face: FaceName;
   context: RenderContext;
   prefix: string;
-  grains: (kind: GrainKind) => string | undefined;
 }
 
 /**
@@ -461,16 +484,13 @@ function PieceShadow({ piece, prefix }: { piece: Piece; prefix: string }) {
  * Over the printing: the paper's grain, the fall of the light, and the cut
  * edge catching it.
  */
-function PieceFinish({ piece, prefix, grains }: PieceProps) {
+function PieceFinish({ piece, prefix }: { piece: Piece; prefix: string }) {
   const own = lifelikeIds(prefix);
   const stock = stocks[piece.stock];
   const area = { x: 0, y: 0, width: piece.width, height: piece.height };
-  const grain = grains(stock.texture);
   return (
     <>
-      {grain ? (
-        <rect {...area} fill={`url(#${own.grain(stock.texture)})`} />
-      ) : null}
+      <rect {...area} fill={`url(#${own.grain(stock.texture)})`} />
       <rect {...area} fill={`url(#${own.light})`} />
       <path
         d={trimPath(piece)}
@@ -513,13 +533,7 @@ function shine(piece: Piece, face: FaceName, context: RenderContext) {
  * The light on one side of a sheet: pearl's shimmer or vellum's sheen
  * across it, foil's glint and spot UV's gloss on their shapes.
  */
-function PieceLight({
-  document,
-  piece,
-  face,
-  context,
-  prefix,
-}: Omit<PieceProps, "grains">) {
+function PieceLight({ document, piece, face, context, prefix }: PieceProps) {
   const own = lifelikeIds(prefix);
   const lit = shine(piece, face, context);
   if (!lit) return null;
@@ -578,9 +592,17 @@ function PieceLight({
   );
 }
 
-/** One sheet as it lies: its shadow, its cut edge, its face and finish. */
-function LifelikePiece(props: PieceProps) {
-  const { document, piece, face, context, prefix } = props;
+/**
+ * One sheet as it lies: its shadow, its cut edge, its face and finish. Drawn
+ * again only when the design changes, not for a zoom.
+ */
+const LifelikePiece = memo(function LifelikePiece({
+  document,
+  piece,
+  face,
+  context,
+  prefix,
+}: PieceProps) {
   const thickness = stockThickness(piece.stock);
   const translucent = stocks[piece.stock].translucent;
   // The edge shows the paper itself, whatever is printed on its face.
@@ -607,11 +629,11 @@ function LifelikePiece(props: PieceProps) {
         bleed={false}
         plain
       >
-        <PieceFinish {...props} />
+        <PieceFinish piece={piece} prefix={prefix} />
       </PieceSurface>
     </>
   );
-}
+});
 
 /** The box a placed piece covers in the assembly, turned or not. */
 function placedBox(piece: Piece): Box {
@@ -890,30 +912,36 @@ function Cover({
   );
 }
 
-/**
- * The finished item lying on the table: the envelope behind, every piece in
- * its place, vellum frosting what it covers, ribbons tied and seals pressed.
- */
-export function LifelikeAssemblyView({
-  document,
-  context,
-  pixelsPerMm,
-  title,
-  className,
-  style,
-}: LifelikeViewProps) {
-  const prefix = svgId(useId(), "lifelike");
-  const own = lifelikeIds(prefix);
-  const grains = useGrains(grainsOf(document), pixelsPerMm);
-  const bounds = assemblyBounds(document);
-  const frame = lifelikeFrame(document, { kind: "assembly" });
-  const envelope = envelopeLayout(document);
-  const ribbons = document.accessories.filter(
+interface ItemProps {
+  document: DesignDocument;
+  context: RenderContext;
+  prefix: string;
+}
+
+const ribbonsOf = (document: DesignDocument) =>
+  document.accessories.filter(
     (accessory): accessory is Ribbon => accessory.kind === "ribbon",
   );
-  const seals = document.accessories.filter(
+const sealsOf = (document: DesignDocument) =>
+  document.accessories.filter(
     (accessory): accessory is Seal => accessory.kind === "wax-seal",
   );
+
+/**
+ * All of the item that stays still: the envelope behind, every piece in its
+ * place, vellum frosting what it covers, ribbons tied and seals pressed.
+ * Drawn again only when the design changes, not for a zoom or a new tile.
+ */
+const AssemblyStill = memo(function AssemblyStill({
+  document,
+  context,
+  prefix,
+}: ItemProps) {
+  const own = lifelikeIds(prefix);
+  const bounds = assemblyBounds(document);
+  const envelope = envelopeLayout(document);
+  const ribbons = ribbonsOf(document);
+  const seals = sealsOf(document);
   let stack: ReactNode[] = envelope
     ? [
         <EnvelopeView
@@ -922,7 +950,7 @@ export function LifelikeAssemblyView({
           layout={envelope}
           context={context}
           prefix={prefix}
-          grain={grains("smooth")}
+          grain={own.grain("smooth")}
         />,
       ]
     : [];
@@ -935,7 +963,6 @@ export function LifelikeAssemblyView({
           face="front"
           context={context}
           prefix={prefix}
-          grains={grains}
         />
       </g>
     );
@@ -956,10 +983,66 @@ export function LifelikeAssemblyView({
       ];
     } else stack.push(drawn);
   }
+  return (
+    <>
+      {stack}
+      {ribbons.map((ribbon) => (
+        <LifelikeRibbon
+          key={ribbon.id}
+          ribbon={ribbon}
+          bounds={bounds}
+          prefix={prefix}
+        />
+      ))}
+      {/* Seals last: wax is pressed over any ribbon. */}
+      {seals.map((seal) => (
+        <LifelikeWaxSeal
+          key={seal.id}
+          seal={seal}
+          prefix={prefix}
+          initials={
+            seal.motif.kind === "initials"
+              ? resolveText(seal.motif.text, {
+                  fields: context.fields,
+                  occasion: document.occasion,
+                  language: document.language,
+                })
+              : ""
+          }
+          motif={
+            seal.motif.kind === "asset"
+              ? context.assets(seal.motif.asset)
+              : undefined
+          }
+        />
+      ))}
+    </>
+  );
+});
 
-  // The light on each sheet, hidden under all that lies over it; then the
-  // shine on each ribbon, hidden under its bow and the seals; then the
-  // glint on each seal, which nothing covers.
+/** Whether anything in the item catches the light. */
+function shines(document: DesignDocument, context: RenderContext) {
+  return (
+    document.pieces.some((piece) => shine(piece, "front", context)) ||
+    ribbonsOf(document).some(ribbonShines) ||
+    sealsOf(document).length > 0
+  );
+}
+
+/**
+ * The light on the item: on each sheet, hidden under all that lies over it;
+ * then the shine on each ribbon, hidden under its bow and the seals; then
+ * the glint on each seal, which nothing covers.
+ */
+const AssemblyLight = memo(function AssemblyLight({
+  document,
+  context,
+  prefix,
+}: ItemProps) {
+  const own = lifelikeIds(prefix);
+  const bounds = assemblyBounds(document);
+  const ribbons = ribbonsOf(document);
+  const seals = sealsOf(document);
   const lights: ReactNode[] = [];
   document.pieces.forEach((piece, index) => {
     if (!shine(piece, "front", context)) return;
@@ -1015,55 +1098,50 @@ export function LifelikeAssemblyView({
   }
   for (const seal of seals)
     lights.push(<SealGlint key={seal.id} seal={seal} prefix={prefix} />);
+  return (
+    <>
+      <LightDefs prefix={prefix} />
+      {lights}
+    </>
+  );
+});
 
+/**
+ * The finished item lying on the table: the envelope behind, every piece in
+ * its place, vellum frosting what it covers, ribbons tied and seals pressed.
+ */
+export function LifelikeAssemblyView({
+  document,
+  context,
+  pixelsPerMm,
+  title,
+  className,
+  style,
+}: LifelikeViewProps) {
+  const prefix = svgId(useId(), "lifelike");
   return (
     <Frame
-      frame={frame}
+      frame={lifelikeFrame(document, { kind: "assembly" })}
       title={title}
       className={className}
       style={style}
       pixelsPerMm={pixelsPerMm}
       light={
-        lights.length > 0 ? (
-          <>
-            <LightDefs prefix={prefix} />
-            {lights}
-          </>
+        shines(document, context) ? (
+          <AssemblyLight
+            document={document}
+            context={context}
+            prefix={prefix}
+          />
         ) : null
       }
     >
-      <LifelikeDefs prefix={prefix} grains={grains} />
-      {stack}
-      {ribbons.map((ribbon) => (
-        <LifelikeRibbon
-          key={ribbon.id}
-          ribbon={ribbon}
-          bounds={bounds}
-          prefix={prefix}
-        />
-      ))}
-      {/* Seals last: wax is pressed over any ribbon. */}
-      {seals.map((seal) => (
-        <LifelikeWaxSeal
-          key={seal.id}
-          seal={seal}
-          prefix={prefix}
-          initials={
-            seal.motif.kind === "initials"
-              ? resolveText(seal.motif.text, {
-                  fields: context.fields,
-                  occasion: document.occasion,
-                  language: document.language,
-                })
-              : ""
-          }
-          motif={
-            seal.motif.kind === "asset"
-              ? context.assets(seal.motif.asset)
-              : undefined
-          }
-        />
-      ))}
+      <LifelikeDefs
+        prefix={prefix}
+        grains={grainsOf(document)}
+        pixelsPerMm={pixelsPerMm}
+      />
+      <AssemblyStill document={document} context={context} prefix={prefix} />
     </Frame>
   );
 }
@@ -1089,7 +1167,6 @@ export function LifelikeFaceView({
   const piece =
     document.pieces.find((candidate) => candidate.id === pieceId) ??
     (document.pieces[0] as Piece);
-  const grains = useGrains([stocks[piece.stock].texture], pixelsPerMm);
   const lit = shine(piece, face, context);
   return (
     <Frame
@@ -1113,14 +1190,17 @@ export function LifelikeFaceView({
         ) : null
       }
     >
-      <LifelikeDefs prefix={prefix} grains={grains} />
+      <LifelikeDefs
+        prefix={prefix}
+        grains={[stocks[piece.stock].texture]}
+        pixelsPerMm={pixelsPerMm}
+      />
       <LifelikePiece
         document={document}
         piece={piece}
         face={face}
         context={context}
         prefix={prefix}
-        grains={grains}
       />
     </Frame>
   );

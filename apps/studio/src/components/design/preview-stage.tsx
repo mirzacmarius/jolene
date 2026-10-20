@@ -67,6 +67,39 @@ const sameSpace = (a: Space, b: Space) =>
 const densityStep = (value: number) =>
   2 ** (Math.round(Math.log2(value) * 4) / 4);
 
+/**
+ * The linen the item lies on, its weave as fine as the screen shows it. It
+ * follows the tiles itself, so a tile arriving redraws the cloth alone.
+ */
+function Tablecloth({
+  color,
+  pixelsPerMm,
+  perMm,
+  origin,
+}: {
+  color: string;
+  /** Device pixels to the millimetre, for the weave's detail. */
+  pixelsPerMm: number | undefined;
+  /** CSS pixels to the millimetre, for the weave's size. */
+  perMm: number;
+  /** Where the weave starts, under the item's corner. */
+  origin: Box | null;
+}) {
+  const cloth = useGrains(["cloth"], pixelsPerMm)("cloth");
+  return (
+    <div
+      aria-hidden
+      className="absolute inset-0"
+      style={{
+        backgroundColor: color,
+        backgroundImage: cloth ? `url(${cloth})` : undefined,
+        backgroundSize: `${grainMm("cloth") * perMm}px`,
+        backgroundPosition: origin ? `${origin.x}px ${origin.y}px` : undefined,
+      }}
+    />
+  );
+}
+
 /** Whether a media query matches, kept up to date; false on the server. */
 function useMedia(query: string) {
   const subscribe = useCallback(
@@ -187,9 +220,6 @@ export function PreviewStage({
     sweep: viewKey,
   });
 
-  const grains = useGrains(lifelike ? ["cloth"] : [], pixelsPerMm);
-  const cloth = grains("cloth");
-
   return (
     <>
       <div
@@ -199,22 +229,15 @@ export function PreviewStage({
           zoom > 1 && "cursor-grab touch-none",
         )}
       >
-        <div
-          ref={table}
-          className="absolute inset-0"
-          style={
-            lifelike
-              ? {
-                  backgroundColor: tabletopColor(document.theme.palette),
-                  backgroundImage: cloth ? `url(${cloth})` : undefined,
-                  backgroundSize: `${grainMm("cloth") * perMm}px`,
-                  backgroundPosition: fitted
-                    ? `${fitted.x}px ${fitted.y}px`
-                    : undefined,
-                }
-              : undefined
-          }
-        >
+        <div ref={table} className="absolute inset-0">
+          {lifelike ? (
+            <Tablecloth
+              color={tabletopColor(document.theme.palette)}
+              pixelsPerMm={pixelsPerMm}
+              perMm={perMm}
+              origin={fitted}
+            />
+          ) : null}
           {box ? (
             <div
               ref={item}

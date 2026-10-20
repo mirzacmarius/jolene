@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { paperTextures } from "../catalog";
-import { type GrainKind, grainLevel, grainMm, grainTile } from "./grain";
+import {
+  type GrainKind,
+  grainLevel,
+  grainMm,
+  grainTile,
+  grainTiles,
+} from "./grain";
 
 const kinds: GrainKind[] = [...paperTextures, "cloth"];
 
@@ -52,6 +58,17 @@ describe("grain tiles", () => {
     expect(coarser.size).toBe(finest.size / 2);
     expect(coarser.data.length).toBe(finest.data.length / 4);
     expect(coarser.mm).toBe(finest.mm);
+  });
+
+  test("come at every level of detail from one drawing", () => {
+    for (const kind of kinds) {
+      const tiles = grainTiles(kind);
+      // Every level grainLevel picks is drawn.
+      expect(tiles.length).toBe(grainLevel(kind, 0.01) + 1);
+      tiles.forEach((tile, level) => {
+        expect(tile.data).toEqual(grainTile(kind, level).data);
+      });
+    }
   });
 });
 

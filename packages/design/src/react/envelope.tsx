@@ -1,7 +1,6 @@
 import { type Hex, mix, resolveColor } from "../color";
 import { assemblyBounds, type Box } from "../geometry";
 import type { DesignDocument, Envelope } from "../schema";
-import { grainMm } from "./grain";
 import type { RenderContext } from "./shared";
 
 /**
@@ -106,7 +105,7 @@ export interface EnvelopeViewProps {
   layout: EnvelopeLayout;
   context: RenderContext;
   prefix: string;
-  /** The smooth paper's grain laid over the envelope, if drawn yet. */
+  /** The id of a pattern of paper grain to lay over the envelope. */
   grain?: string;
 }
 
@@ -191,20 +190,6 @@ export function EnvelopeView({
             width={w}
             height={depth + h * 0.25}
             preserveAspectRatio="xMidYMid slice"
-          />
-        </pattern>
-      ) : null}
-      {grain ? (
-        <pattern
-          id={id("grain")}
-          patternUnits="userSpaceOnUse"
-          width={grainMm("smooth")}
-          height={grainMm("smooth")}
-        >
-          <image
-            href={grain}
-            width={grainMm("smooth")}
-            height={grainMm("smooth")}
           />
         </pattern>
       ) : null}
@@ -309,7 +294,7 @@ export function EnvelopeView({
       <g clipPath={`url(#${id("outline")})`}>
         <path d={outline} fill={`url(#${id("light")})`} />
         {grain ? (
-          <path d={outline} fill={`url(#${id("grain")})`} opacity={0.8} />
+          <path d={outline} fill={`url(#${grain})`} opacity={0.8} />
         ) : null}
       </g>
     </g>

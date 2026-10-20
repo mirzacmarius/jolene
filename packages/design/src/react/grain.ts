@@ -502,18 +502,8 @@ export function grainLevel(kind: GrainKind, pixelsPerMm?: number): number {
   return level;
 }
 
-/**
- * Draws one tile at a level of detail (see grainLevel). Pure, so it runs and
- * is tested without a browser.
- */
-export function grainTile(kind: GrainKind, level = 0): GrainTile {
-  const recipe = recipes[kind];
-  let field = recipe.draw(recipe.size, seededRandom(seedOf(kind)));
-  let size = recipe.size;
-  for (let i = 0; i < level && size / 2 >= SMALLEST; i++) {
-    field = halve(field, size);
-    size /= 2;
-  }
+/** A tile's pixels: white or black, as opaque as its value is strong. */
+function encode(field: Field, size: number, recipe: Recipe): GrainTile {
   const data = new Uint8ClampedArray(field.length * 4);
   for (let i = 0; i < field.length; i++) {
     const value = Math.max(-1, Math.min(1, at(field, i)));
@@ -526,28 +516,53 @@ export function grainTile(kind: GrainKind, level = 0): GrainTile {
   return { size, mm: recipe.mm, data };
 }
 
+/**
+ * Draws a tile at every level of detail (see grainLevel), finest first, from
+ * one drawing. Pure, so it runs and is tested without a browser.
+ */
+export function grainTiles(kind: GrainKind): GrainTile[] {
+  const recipe = recipes[kind];
+  let field = recipe.draw(recipe.size, seededRandom(seedOf(kind)));
+  let size = recipe.size;
+  const tiles = [encode(field, size, recipe)];
+  while (size / 2 >= SMALLEST) {
+    field = halve(field, size);
+    size /= 2;
+    tiles.push(encode(field, size, recipe));
+  }
+  return tiles;
+}
+
+/** Draws one tile at a level of detail (see grainLevel). */
+export function grainTile(kind: GrainKind, level = 0): GrainTile {
+  const tiles = grainTiles(kind);
+  return tiles[Math.min(level, tiles.length - 1)] as GrainTile;
+}
+
 /** A tile at one level of detail, as the store keeps it. */
 type TileKey = `${GrainKind}/${number}`;
 
 const urls = new Map<TileKey, string>();
-const pending = new Set<TileKey>();
+/** Kinds drawn already, or tried: a browser without a canvas keeps none. */
+const painted = new Set<GrainKind>();
+const pending = new Set<GrainKind>();
 const listeners = new Set<() => void>();
 let drawn = 0;
 
-/** Paints a tile on a canvas and keeps its address. */
-function paint(kind: GrainKind, level: number) {
-  const tile = grainTile(kind, level);
+/** Paints a tile's every level on a canvas and keeps their addresses. */
+function paint(kind: GrainKind) {
+  painted.add(kind);
   const canvas = document.createElement("canvas");
-  canvas.width = tile.size;
-  canvas.height = tile.size;
   const context = canvas.getContext("2d");
   if (!context) return;
-  const image = context.createImageData(tile.size, tile.size);
-  image.data.set(tile.data);
-  context.putImageData(image, 0, 0);
-  urls.set(`${kind}/${level}`, canvas.toDataURL("image/png"));
-  drawn += 1;
-  for (const listener of listeners) listener();
+  grainTiles(kind).forEach((tile, level) => {
+    canvas.width = tile.size;
+    canvas.height = tile.size;
+    const image = context.createImageData(tile.size, tile.size);
+    image.data.set(tile.data);
+    context.putImageData(image, 0, 0);
+    urls.set(`${kind}/${level}`, canvas.toDataURL("image/png"));
+  });
 }
 
 /** Runs a task when the browser has a moment, one tile at a time. */
@@ -558,23 +573,23 @@ function whenIdle(task: () => void) {
 }
 
 /**
- * Draws the tiles a preview needs, each in its own idle moment so a page
- * never stalls on them; previews already showing pick each one up as it's
- * ready.
+ * Draws the tiles of the kinds a preview needs, at every level of detail so
+ * zooming never waits for one: each kind in its own idle moment, so a page
+ * never stalls on them. Previews already showing pick them up once all that
+ * were asked for are ready, together, so they're redrawn once and not once
+ * for each.
  */
-export function requestGrains(
-  kinds: readonly GrainKind[],
-  pixelsPerMm?: number,
-) {
+export function requestGrains(kinds: readonly GrainKind[]) {
   if (typeof document === "undefined") return;
   for (const kind of kinds) {
-    const level = grainLevel(kind, pixelsPerMm);
-    const key: TileKey = `${kind}/${level}`;
-    if (urls.has(key) || pending.has(key)) continue;
-    pending.add(key);
+    if (painted.has(kind) || pending.has(kind)) continue;
+    pending.add(kind);
     whenIdle(() => {
-      pending.delete(key);
-      if (!urls.has(key)) paint(kind, level);
+      if (!painted.has(kind)) paint(kind);
+      pending.delete(kind);
+      if (pending.size > 0) return;
+      drawn += 1;
+      for (const listener of listeners) listener();
     });
   }
 }
@@ -586,23 +601,12 @@ const subscribe = (listener: () => void) => {
   };
 };
 
-/** The drawn tile of a kind closest in detail to `level`, if any is. */
-function nearest(kind: GrainKind, level: number): string | undefined {
-  for (let apart = 0; apart <= 4; apart++) {
-    const url =
-      urls.get(`${kind}/${level - apart}`) ??
-      urls.get(`${kind}/${level + apart}`);
-    if (url) return url;
-  }
-  return undefined;
-}
-
 /**
  * The addresses of the tiles a preview draws, at the detail a screen of
  * `pixelsPerMm` device pixels to the millimetre shows (see grainLevel).
  * None while the server renders or the page hydrates, so both draw the same
- * markup; each tile then appears once it's drawn, and while a finer or
- * coarser one is drawn for a new zoom the one already there stays.
+ * markup; each kind then appears once it's drawn, at every level of detail,
+ * so a new zoom just picks another.
  */
 export function useGrains(
   kinds: readonly GrainKind[],
@@ -615,11 +619,13 @@ export function useGrains(
     () => -1,
   );
   useEffect(() => {
-    if (key) requestGrains(key.split(" ") as GrainKind[], pixelsPerMm);
-  }, [key, pixelsPerMm]);
+    if (key) requestGrains(key.split(" ") as GrainKind[]);
+  }, [key]);
   return useCallback(
     (kind: GrainKind) =>
-      generation < 0 ? undefined : nearest(kind, grainLevel(kind, pixelsPerMm)),
+      generation < 0
+        ? undefined
+        : urls.get(`${kind}/${grainLevel(kind, pixelsPerMm)}`),
     [generation, pixelsPerMm],
   );
 }
