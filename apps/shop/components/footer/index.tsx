@@ -8,7 +8,6 @@ import { Link } from "@/components/ui/link";
 import { shopConfig } from "@/lib/config";
 
 import anpcSal from "./anpc-sal.webp";
-import anpcSol from "./anpc-sol.webp";
 import { type SocialLink, SocialLinks } from "./social-links";
 
 // These pages and articles still live on jolene.ro: they must move here before jolene.ro points at this shop.
@@ -85,29 +84,16 @@ export function Footer() {
               <FooterLinks links={ARTICLES} title="Din blog" />
             </div>
             <div className="flex flex-wrap items-center justify-between gap-5">
-              {/* Unoptimized: images.deviceSizes would serve them 1320 px wide; they are saved at twice their size. */}
-              <div className="flex flex-wrap gap-2.5">
-                <a href="https://anpc.ro/ce-este-sal/" rel="noopener noreferrer" target="_blank">
-                  <Image
-                    alt="Soluționarea alternativă a litigiilor"
-                    className="h-9.5 w-auto"
-                    src={anpcSal}
-                    unoptimized
-                  />
-                </a>
-                <a
-                  href="https://ec.europa.eu/consumers/odr/main/index.cfm?event=main.home2.show&lng=RO"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <Image
-                    alt="Soluționarea online a litigiilor"
-                    className="h-9.5 w-auto"
-                    src={anpcSol}
-                    unoptimized
-                  />
-                </a>
-              </div>
+              {/* ANPC's Order 270/2026 asks for one SAL pictogram, 250 × 50 px, linking to its SAL platform. */}
+              {/* Unoptimized: images.deviceSizes would serve it 1320 px wide; it is saved at twice its size. */}
+              <a href="https://reclamatiisal.anpc.ro/" rel="noopener noreferrer" target="_blank">
+                <Image
+                  alt="Soluționarea alternativă a litigiilor"
+                  className="h-12.5 w-auto"
+                  src={anpcSal}
+                  unoptimized
+                />
+              </a>
               <SocialLinks links={SOCIAL_LINKS} />
             </div>
             <div className="flex flex-col gap-4 border-t border-primary-foreground/20 pt-5 text-xxs leading-[1.65] tracking-[0.035em] sm:flex-row sm:justify-between">
