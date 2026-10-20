@@ -36,7 +36,13 @@ type Env = {
   readonly AI_MODEL: string | undefined;
   readonly AI_STAND_IN: string | undefined;
   readonly ANTHROPIC_API_KEY: string | undefined;
+  readonly AUTH_GOOGLE_ID: string | undefined;
+  readonly AUTH_GOOGLE_SECRET: string | undefined;
+  readonly SHOPIFY_CLIENT_ID: string | undefined;
+  readonly SHOPIFY_CLIENT_SECRET: string | undefined;
+  readonly SHOPIFY_STORE_DOMAIN: string | undefined;
   readonly SITE_URL: string | undefined;
+  readonly WORKSHOP_EMAILS: string | undefined;
 };
 
 /**

@@ -21,4 +21,6 @@ export const errors = {
   aiInvalidMessage: "ai-invalid-message",
   /** A picture that isn't a PNG or a JPEG, or is too large to keep. */
   invalidImage: "invalid-image",
+  /** Orders are for the workshop's Google accounts alone. */
+  workshopOnly: "workshop-only",
 } as const;

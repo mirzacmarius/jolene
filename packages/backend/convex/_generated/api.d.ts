@@ -40,6 +40,11 @@ import type * as utils_assets from "../utils/assets.js";
 import type * as utils_auth from "../utils/auth.js";
 import type * as utils_errors from "../utils/errors.js";
 import type * as utils_validators from "../utils/validators.js";
+import type * as workshop from "../workshop.js";
+import type * as workshop_orders from "../workshop/orders.js";
+import type * as workshop_proofs from "../workshop/proofs.js";
+import type * as workshop_staff from "../workshop/staff.js";
+import type * as workshop_validators from "../workshop/validators.js";
 
 import type {
   ApiFromModules,
@@ -80,6 +85,11 @@ declare const fullApi: ApiFromModules<{
   "utils/auth": typeof utils_auth;
   "utils/errors": typeof utils_errors;
   "utils/validators": typeof utils_validators;
+  workshop: typeof workshop;
+  "workshop/orders": typeof workshop_orders;
+  "workshop/proofs": typeof workshop_proofs;
+  "workshop/staff": typeof workshop_staff;
+  "workshop/validators": typeof workshop_validators;
 }>;
 
 /**

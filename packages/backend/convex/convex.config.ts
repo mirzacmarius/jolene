@@ -31,6 +31,31 @@ const app = defineApp({
      * on a real deployment.
      */
     AI_STAND_IN: v.optional(v.string()),
+    /**
+     * The workshop's Google sign-in: the ID and secret of an OAuth client in
+     * Google Cloud (auth.ts). The workshop's page says sign-in isn't set up
+     * while they're unset; couples sign in without them.
+     */
+    AUTH_GOOGLE_ID: v.optional(v.string()),
+    AUTH_GOOGLE_SECRET: v.optional(v.string()),
+    /**
+     * The Google accounts the workshop's order list opens to, by address,
+     * comma-separated. It opens to no one while unset.
+     */
+    WORKSHOP_EMAILS: v.optional(v.string()),
+    /**
+     * The Shopify store the workshop's order list reads, such as
+     * jolene.myshopify.com. The list says it isn't connected to the store
+     * while this or the app's credentials are unset.
+     */
+    SHOPIFY_STORE_DOMAIN: v.optional(v.string()),
+    /**
+     * The client ID and secret of the Dev Dashboard app the store installed
+     * (packages/products), which reads orders with read_orders. The secret
+     * is only ever sent to the store.
+     */
+    SHOPIFY_CLIENT_ID: v.optional(v.string()),
+    SHOPIFY_CLIENT_SECRET: v.optional(v.string()),
   },
 });
 
