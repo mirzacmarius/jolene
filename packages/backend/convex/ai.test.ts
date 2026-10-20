@@ -709,7 +709,20 @@ describe("the AI designer", () => {
     expect(reply.changes).toEqual([
       { kind: "design", revision: 2, note: "Culori mai calde" },
     ]);
-    expect(reply.text).toContain("Anulează");
+    expect(reply.text).toContain("Anulați");
+
+    await talk(setup, "Completați detaliile");
+    expect((await designOf(setup)).event.fields).toEqual({
+      partner1: "Ioana",
+      partner2: "Andrei",
+    });
+    expect((await replyOf(setup)).changes).toEqual([
+      {
+        kind: "details",
+        previous: { partner1: "", partner2: "" },
+        note: "Nume de probă",
+      },
+    ]);
   });
 
   test("is not available without a key", async () => {

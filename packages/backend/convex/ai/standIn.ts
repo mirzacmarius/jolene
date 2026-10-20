@@ -14,7 +14,9 @@ import { toolNames } from "./tools";
  * answers every message with a short scripted turn. It notes what it is
  * doing, makes one apply_operations call that warms or cools the palette,
  * then says so; asked to look ("look", "uitați-vă"), it first calls
- * look_at_design. Enough to try the whole flow in the browser.
+ * look_at_design, and asked about the details ("detalii", "details"), it
+ * writes sample names into them with set_details instead. Enough to try the
+ * whole flow in the browser.
  */
 export const standIn: ModelClient = {
   async stream(request, onEvent, signal) {
@@ -25,6 +27,8 @@ export const standIn: ModelClient = {
     const calledLook = results.some((name) => name === toolNames.lookAtDesign);
     if (results.includes(toolNames.applyOperations))
       return await play([text(words.done)], "end_turn", onEvent, signal);
+    if (results.includes(toolNames.setDetails))
+      return await play([text(words.named)], "end_turn", onEvent, signal);
     const wantsLook =
       !calledLook &&
       /look|see|check|uita|uită|vede|verific/i.test(lastText(request.messages));
@@ -35,6 +39,24 @@ export const standIn: ModelClient = {
         onEvent,
         signal,
       );
+    if (/detali|details/i.test(lastText(request.messages))) {
+      const occasion = latest(request.messages, /<details occasion="(\w+)"/);
+      return await play(
+        [
+          note(words.naming),
+          toolUse(toolNames.setDetails, {
+            fields:
+              occasion === "christening"
+                ? { child: "Sofia" }
+                : { partner1: "Ioana", partner2: "Andrei" },
+            note: words.names,
+          }),
+        ],
+        "tool_use",
+        onEvent,
+        signal,
+      );
+    }
     const revision = Number(
       latest(request.messages, /revision"?[=:]"?(\d+)/) ?? 1,
     );
@@ -67,7 +89,11 @@ const romanian = {
   choosing: "Aleg o paletă nouă pentru accent și ilustrații.",
   warmer: "Culori mai calde",
   cooler: "Culori mai reci",
-  done: "Gata: am schimbat paleta, iar accentul și ilustrațiile au acum un ton nou. Dacă nu vă place, apăsați „Anulează”.",
+  done: "Gata: am schimbat paleta, iar accentul și ilustrațiile au acum un ton nou. Dacă nu vă place, apăsați „Anulați”.",
+  naming: "Scriu niște nume de probă în detalii.",
+  names: "Nume de probă",
+  named:
+    "Gata: am scris niște nume de probă în detalii, iar toate piesele le arată. Dacă nu vă plac, apăsați „Anulați”.",
 };
 
 const english = {
@@ -76,6 +102,10 @@ const english = {
   warmer: "Warmer colours",
   cooler: "Cooler colours",
   done: "Done: I've changed the palette, so the accent and the artwork have a new tone. If you don't like it, press Undo.",
+  naming: "Writing sample names into your details.",
+  names: "Sample names",
+  named:
+    "Done: I've written sample names into your details, and every piece shows them. If you don't like them, press Undo.",
 };
 
 /** Every text the request holds, newest last, tool results included. */
