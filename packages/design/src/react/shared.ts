@@ -1,4 +1,5 @@
 import { type FontFamilyName, fontFamilies } from "../catalog";
+import { symbolFonts } from "../fonts";
 import type { Fields } from "../fields";
 import type { Measure } from "../text-layout";
 
@@ -18,9 +19,11 @@ export interface RenderContext {
 }
 
 const fallbacks = { script: "cursive", serif: "serif", sans: "sans-serif" };
+const symbols = symbolFonts.map((family) => `"${family}"`).join(", ");
 
+/** A typeface, then the symbol faces for what it lacks (fonts.ts). */
 export function fontStack(family: FontFamilyName): string {
-  return `"${family}", ${fallbacks[fontFamilies[family].category]}`;
+  return `"${family}", ${symbols}, ${fallbacks[fontFamilies[family].category]}`;
 }
 
 /** Ids from React's useId, made safe for url(#…) references. */

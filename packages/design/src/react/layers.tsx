@@ -8,7 +8,7 @@ import type {
   ShapeLayer,
   TextLayer,
 } from "../schema";
-import { layoutText } from "../text-layout";
+import { layoutText, lineMiddles } from "../text-layout";
 import { ptToMm } from "../units";
 import { defIds } from "./defs";
 import { fontStack, type RenderContext } from "./shared";
@@ -125,12 +125,7 @@ function TextLayerView({
   });
   const sizeMm = ptToMm(layout.size);
   const trackingMm = (style.tracking / 1000) * sizeMm;
-  const top =
-    layer.valign === "top"
-      ? 0
-      : layer.valign === "bottom"
-        ? height - layout.height
-        : (height - layout.height) / 2;
+  const middles = lineMiddles(layout, layer.valign, height);
   // Browsers space out the last letter of a line too, and centre or
   // right-align that trailing space with it; shift the line by that space so
   // its letters sit where the layout measured them.
@@ -167,7 +162,7 @@ function TextLayerView({
           // biome-ignore lint/suspicious/noArrayIndexKey: see above
           key={index}
           x={x}
-          y={top + (index + 0.5) * layout.lineHeight}
+          y={middles[index]}
         >
           {line.text}
         </tspan>
