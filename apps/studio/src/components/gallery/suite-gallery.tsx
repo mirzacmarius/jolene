@@ -22,6 +22,7 @@ import { useMemo, useState } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { type AssetLink, DesignPreview } from "../design/design-preview";
 import { StartDesignButton } from "../design/start-design-button";
+import { useEventFields } from "../design/use-event-fields";
 
 interface SuiteSummary {
   slug: string;
@@ -49,12 +50,14 @@ function stylesOf(suites: { styles: string[] }[]) {
 
 /**
  * Jolene's published collections, each previewed by its invitation, to browse
- * by occasion and style.
+ * by occasion and style. Once a couple has given their details, every
+ * collection shows them.
  */
 export function SuiteGallery() {
   const t = useI18n();
   const locale = useCurrentLocale();
   const data = useQuery(api.catalog.suites);
+  const own = useEventFields();
   const [occasion, setOccasion] = useState<Occasion | "all">("all");
   const [style, setStyle] = useState<string | null>(null);
   if (data === undefined)
@@ -122,7 +125,12 @@ export function SuiteGallery() {
       ) : null}
       <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
         {shown.map((suite) => (
-          <SuiteCard key={suite.slug} suite={suite} assets={data.assets} />
+          <SuiteCard
+            key={suite.slug}
+            suite={suite}
+            own={own[suite.occasion]}
+            assets={data.assets}
+          />
         ))}
       </div>
     </>
@@ -131,9 +139,12 @@ export function SuiteGallery() {
 
 function SuiteCard({
   suite,
+  own,
   assets,
 }: {
   suite: SuiteSummary;
+  /** The couple's own details, over the collection's examples. */
+  own: Fields | undefined;
   assets: AssetLink[];
 }) {
   const t = useI18n();
@@ -142,8 +153,11 @@ function SuiteCard({
   const lead = suite.lead?.document as DesignDocument | undefined;
   const fields = useMemo(
     () =>
-      previewFields(suite.occasion, lead?.language ?? "ro", suite.sampleFields),
-    [suite.occasion, lead?.language, suite.sampleFields],
+      previewFields(suite.occasion, lead?.language ?? "ro", {
+        ...suite.sampleFields,
+        ...own,
+      }),
+    [suite.occasion, lead?.language, suite.sampleFields, own],
   );
   return (
     <article className="group flex flex-col">

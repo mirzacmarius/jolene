@@ -110,6 +110,28 @@ _Avoid_: Insert
 The guides the studio draws over a face: where the workshop cuts the piece, and the bleed beyond, printed and then cut away so colour runs to the edge.
 _Avoid_: Border, padding, crop marks
 
+### Printing
+
+**Print file** (ro: fișier de tipar):
+The PDF the workshop prints an item from: every face of every piece, a page for each plate, with its bleed, crop marks and a line saying what each page is. Couples never get one; they approve a proof.
+_Avoid_: Export, artwork, PDF (any PDF)
+
+**Plate** (ro: separație):
+One ink's page of a face in the print file: the colour print, or the shape in solid black where the workshop presses a foil, white ink, embossing or spot UV.
+_Avoid_: Layer, separation (in code)
+
+**Crop marks** (ro: semne de tăiere):
+The short lines outside each corner of a page in the print file, where the workshop cuts, and the dashed fold marks where a piece folds.
+_Avoid_: Trim lines (the studio's guides on screen)
+
+**Die line** (ro: contur de tăiere):
+The outline a die cuts a piece to when it isn't a plain rectangle, on its own page after the piece's faces.
+_Avoid_: Cut path, shape
+
+**Safe margin** (ro: margine de siguranță):
+The band inside the trim that words stay out of, so a cut a little off never touches them.
+_Avoid_: Padding, quiet zone
+
 ### Ordering
 
 **Proof** (ro: bun de tipar):

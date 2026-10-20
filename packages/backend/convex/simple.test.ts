@@ -82,6 +82,16 @@ const christening = {
   art,
 };
 
+/** Another wedding collection, for a couple who makes a second one. */
+const otherWedding = {
+  ...wedding,
+  suite: { ...wedding.suite, slug: "other", sortOrder: 2 },
+  templates: wedding.templates.map((template) => ({
+    ...template,
+    slug: template.slug.replace("sample", "other"),
+  })),
+};
+
 const aiEnv = [
   "ANTHROPIC_API_KEY",
   "AI_MODEL",
@@ -324,6 +334,56 @@ describe("simple mode", () => {
       designId: setup.designId,
     });
     expect(data?.event.wording).toEqual({ tone: "classic", language: "ro" });
+    expect(data?.composed).toBe(true);
+  });
+
+  test("writes another collection of the same wedding with what the couple said", async () => {
+    const setup = await setUp();
+    await setup.t.mutation(internal.catalog.save.suite, otherWedding);
+    const requests = standInModel();
+    const opened = await setup.couple.query(api.designs.get, {
+      designId: setup.designId,
+    });
+    expect(opened?.composed).toBe(false);
+    await setup.couple.mutation(api.events.setFields, {
+      eventId: opened?.event._id as never,
+      fields: { partner1: "Ioana", partner2Parents: "Maria și Vasile Dobre" },
+    });
+    const compose = (designId: Id<"designs">) =>
+      setup.couple.mutation(api.simple.compose, {
+        designId,
+        items: [request("invitation")],
+        tone: "romantic",
+        language: "ro",
+        locale: "ro",
+      });
+    await compose(setup.designId);
+    await setup.t.finishAllScheduledFunctions(() => {});
+    const written = requests.length;
+
+    // The other collection's invitation is of the same wedding, with its
+    // details and wording, and isn't made yet.
+    const designId = await setup.couple.mutation(api.designs.start, {
+      template: "other-invitation",
+    });
+    const data = await setup.couple.query(api.designs.get, { designId });
+    expect(data?.event._id).toBe(opened?.event._id as never);
+    expect(data?.event.wording).toEqual({ tone: "romantic", language: "ro" });
+    expect(data?.composed).toBe(false);
+
+    await compose(designId);
+    expect(
+      (await setup.couple.query(api.designs.get, { designId }))?.composed,
+    ).toBe(true);
+    await setup.t.finishAllScheduledFunctions(() => {});
+    // The AI designer writes it knowing everyone the couple named, and puts
+    // them on it whether or not the template has a line for them.
+    const context = contextOf(requests.slice(written), "Invitation");
+    expect(context).toContain(
+      '{"partner1":"Ioana","partner2Parents":"Maria și Vasile Dobre"}',
+    );
+    expect(context).toContain('<wording language="ro" tone="romantic">');
+    expect(context).toContain("even where the template has no line for it");
   });
 
   test("keeps the couple's designs of an item and their own line", async () => {

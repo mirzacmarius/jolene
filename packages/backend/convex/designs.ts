@@ -5,6 +5,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { type MutationCtx, mutation, query } from "./_generated/server";
 import { applyToDesign } from "./designs/apply";
 import { saveRevision } from "./designs/versions";
+import { latestEvent } from "./events";
 import schema from "./schema";
 import { resolveAssets, resolvedAssetValidator } from "./utils/assets";
 import { requireUser } from "./utils/auth";
@@ -66,8 +67,9 @@ export async function createDesign(
 
 /**
  * Starts a design from a template. The couple's details carry over from their
- * latest event of the same occasion, so a save-the-date started after the
- * invitation already has their names; their first design starts the event.
+ * latest event of the same occasion, whichever collection its designs come
+ * from, so a save-the-date started after the invitation already has their
+ * names; their first design starts the event.
  */
 export const start = mutation({
   args: { template: v.string() },
@@ -80,13 +82,7 @@ export const start = mutation({
       .unique();
     if (!template || template.retired) throw new ConvexError(errors.notFound);
     const { occasion } = documentOf(template);
-    const event = await ctx.db
-      .query("events")
-      .withIndex("by_ownerId_and_occasion", (q) =>
-        q.eq("ownerId", ownerId).eq("occasion", occasion),
-      )
-      .order("desc")
-      .first();
+    const event = await latestEvent(ctx, ownerId, occasion);
     const eventId =
       event?._id ??
       (await ctx.db.insert("events", {
@@ -113,6 +109,8 @@ export const get = query({
         slug: v.string(),
         suite: v.object({ slug: v.string(), name: labelsValidator }),
       }),
+      /** Simple mode has made the design's collection for its event. */
+      composed: v.boolean(),
       assets: v.array(resolvedAssetValidator),
     }),
     v.null(),
@@ -126,6 +124,12 @@ export const get = query({
     const template = await ctx.db.get("templates", design.templateId);
     const suite = template && (await ctx.db.get("suites", template.suiteId));
     if (!event || !template || !suite) return null;
+    const composition = await ctx.db
+      .query("compositions")
+      .withIndex("by_eventId_and_suiteId", (q) =>
+        q.eq("eventId", event._id).eq("suiteId", suite._id),
+      )
+      .first();
     return {
       design,
       event,
@@ -133,6 +137,7 @@ export const get = query({
         slug: template.slug,
         suite: { slug: suite.slug, name: suite.name },
       },
+      composed: composition !== null,
       assets: await resolveAssets(ctx, assetKeys(documentOf(design)), viewerId),
     };
   },

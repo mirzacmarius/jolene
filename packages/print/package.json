@@ -1,0 +1,29 @@
+{
+  "name": "@jolene/print",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome lint",
+    "typecheck": "tsc --noEmit",
+    "samples": "bun scripts/samples.ts"
+  },
+  "dependencies": {
+    "@jolene/design": "workspace:*",
+    "fontkit": "2.0.4",
+    "pdfkit": "0.20.2",
+    "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "@jolene/suites": "workspace:*",
+    "@jolene/typescript": "workspace:*",
+    "@types/bun": "^1.4.3",
+    "@types/fontkit": "2.0.9",
+    "@types/pdfkit": "^0.17.6",
+    "typescript": "^5.9.3"
+  }
+}

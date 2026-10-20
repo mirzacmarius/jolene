@@ -106,6 +106,10 @@ describe("the context of a message", () => {
     );
     expect(first).toContain('<composition item="Invitation" first="true">');
     expect(first).toContain("in this order: Invitation, Menu.");
+    // Whoever the couple named goes on it, though the template may not.
+    expect(first).toContain(
+      "even where the template has no line for it: an invitation names the parents and the godparents",
+    );
     expect(first).toContain("It is written first");
     expect(first.indexOf("<composition")).toBeLessThan(
       first.indexOf("</context>"),

@@ -45,6 +45,14 @@ describe("resolveText", () => {
     );
   });
 
+  test("joins accents to their letters and draws symbols as type", () => {
+    // "ș" typed as s and a comma below, a heart and a check mark from a
+    // phone's emoji keyboard.
+    expect(
+      resolveText("Ia\u0219i \u2764\uFE0F {{partner1}} \u2714\uFE0E", options),
+    ).toBe("Iași ❤ Ana ✔");
+  });
+
   test("derives the monogram unless one is given", () => {
     expect(resolveText("{{monogram}}", options)).toBe("A & M");
     expect(

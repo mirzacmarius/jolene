@@ -50,6 +50,21 @@ const sample = {
   ],
 };
 
+/** Another wedding collection, for a couple who designs from two. */
+const other = {
+  ...sample,
+  suite: {
+    ...sample.suite,
+    slug: "other",
+    name: { ro: "Altă colecție", en: "Another collection" },
+    sortOrder: 1,
+  },
+  templates: sample.templates.map((template) => ({
+    ...template,
+    slug: template.slug.replace("sample", "other"),
+  })),
+};
+
 async function setUp() {
   const t = convexTest(schema, modules);
   await t.mutation(internal.catalog.save.suite, sample);
@@ -177,6 +192,43 @@ describe("designs", () => {
     });
     const after = await couple.query(api.designs.get, { designId: menu });
     expect(after?.event.fields).toEqual({ partner1: "Ioana" });
+  });
+
+  test("share the couple's details across collections", async () => {
+    const { t, couple, stranger } = await setUp();
+    await t.mutation(internal.catalog.save.suite, other);
+    const invitation = await couple.mutation(api.designs.start, {
+      template: "sample-invitation",
+    });
+    const first = await couple.query(api.designs.get, { designId: invitation });
+    // Until the couple gives some, collections preview with their own.
+    expect(await couple.query(api.events.latestFields, {})).toEqual([]);
+    const fields = {
+      partner1: "Ioana",
+      partner2: "Mihai",
+      godparents: "Ana și Radu Pop",
+    };
+    await couple.mutation(api.events.setFields, {
+      eventId: first?.event._id as never,
+      fields,
+    });
+    expect(await couple.query(api.events.latestFields, {})).toEqual([
+      { occasion: "wedding", fields },
+    ]);
+
+    // A design from another collection is of the same wedding.
+    const menu = await couple.mutation(api.designs.start, {
+      template: "other-menu",
+    });
+    const second = await couple.query(api.designs.get, { designId: menu });
+    expect(second?.event._id).toBe(first?.event._id as never);
+    expect(second?.event.fields).toEqual(fields);
+    expect(second?.template.suite.slug).toBe("other");
+    expect(second?.composed).toBe(false);
+
+    // Nobody else previews with them.
+    expect(await stranger.query(api.events.latestFields, {})).toEqual([]);
+    expect(await t.query(api.events.latestFields, {})).toEqual([]);
   });
 
   test("are private to their owner", async () => {

@@ -384,7 +384,9 @@ export interface ResolveOptions {
 /**
  * Fills a text's tokens from the fields. A line whose tokens all come out
  * empty is dropped, so "Nașii: {{godparents}}" disappears until nași are
- * named instead of printing a bare label.
+ * named instead of printing a bare label. Letters typed as a letter and its
+ * accent are joined, and the selectors a phone adds to ask for a colour emoji
+ * are dropped: a design draws its symbols as type, in its own ink.
  */
 export function resolveText(text: string, options: ResolveOptions): string {
   const value = (key: string, format?: string): string => {
@@ -415,5 +417,7 @@ export function resolveText(text: string, options: ResolveOptions): string {
       );
       return tokens > 0 && filled === 0 ? [] : [resolved];
     })
-    .join("\n");
+    .join("\n")
+    .normalize("NFC")
+    .replace(/[\uFE0E\uFE0F]/g, "");
 }

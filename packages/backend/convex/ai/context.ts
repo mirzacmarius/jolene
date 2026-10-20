@@ -250,7 +250,7 @@ function compositionSection(composition: CompositionContext): string[] {
   const lines = [
     `<composition item="${composition.item}" first="${first}">`,
     `The couple answered simple mode's questions and asked you to write the wording of these items of their collection and lay each one out, each in its own conversation, in this order: ${composition.items.join(", ")}. This message is about the ${composition.item}.`,
-    "Write its words in the language the couple chose for their cards (setLanguage first when the design is in another), keep their details as tokens, and arrange the faces so everything fits with calm space, as Jolene's taste asks. Then say in a sentence or two what you wrote.",
+    "Write its words in the language the couple chose for their cards (setLanguage first when the design is in another), keep their details as tokens, and arrange the faces so everything fits with calm space, as Jolene's taste asks. Every detail they have given that this kind of item carries goes on it, even where the template has no line for it: an invitation names the parents and the godparents, and gives each ceremony, the party and the reply line. Then say in a sentence or two what you wrote.",
   ];
   if (first)
     lines.push(
