@@ -1,4 +1,4 @@
-import { type CSSProperties, useId } from "react";
+import { type CSSProperties, type ReactNode, useId } from "react";
 import { stocks } from "../catalog";
 import { resolveColor } from "../color";
 import { trimPath } from "../geometry";
@@ -22,6 +22,13 @@ export interface PieceSurfaceProps {
   prefix: string;
   /** Draw the bleed instead of clipping to the trim. */
   bleed: boolean;
+  /**
+   * Leave the paper untextured, for a view that lays its own grain over the
+   * printing (the lifelike preview).
+   */
+  plain?: boolean;
+  /** Drawn over the printing, inside the trim. */
+  children?: ReactNode;
 }
 
 /** One side of a piece, paper and printing, in the piece's millimetres. */
@@ -32,6 +39,8 @@ export function PieceSurface({
   context,
   prefix,
   bleed,
+  plain = false,
+  children,
 }: PieceSurfaceProps) {
   const ids = defIds(prefix);
   const side = piece[face];
@@ -56,7 +65,7 @@ export function PieceSurface({
           fill={paper}
           fillOpacity={stock.translucent ? 0.58 : 1}
         />
-        {stock.texture === "pearl" ? (
+        {plain ? null : stock.texture === "pearl" ? (
           <rect {...area} fill={`url(#${ids.texture("pearl")})`} />
         ) : stock.texture !== "smooth" ? (
           <rect
@@ -81,6 +90,7 @@ export function PieceSurface({
             context={context}
           />
         ))}
+        {children}
       </g>
     </g>
   );
