@@ -294,12 +294,13 @@ describe("makePrintFile", () => {
       face,
       layer,
     });
+    // Layer by layer, as the faces stack them.
     expect(file.issues).toEqual([
       { kind: "missing-details", fields: ["godparents"] },
       { kind: "missing-glyphs", ...at("front", "ring"), characters: "💍" },
       { kind: "unusual-characters", ...at("front", "ring"), characters: "💍" },
-      { kind: "outside-safe-area", ...at("front", "edge") },
       { kind: "missing-photo", ...at("front", "photo") },
+      { kind: "outside-safe-area", ...at("front", "edge") },
       { kind: "missing-artwork", ...at("back", "lost"), asset: "lost" },
       { kind: "low-resolution", ...at("back", "tiny"), dpi: 5 },
     ]);
