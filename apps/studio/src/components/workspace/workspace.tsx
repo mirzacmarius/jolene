@@ -23,6 +23,10 @@ import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { DesignPreview, type PreviewView } from "../design/design-preview";
+import { ExpertEditor } from "./expert/expert-editor";
+import { ModeSwitch } from "./expert/mode-switch";
+import { useHistory } from "./expert/use-history";
+import { useDesignMode } from "./expert/use-mode";
 import { FieldsPanel } from "./fields-panel";
 import { StylePanel } from "./style-panel";
 import { useApply, useFieldDrafts, useSaving } from "./use-design";
@@ -58,6 +62,9 @@ function Editor({ data }: { data: DesignData }) {
   const designId = data.design._id;
   const { saving, track } = useSaving();
   const apply = useApply(designId, track);
+  // Every change made in this tab goes through the history, to undo it.
+  const history = useHistory(document, apply);
+  const { mode, choose } = useDesignMode();
   const { values, update } = useFieldDrafts({
     eventId: data.event._id,
     occasion: data.event.occasion,
@@ -98,6 +105,15 @@ function Editor({ data }: { data: DesignData }) {
           guides,
         };
   const title = `${productKindLabels[document.kind][locale]} · ${data.template.suite.name[locale]}`;
+  const details = (
+    <FieldsPanel
+      occasion={document.occasion}
+      used={used}
+      language={document.language}
+      values={values}
+      onChange={update}
+    />
+  );
 
   return (
     <div className="flex min-h-dvh flex-col lg:h-dvh">
@@ -123,6 +139,7 @@ function Editor({ data }: { data: DesignData }) {
           {saving ? t("design.saving") : t("design.saved")}
         </span>
         <div className="ml-auto flex items-center gap-2">
+          <ModeSwitch mode={mode} onChange={choose} />
           <Button
             variant="outline"
             size="sm"
@@ -139,67 +156,76 @@ function Editor({ data }: { data: DesignData }) {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <section className="relative flex min-h-[60vh] min-w-0 flex-1 flex-col bg-[radial-gradient(80%_70%_at_50%_45%,var(--color-card),var(--color-secondary))] lg:order-2 lg:min-h-0">
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3">
-            <SegmentedControl
-              label={t("design.together")}
-              value={viewKey}
-              onValueChange={setViewKey}
-              options={views}
-            />
-            {viewKey !== "assembly" ? (
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={guides}
-                  onChange={(event) => setGuides(event.target.checked)}
-                  className="size-3.5 accent-[var(--color-primary)]"
-                />
-                {t("design.guides")}
-              </label>
-            ) : null}
-          </div>
-          <div className="min-h-0 flex-1 px-6 pb-8 sm:px-12">
-            <DesignPreview
-              document={document}
-              fields={fields}
-              assets={data.assets}
-              view={view}
-              title={title}
-              className="size-full drop-shadow-[0_18px_30px_rgba(43,38,32,0.12)]"
-            />
-          </div>
-        </section>
-
-        <aside className="flex w-full shrink-0 flex-col border-border/70 bg-card lg:order-1 lg:w-[380px] lg:border-r">
-          <div className="border-b border-border/70 p-3">
-            <SegmentedControl
-              label={t("design.details")}
-              value={tab}
-              onValueChange={setTab}
-              options={[
-                { value: "details", label: t("design.details") },
-                { value: "style", label: t("design.style") },
-              ]}
-              className="w-full [&>*]:flex-1"
-            />
-          </div>
-          <div className={cn("flex-1 overflow-y-auto p-5")}>
-            {tab === "details" ? (
-              <FieldsPanel
-                occasion={document.occasion}
-                used={used}
-                language={document.language}
-                values={values}
-                onChange={update}
+      {mode === "expert" ? (
+        <ExpertEditor
+          document={document}
+          fields={fields}
+          assets={data.assets}
+          suite={data.template.suite.slug}
+          history={history}
+          title={title}
+          views={views}
+          viewKey={viewKey}
+          onViewChange={setViewKey}
+          details={details}
+        />
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+          <section className="relative flex min-h-[60vh] min-w-0 flex-1 flex-col bg-[radial-gradient(80%_70%_at_50%_45%,var(--color-card),var(--color-secondary))] lg:order-2 lg:min-h-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3">
+              <SegmentedControl
+                label={t("design.together")}
+                value={viewKey}
+                onValueChange={setViewKey}
+                options={views}
               />
-            ) : (
-              <StylePanel document={document} apply={apply} />
-            )}
-          </div>
-        </aside>
-      </div>
+              {viewKey !== "assembly" ? (
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={guides}
+                    onChange={(event) => setGuides(event.target.checked)}
+                    className="size-3.5 accent-[var(--color-primary)]"
+                  />
+                  {t("design.guides")}
+                </label>
+              ) : null}
+            </div>
+            <div className="min-h-0 flex-1 px-6 pb-8 sm:px-12">
+              <DesignPreview
+                document={document}
+                fields={fields}
+                assets={data.assets}
+                view={view}
+                title={title}
+                className="size-full drop-shadow-[0_18px_30px_rgba(43,38,32,0.12)]"
+              />
+            </div>
+          </section>
+
+          <aside className="flex w-full shrink-0 flex-col border-border/70 bg-card lg:order-1 lg:w-[380px] lg:border-r">
+            <div className="border-b border-border/70 p-3">
+              <SegmentedControl
+                label={t("design.details")}
+                value={tab}
+                onValueChange={setTab}
+                options={[
+                  { value: "details", label: t("design.details") },
+                  { value: "style", label: t("design.style") },
+                ]}
+                className="w-full [&>*]:flex-1"
+              />
+            </div>
+            <div className={cn("flex-1 overflow-y-auto p-5")}>
+              {tab === "details" ? (
+                details
+              ) : (
+                <StylePanel document={document} apply={history.apply} />
+              )}
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
