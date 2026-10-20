@@ -2,10 +2,18 @@ import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import {
+  aiChangeValidator,
+  aiErrorValidator,
+  aiRoleValidator,
+  aiStatusValidator,
+  aiUsageValidator,
+} from "./ai/validators";
+import {
   authorValidator,
   documentValidator,
   fieldsValidator,
   labelsValidator,
+  languageValidator,
   occasionValidator,
   productKindValidator,
 } from "./utils/validators";
@@ -131,4 +139,77 @@ export default defineSchema({
     restoredFrom: v.optional(v.number()),
     updatedAt: v.number(),
   }).index("by_designId_and_revision", ["designId", "revision"]),
+
+  /**
+   * Each design's conversation with the AI designer as the studio shows it:
+   * the couple's words, the replies and the changes each reply made. What
+   * the Messages API reads back is kept in aiTurns.
+   */
+  aiMessages: defineTable({
+    designId: v.id("designs"),
+    ownerId: v.id("users"),
+    role: aiRoleValidator,
+    /** The couple's words, or the reply as far as it is written. */
+    text: v.string(),
+    status: aiStatusValidator,
+    /** The conversation with the API the message belongs to (see aiTurns). */
+    thread: v.number(),
+    /** The studio's language when the couple wrote, which the reply is in. */
+    locale: v.optional(languageValidator),
+    /** The rendering of the design the couple's words came with. */
+    snapshot: v.optional(v.id("_storage")),
+    /** Short notes on what the AI designer is doing, written as it works. */
+    notes: v.optional(v.array(v.string())),
+    changes: v.optional(v.array(aiChangeValidator)),
+    error: v.optional(aiErrorValidator),
+    usage: v.optional(aiUsageValidator),
+    /** The model that answered when a server-side fallback stood in. */
+    servedBy: v.optional(v.string()),
+    /** Requests the reply has made; a reply makes at most a few. */
+    rounds: v.optional(v.number()),
+    /** Input tokens of the reply's latest request: how long the thread is. */
+    contextTokens: v.optional(v.number()),
+    /** The design's revision and the details, as the AI designer knows them. */
+    seen: v.optional(v.object({ revision: v.number(), details: v.string() })),
+    /**
+     * The rendering the reply waits for: the tool call that asked, and the
+     * revision the studio should show.
+     */
+    rendering: v.optional(
+      v.object({ toolUseId: v.string(), revision: v.number() }),
+    ),
+    /** The round's other tool results while the rendering is awaited, JSON. */
+    pendingResults: v.optional(v.string()),
+    /**
+     * The thread can't go on (a refusal, a context too long): the next
+     * message starts a new one.
+     */
+    endsThread: v.optional(v.boolean()),
+    /**
+     * What the thread's requests are made with (model, system prompt and
+     * tools), hashed: when a deploy changes it, the next message starts a
+     * new thread.
+     */
+    prompt: v.optional(v.string()),
+    finishedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_designId", ["designId"])
+    .index("by_ownerId_and_role", ["ownerId", "role"])
+    .index("by_role", ["role"]),
+
+  /**
+   * The AI designer's conversations as the Messages API reads them: one row
+   * per API message, sent back verbatim and in order with every later request
+   * of the same thread, thinking included. Kept apart from aiMessages because
+   * a reply's rounds can outgrow one document.
+   */
+  aiTurns: defineTable({
+    designId: v.id("designs"),
+    thread: v.number(),
+    messageId: v.id("aiMessages"),
+    role: v.union(v.literal("user"), v.literal("assistant")),
+    /** The content blocks as JSON; images refer to stored files. */
+    content: v.string(),
+  }).index("by_designId_and_thread", ["designId", "thread"]),
 });
