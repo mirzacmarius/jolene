@@ -257,9 +257,12 @@ describe("simple mode", () => {
     expect(textsOf(await documentOf(setup, invitation))).toContain(
       "Cu binecuvântarea părinților,\n{{partner1}} și {{partner2}} vă invită la cununia lor",
     );
-    expect(textsOf(await documentOf(setup, menu))).toContain(
+    // The menu's courses keep their token: the closing is a line of its own.
+    const menuTexts = textsOf(await documentOf(setup, menu));
+    expect(menuTexts).toContain(
       "Vă mulțumim că ne sunteți alături,\n{{partner1}} și {{partner2}}",
     );
+    expect(menuTexts).toContain("{{menu}}");
 
     // The event keeps how the wording should read, for what comes later.
     const data = await setup.couple.query(api.designs.get, {

@@ -24,8 +24,8 @@ import { toolNames } from "./tools";
  * writes sample names into them with set_details instead. Asked by simple
  * mode to write an item of a collection, it writes a line in the chosen
  * tone and language, with the couple's details as tokens, into one of the
- * item's texts, makes room for it, and says so. Enough to try the whole
- * flow in the browser.
+ * item's texts or a new one, lays it out, and says so. Enough to try the
+ * whole flow in the browser.
  */
 export const standIn: ModelClient = {
   async stream(request, onEvent, signal) {
@@ -56,17 +56,14 @@ export function standInTurn(request: BetaMessageStreamParams): {
       context,
       composition[1] === "true",
     );
-    if (change)
-      return {
-        content: [
-          note(words.composing(item)),
-          toolUse(toolNames.applyOperations, {
-            ...change,
-            note: words.wording,
-          }),
-        ],
-        stop: "tool_use",
-      };
+    if (!change) return { content: [text(words.kept(item))], stop: "end_turn" };
+    return {
+      content: [
+        note(words.composing(item)),
+        toolUse(toolNames.applyOperations, { ...change, note: words.wording }),
+      ],
+      stop: "tool_use",
+    };
   }
   const calledLook = results.some((name) => name === toolNames.lookAtDesign);
   if (results.includes(toolNames.applyOperations))
@@ -147,7 +144,9 @@ const romanian = {
     `Scriu textul pentru ${item} în tonul ales și îi fac loc.`,
   wording: "Textul în tonul ales",
   composed: (item: string) =>
-    `Gata: am scris textul pentru ${item} în tonul ales, cu detaliile dumneavoastră, și i-am făcut puțin mai mult loc. Dacă nu vă place, apăsați „Anulați”.`,
+    `Gata: am scris textul pentru ${item} în tonul ales, cu detaliile voastre, și l-am așezat în pagină. Dacă nu vă place, apăsați „Anulați”.`,
+  kept: (item: string) =>
+    `Pe ${item} n-am găsit loc pentru încă un rând, așa că i-am lăsat textul cum era. Spuneți-mi dacă vreți să-l schimb.`,
 };
 
 const english = {
@@ -164,7 +163,9 @@ const english = {
     `Writing the words for the ${item} in the tone you chose, and making room for them.`,
   wording: "Wording in the tone you chose",
   composed: (item: string) =>
-    `Done: I've written the words for the ${item} in the tone you chose, with your details, and given them a little more room. If you don't like it, press Undo.`,
+    `Done: I've written the words for the ${item} in the tone you chose, with your details, and laid them out on the page. If you don't like it, press Undo.`,
+  kept: (item: string) =>
+    `I couldn't find room for another line on the ${item}, so I've left its wording as it was. Tell me if you'd like it changed.`,
 };
 
 type Lines = Record<Language, string>;
@@ -253,22 +254,58 @@ interface CompactLayer {
   hidden?: boolean;
 }
 
+interface CompactPiece
+  extends Partial<Record<"front" | "back", { layers?: CompactLayer[] }>> {
+  id: string;
+  width?: number;
+  height?: number;
+  fold?: { orientation: "vertical" | "horizontal"; at: number };
+}
+
 interface CompactDesign {
   occasion?: string;
   language?: string;
-  pieces?: ({ id: string } & Partial<
-    Record<"front" | "back", { layers?: CompactLayer[] }>
-  >)[];
+  pieces?: CompactPiece[];
 }
+
+type Frame = NonNullable<CompactLayer["frame"]>;
 
 const hundredths = (value: number) => Math.round(value * 100) / 100;
 
+/** The room left clear along a panel's edge, in millimetres. */
+const edge = (size: number) => Math.max(4, size * 0.06);
+
+/** The height one line of small text takes, in millimetres, roughly. */
+const SMALL_LINE = 4.6;
+
+const lineCount = (value: string) => value.split("\n").length;
+
+/** The panels a piece folds into, or the piece itself. */
+function panels(width: number, height: number, fold: CompactPiece["fold"]) {
+  if (fold?.orientation === "vertical")
+    return [
+      { x: 0, y: 0, width: fold.at, height },
+      { x: fold.at, y: 0, width: width - fold.at, height },
+    ];
+  if (fold?.orientation === "horizontal")
+    return [
+      { x: 0, y: 0, width, height: fold.at },
+      { x: 0, y: fold.at, width, height: height - fold.at },
+    ];
+  return [{ x: 0, y: 0, width, height }];
+}
+
 /**
  * The stand-in's change for a composition's item: the cards' language, and
- * a line in the chosen tone written into one of the item's running texts
- * (body or small), preferably one without tokens: the first of the item
- * written first, the last of the others, as a closing. Its frame grows to
- * fit and keeps its centre.
+ * a line in the chosen tone, with the couple's details as tokens. The item
+ * written first has its opening in place of its first short running text
+ * (body or small, a few lines without tokens), its frame grown to fit and
+ * kept on the piece, or as a new small text when it has none; the others
+ * have their closing as a new small text, in the widest free band below
+ * the words of a panel. Texts with tokens hold the couple's details or a
+ * guest's name, long ones a menu or a programme, and the others' texts
+ * their own content (a guest list, the RSVP's answers): they stay as they
+ * are. No room, no change.
  */
 function composeChange(
   messages: BetaMessageParam[],
@@ -297,51 +334,153 @@ function composeChange(
   const wording = (tones[tone ?? ""] ?? tones.classic)?.[
     first ? "opening" : "closing"
   ][language];
-  const candidates = (design.pieces ?? []).flatMap((piece) =>
-    (["front", "back"] as const).flatMap((face) =>
-      (piece[face]?.layers ?? []).flatMap((layer) =>
-        layer.type === "text" &&
-        typeof layer.text === "string" &&
-        layer.frame &&
-        !layer.locked &&
-        !layer.hidden
-          ? [{ piece: piece.id, face, layer, frame: layer.frame }]
-          : [],
-      ),
-    ),
-  );
-  const running = candidates.filter(
-    ({ layer }) => layer.style === "body" || layer.style === "small",
-  );
-  const pick = (list: typeof candidates) => (first ? list[0] : list.at(-1));
-  const target =
-    pick(running.filter(({ layer }) => !layer.text?.includes("{{"))) ??
-    pick(running) ??
-    pick(candidates);
-  if (!wording || !target) return undefined;
+  if (!wording) return undefined;
   const written =
     first && own ? `${JSON.parse(own) as string}\n${wording}` : wording;
-  const lines = (value: string) => value.split("\n").length;
-  const { frame } = target;
-  const height = hundredths(
-    (frame.height / lines(target.layer.text ?? "")) * lines(written) * 1.1,
+  const toLanguage =
+    language === design.language ? [] : [{ op: "setLanguage", language }];
+  const faces = (design.pieces ?? []).flatMap((piece) =>
+    (["front", "back"] as const).flatMap((face) => {
+      const layers = piece[face]?.layers;
+      return layers ? [{ piece, face, layers }] : [];
+    }),
   );
-  const y = hundredths(Math.max(0, frame.y + (frame.height - height) / 2));
-  return {
-    revision,
-    operations: [
-      ...(language !== design.language
-        ? [{ op: "setLanguage", language }]
-        : []),
-      {
-        op: "updateLayer",
-        piece: target.piece,
-        face: target.face,
-        layer: target.layer.id,
-        set: { text: written, frame: { y, height } },
-      },
-    ],
+  const texts = faces.flatMap(({ piece, face, layers }) =>
+    layers.flatMap((layer) =>
+      layer.type === "text" &&
+      typeof layer.text === "string" &&
+      layer.frame &&
+      !layer.hidden
+        ? [{ piece, face, layer, text: layer.text, frame: layer.frame }]
+        : [],
+    ),
+  );
+  const short = texts.filter(
+    ({ layer, text }) =>
+      !layer.locked &&
+      (layer.style === "body" || layer.style === "small") &&
+      !text.includes("{{") &&
+      lineCount(text) <= 4 &&
+      text.length <= 200,
+  );
+
+  const rewrite = (target: (typeof short)[number]) => {
+    const { piece, frame } = target;
+    const grown =
+      (frame.height / lineCount(target.text)) * lineCount(written) * 1.1;
+    const top = piece.height ? edge(piece.height) : 0;
+    const bottom = piece.height ? piece.height - top : Number.POSITIVE_INFINITY;
+    const height = hundredths(Math.min(grown, bottom - top));
+    const centred = frame.y + (frame.height - height) / 2;
+    const y = hundredths(Math.max(top, Math.min(centred, bottom - height)));
+    return {
+      revision,
+      operations: [
+        ...toLanguage,
+        {
+          op: "updateLayer",
+          piece: target.piece.id,
+          face: target.face,
+          layer: target.layer.id,
+          set: { text: written, frame: { y, height } },
+        },
+      ],
+    };
   };
+
+  // The free bands above and below the words of each panel: an opening
+  // goes in the widest one above them if it fits, a closing below.
+  const needed = lineCount(written) * SMALL_LINE + 1;
+  const bands: {
+    face: (typeof faces)[number];
+    frame: Frame;
+    room: number;
+    above: boolean;
+  }[] = [];
+  for (const face of faces) {
+    const { width, height, fold } = face.piece;
+    if (!width || !height) continue;
+    const frames = texts
+      .filter((text) => text.piece === face.piece && text.face === face.face)
+      .map(({ frame }) => frame);
+    for (const panel of panels(width, height, fold)) {
+      const inside = frames.filter((frame) => {
+        const x = frame.x + frame.width / 2;
+        const y = frame.y + frame.height / 2;
+        return (
+          x >= panel.x &&
+          x < panel.x + panel.width &&
+          y >= panel.y &&
+          y < panel.y + panel.height
+        );
+      });
+      if (inside.length === 0) continue;
+      const top = panel.y + edge(panel.height);
+      const bottom = panel.y + panel.height - edge(panel.height);
+      const highest = Math.min(...inside.map((frame) => frame.y));
+      const lowest = Math.max(...inside.map((frame) => frame.y + frame.height));
+      const side = edge(panel.width);
+      for (const [from, to, above] of [
+        [Math.max(top, lowest), bottom, false],
+        [top, Math.min(bottom, highest), true],
+      ] as const) {
+        const room = to - from;
+        if (room >= needed)
+          bands.push({
+            face,
+            room,
+            above,
+            frame: {
+              x: hundredths(panel.x + side),
+              y: hundredths(from + (room - needed) / 2),
+              width: hundredths(panel.width - 2 * side),
+              height: hundredths(needed),
+            },
+          });
+      }
+    }
+  }
+  const widest = (list: typeof bands) =>
+    list.reduce<(typeof bands)[number] | undefined>(
+      (wide, band) => (wide && wide.room >= band.room ? wide : band),
+      undefined,
+    );
+  const best =
+    widest(bands.filter((band) => band.above === first)) ?? widest(bands);
+  const add = ({ face, frame }: (typeof bands)[number]) => {
+    const ids = new Set(face.layers.map((layer) => layer.id));
+    const base = first ? "opening" : "closing";
+    let id = base;
+    for (let count = 2; ids.has(id); count++) id = `${base}-${count}`;
+    const name = first
+      ? { ro: "Rândul de început", en: "Opening line" }
+      : { ro: "Rândul de încheiere", en: "Closing line" };
+    return {
+      revision,
+      operations: [
+        ...toLanguage,
+        {
+          op: "addLayer",
+          piece: face.piece.id,
+          face: face.face,
+          layer: {
+            id,
+            name: name[language],
+            type: "text",
+            style: "small",
+            text: written,
+            frame,
+          },
+        },
+      ],
+    };
+  };
+
+  if (first) {
+    const target = short[0];
+    if (target) return rewrite(target);
+  }
+  return best ? add(best) : undefined;
 }
 
 /** Every text the request holds, newest last, tool results included. */
