@@ -1,4 +1,5 @@
 import { forest } from "./forest";
+import { royalBlue } from "./royal-blue";
 import type { Suite } from "./suite";
 
 export {
@@ -9,4 +10,4 @@ export {
 } from "./suite";
 
 /** Jolene's collections, in the order the gallery shows them. */
-export const suites: Suite[] = [forest];
+export const suites: Suite[] = [forest, royalBlue];
