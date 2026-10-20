@@ -331,7 +331,7 @@ const tableNumber: DesignDocumentInput = {
 
 export const autumn: Suite = {
   slug: "autumn",
-  name: { ro: "Toamnă", en: "Autumn" },
+  name: { ro: "Autumn", en: "Autumn" },
   description: {
     ro: "Floarea-soarelui, margarete și flori de toamnă în acuarelă, o inimă de lemn și două felinare vechi în jurul invitației; pe numărul de masă, o lădiță cu borcane cu flori.",
     en: "Watercolour sunflowers, daisies and autumn flowers, a wooden heart and two old lanterns around the invitation; on the table number, a crate of jars full of flowers.",
