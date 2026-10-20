@@ -9,6 +9,7 @@
  */
 
 import type * as ai from "../ai.js";
+import type * as ai_changes from "../ai/changes.js";
 import type * as ai_config from "../ai/config.js";
 import type * as ai_context from "../ai/context.js";
 import type * as ai_limits from "../ai/limits.js";
@@ -46,6 +47,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
+  "ai/changes": typeof ai_changes;
   "ai/config": typeof ai_config;
   "ai/context": typeof ai_context;
   "ai/limits": typeof ai_limits;

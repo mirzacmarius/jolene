@@ -132,6 +132,17 @@ export default {
       start: "Let's start",
       later: "I'll fill in the details myself",
     },
+    known: {
+      title: "Make this collection with your details?",
+      lead: "No need to type them again: choose the items, and the AI designer writes each one with everyone you named, in the same tone.",
+      leadTone:
+        "No need to type them again: choose the items and how they should sound, and the AI designer writes each one with everyone you named.",
+      leadSoon:
+        "No need to type them again: choose the items, and each one starts with your details. The AI designer, who will write the wording for you, isn't available yet.",
+      choose: "Choose the items",
+      review: "Check the details",
+      later: "Not now",
+    },
     again: "Answer a few questions",
     progress: "Step {current} of {total}",
     back: "Back",
