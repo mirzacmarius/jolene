@@ -309,7 +309,7 @@ describe("the AI designer", () => {
       model: "claude-opus-5-5",
       max_tokens: 32000,
       thinking: { type: "adaptive", display: "updates" },
-      output_config: { effort: "xhigh" },
+      output_config: { effort: "medium" },
       tool_choice: { type: "auto" },
       fallbacks: "default",
       cache_control: { type: "ephemeral" },
@@ -853,17 +853,17 @@ describe("the AI designer", () => {
       answer({ content: [text("Bună!")] }),
       answer({ content: [text("Gata.")] }),
     );
-    setEnv({ ANTHROPIC_API_KEY: "test-key", AI_EFFORT: " Medium " });
+    setEnv({ ANTHROPIC_API_KEY: "test-key", AI_EFFORT: " XHigh " });
     await talk(setup, "Verde");
     // A name the API doesn't know leaves the default.
     setEnv({ ANTHROPIC_API_KEY: "test-key", AI_EFFORT: "extreme" });
     await talk(setup, "Albastru");
     expect(requests.map((request) => request.output_config?.effort)).toEqual([
-      "medium",
       "xhigh",
+      "medium",
     ]);
-    // The thread goes on: its earlier thinking holds at any effort.
-    expect(requests[1]?.messages).toHaveLength(3);
+    // Each thread runs at one effort: the next message starts a new one.
+    expect(requests[1]?.messages).toHaveLength(1);
   });
 
   test("counts a reply the API never answered only when it runs again", async () => {

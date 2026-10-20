@@ -17,7 +17,7 @@ const app = defineApp({
     /** The model the AI designer runs on; ai/config.ts has the default. */
     AI_MODEL: v.optional(v.string()),
     /**
-     * How much the model thinks: low, medium, high, xhigh or max; xhigh when
+     * How much the model thinks: low, medium, high, xhigh or max; medium when
      * unset. Lower costs less and answers sooner.
      */
     AI_EFFORT: v.optional(v.string()),

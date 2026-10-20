@@ -80,12 +80,19 @@ function hash(text: string): string {
 /**
  * What a thread's requests are made with. A thread goes on only while this
  * stays the same; a deploy that changes it starts the next message afresh.
- * The effort isn't part of it: the model keeps its earlier thinking at any
- * effort, and a change costs the thread's cache once.
+ * The effort is part of it, so each thread runs at one effort: a change
+ * would rebuild the thread's cache anyway, which costs more than a recap.
  */
 export function promptVersion(config: AiConfig): string {
   return hash(
-    JSON.stringify([config.model, config.standIn, SYSTEM_PROMPT, tools, betas]),
+    JSON.stringify([
+      config.model,
+      config.effort,
+      config.standIn,
+      SYSTEM_PROMPT,
+      tools,
+      betas,
+    ]),
   );
 }
 

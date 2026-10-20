@@ -23,10 +23,14 @@ export type AiConfig = ReturnType<typeof aiConfig>;
 
 const efforts = ["low", "medium", "high", "xhigh", "max"] as const;
 
-/** AI_EFFORT, when it names an effort the API knows; xhigh otherwise. */
+/**
+ * AI_EFFORT, when it names an effort the API knows; medium otherwise. In the
+ * first trial on the real model, thinking at xhigh was most of a reply's
+ * cost and kept an invitation waiting up to three and a half minutes.
+ */
 function effortOf(value: string | undefined): (typeof efforts)[number] {
   const named = value?.trim().toLowerCase();
-  return efforts.find((effort) => effort === named) ?? "xhigh";
+  return efforts.find((effort) => effort === named) ?? "medium";
 }
 
 function count(value: string | undefined, fallback: number): number {

@@ -19,7 +19,7 @@ import {
 
 const config: AiConfig = {
   model: "claude-opus-5-5",
-  effort: "xhigh",
+  effort: "medium",
   standIn: false,
   configured: true,
   dailyLimit: 20,
@@ -45,13 +45,13 @@ const fallback = {
 } as unknown as BetaContentBlock;
 
 describe("the request", () => {
-  test("streams adaptive thinking at xhigh effort, with every tool", () => {
+  test("streams adaptive thinking at the deployment's effort, with every tool", () => {
     const request = buildRequest(config, [], { userId: "u1", wrapUp: false });
     expect(request).toMatchObject({
       model: "claude-opus-5-5",
       max_tokens: 32000,
       thinking: { type: "adaptive" },
-      output_config: { effort: "xhigh" },
+      output_config: { effort: "medium" },
       tool_choice: { type: "auto" },
       fallbacks: "default",
       cache_control: { type: "ephemeral" },
@@ -83,18 +83,17 @@ describe("the request", () => {
     expect(promptVersion({ ...config, standIn: true })).not.toBe(
       promptVersion(config),
     );
-    // A thread goes on at another effort.
-    expect(promptVersion({ ...config, effort: "medium" })).toBe(
+    expect(promptVersion({ ...config, effort: "high" })).not.toBe(
       promptVersion(config),
     );
   });
 
   test("thinks at the deployment's effort", () => {
-    const request = buildRequest({ ...config, effort: "medium" }, [], {
+    const request = buildRequest({ ...config, effort: "xhigh" }, [], {
       userId: "u1",
       wrapUp: false,
     });
-    expect(request.output_config).toEqual({ effort: "medium" });
+    expect(request.output_config).toEqual({ effort: "xhigh" });
   });
 });
 
