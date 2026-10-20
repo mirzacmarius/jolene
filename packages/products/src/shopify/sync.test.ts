@@ -41,13 +41,20 @@ class FakeStore implements Store {
     "write_metaobject_definitions",
     "read_orders",
   ];
+  // The sales channels of Jolene's store.
   publications = [
     {
       id: "gid://shopify/Publication/1",
       title: "Online Store",
       app: "online_store",
     },
-    { id: "gid://shopify/Publication/2", title: "Jolene", app: "headless" },
+    {
+      id: "gid://shopify/Publication/2",
+      title: "Vercel Storefronts",
+      app: "vercel-storefronts",
+    },
+    { id: "gid://shopify/Publication/4", title: "Shop", app: "shop-72" },
+    { id: "gid://shopify/Publication/5", title: "Point of Sale", app: "pos" },
   ];
   definitions = new Map<string, { id: string; keys: [string, string][] }>();
   metafields = new Map<string, string>();
@@ -305,7 +312,7 @@ describe("sync", () => {
     expect(
       store.calls.filter((c) => /^(create|upsert|set|publish)/.test(c)),
     ).toEqual([]);
-    expect(outcome.report).toContain("Publishing to Jolene");
+    expect(outcome.report).toContain("Publishing to Vercel Storefronts");
     expect(outcome.report).toContain("| Products | 3 | 0 |");
   });
 

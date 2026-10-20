@@ -16,7 +16,7 @@ on:
         options: [plan, draft, publish]
         default: plan
       publication:
-        description: "The shop's sales channel, by name or ID, when the store has more than one headless storefront"
+        description: "The shop's sales channel, by name or ID, when it isn't the store's one Vercel Storefronts or Headless channel"
         required: false
       overwrite:
         description: 'Also update what the store already has from the catalog'
@@ -64,6 +64,7 @@ jobs:
           SHOPIFY_STORE_DOMAIN: ${{ vars.SHOPIFY_STORE_DOMAIN }}
           SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
           SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+      # In the log too, where the API reads it.
       - name: Report
         if: always()
-        run: cat "$RUNNER_TEMP/products/report.md" >> "$GITHUB_STEP_SUMMARY" || true
+        run: tee -a "$GITHUB_STEP_SUMMARY" < "$RUNNER_TEMP/products/report.md" || true

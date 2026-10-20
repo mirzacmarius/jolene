@@ -30,7 +30,7 @@ The **Products** workflow (`.github/workflows/products.yml`) runs `scripts/sync.
 - **draft** creates what the store lacks: the definitions, choices, order options, collections, the fee and extras products, and every product as a draft, with its photos fetched by Shopify from jolene.ro. It adds the products to the shop's sales channel, where they stay hidden while they are drafts, and reports the photos Shopify couldn't fetch.
 - **publish** then puts the drafts on sale, the fees and extras unlisted, and adds the collections to the sales channel. A product Jolene archived stays archived.
 
-`overwrite` updates what the store already has from the catalog too; a product keeps its photos and status. The sales channel is the store's only headless storefront, unless `publication` names another.
+`overwrite` updates what the store already has from the catalog too; a product keeps its photos and status. The sales channel is Vercel Storefronts, which Vercel's Shopify integration made the shop's (Headless on a store it didn't make), unless `publication` names another.
 
 To run it elsewhere:
 

@@ -66,6 +66,13 @@ export const scopes = [
   "write_metaobject_definitions",
 ];
 
+/**
+ * The sales channels a shop of its own reads the store through: Vercel
+ * Storefronts on a store Vercel's Shopify integration made, as Jolene's,
+ * and Headless on any other.
+ */
+const storefronts = ["vercel-storefronts", "headless"];
+
 /** A run stops after this many problems: something larger is wrong. */
 const enough = 25;
 
@@ -270,7 +277,7 @@ class Sync {
 
   /**
    * The publication of the sales channel the shop reads: the one asked
-   * for, or else the store's only headless storefront.
+   * for, or else the store's only storefront channel.
    */
   private async publication(store: Store): Promise<string | undefined> {
     const { publications } = await store.request<{
@@ -302,7 +309,7 @@ class Sync {
           (p) =>
             p.id === asked || p.title.toLowerCase() === asked.toLowerCase(),
         )
-      : list.filter((p) => p.apps.includes("headless"));
+      : list.filter((p) => p.apps.some((app) => storefronts.includes(app)));
     const [only] = matching;
     if (only && matching.length === 1) {
       this.say(`Publishing to ${only.title} (${only.id}).`);
@@ -310,7 +317,7 @@ class Sync {
     }
     const why = asked
       ? `No one sales channel is "${asked}".`
-      : "The store has no one headless storefront to publish to.";
+      : "The store has no one Vercel Storefronts or Headless channel to publish to.";
     if (this.options.mode === "plan")
       this.say(`${why} A draft run needs the shop's one named.`);
     else this.problem(`${why} Run again naming the shop's sales channel.`);
