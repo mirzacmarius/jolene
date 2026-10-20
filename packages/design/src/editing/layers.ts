@@ -165,6 +165,51 @@ export function replaceLayer(
   ];
 }
 
+/** What an updateLayer operation changes. */
+export type LayerChanges = Extract<Operation, { op: "updateLayer" }>["set"];
+
+/**
+ * The document as it would look with some of a face's layers changed the way
+ * updateLayer changes them, for a preview while a handle is dragged or a word
+ * typed. It isn't validated, and every part that doesn't change is shared
+ * with `document`, so the untouched layers are the very same objects.
+ */
+export function previewLayers(
+  document: DesignDocument,
+  target: FaceRef,
+  changes: ReadonlyMap<string, LayerChanges>,
+): DesignDocument {
+  if (changes.size === 0) return document;
+  return {
+    ...document,
+    pieces: document.pieces.map((piece) => {
+      const face = piece.id === target.piece ? piece[target.face] : null;
+      if (!face) return piece;
+      const layers = face.layers.map((layer) => {
+        const set = changes.get(layer.id);
+        return set ? changeLayer(layer, set) : layer;
+      });
+      return { ...piece, [target.face]: { ...face, layers } };
+    }),
+  };
+}
+
+function changeLayer(layer: Layer, set: LayerChanges): Layer {
+  const { frame, overrides, tint, ...rest } = set;
+  // null takes the tint off; left out, the layer keeps its own.
+  const { tint: current, ...untinted } = layer as Layer & { tint?: string };
+  const nextTint = tint === undefined ? current : (tint ?? undefined);
+  const next: Record<string, unknown> = {
+    ...untinted,
+    ...rest,
+    ...(nextTint === undefined ? {} : { tint: nextTint }),
+  };
+  if (frame) next.frame = { ...layer.frame, ...frame };
+  if (overrides && layer.type === "text")
+    next.overrides = { ...layer.overrides, ...overrides };
+  return next as Layer;
+}
+
 /** Lets a text layer follow its style again for `keys`. */
 export function clearOverrides(
   document: DesignDocument,
