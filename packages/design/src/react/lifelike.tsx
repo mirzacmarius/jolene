@@ -1,6 +1,6 @@
 import { type CSSProperties, Fragment, type ReactNode, useId } from "react";
 import { type Ink, paperTextures, stocks } from "../catalog";
-import { type Hex, mix } from "../color";
+import { type Hex, mix, resolveColor } from "../color";
 import { resolveText } from "../fields";
 import { assemblyBounds, type Box, trimPath } from "../geometry";
 import type {
@@ -19,9 +19,11 @@ import { LayerView } from "./layers";
 import {
   FOLLOW_LIGHT,
   type FoilInk,
-  followLight,
   foilTones,
+  followLight,
   isFoil,
+  pearlSheen,
+  type SheenStop,
   stockThickness,
 } from "./materials";
 import {
@@ -86,7 +88,7 @@ const lifelikeIds = (prefix: string) => ({
   grain: (kind: GrainKind) => `${prefix}-grain-${kind}`,
   light: `${prefix}-light`,
   bevel: `${prefix}-bevel`,
-  pearl: `${prefix}-pearl`,
+  pearl: (piece: string) => `${prefix}-pearl-${piece}`,
   vellum: `${prefix}-vellum-sheen`,
   /**
    * Foil layers are drawn again in the light layer under this prefix, whose
@@ -230,7 +232,7 @@ function GlossPaint({ id }: { id: string }) {
  * A soft sheen across a whole sheet, sliding with the light: pearlescent
  * card's shimmer of pale colour, vellum's faint gloss.
  */
-function Sheen({ id, stops }: { id: string; stops: [number, Hex, number][] }) {
+function Sheen({ id, stops }: { id: string; stops: SheenStop[] }) {
   return (
     <>
       <linearGradient id={`${id}-bands`} x1="0" y1="0" x2="1" y2="0.8">
@@ -387,19 +389,6 @@ function LightDefs({ prefix }: { prefix: string }) {
       ))}
       <GlossPaint id={defIds(own.gloss).ink("foil-silver")} />
       <Sheen
-        id={own.pearl}
-        stops={[
-          [0, "#ffffff", 0],
-          [0.32, "#ffe4ec", 0],
-          [0.4, "#ffeedd", 0.26],
-          [0.46, "#fffaf0", 0.36],
-          [0.52, "#e3f5ee", 0.24],
-          [0.58, "#e5e2fb", 0.2],
-          [0.68, "#ffffff", 0],
-          [1, "#ffffff", 0],
-        ]}
-      />
-      <Sheen
         id={own.vellum}
         stops={[
           [0, "#ffffff", 0],
@@ -502,13 +491,7 @@ function inked(layer: Layer, context: RenderContext) {
 }
 
 /** What on one side of a sheet catches the light as it moves. */
-function shine(
-  piece: Piece,
-  face: FaceName,
-  context: RenderContext,
-  prefix: string,
-) {
-  const own = lifelikeIds(prefix);
+function shine(piece: Piece, face: FaceName, context: RenderContext) {
   const stock = stocks[piece.stock];
   const layers = (piece[face]?.layers ?? []).filter(
     (layer) => !layer.hidden && inked(layer, context),
@@ -517,9 +500,9 @@ function shine(
   const glossy = layers.filter((layer) => layer.ink === "spot-uv");
   const sheen =
     stock.texture === "pearl"
-      ? own.pearl
+      ? ("pearl" as const)
       : stock.translucent
-        ? own.vellum
+        ? ("vellum" as const)
         : null;
   return foiled.length || glossy.length || sheen
     ? { foiled, glossy, sheen }
@@ -538,20 +521,36 @@ function PieceLight({
   prefix,
 }: Omit<PieceProps, "grains">) {
   const own = lifelikeIds(prefix);
-  const lit = shine(piece, face, context, prefix);
+  const lit = shine(piece, face, context);
   if (!lit) return null;
   const paper = paperColor(piece, document);
+  // Pearl's sheen takes the colour the card shows, so each sheet has its own.
+  const background = piece[face]?.background;
+  const shows = background
+    ? resolveColor(background, document.theme.palette)
+    : paper;
+  const sheen =
+    lit.sheen === "pearl"
+      ? own.pearl(piece.id)
+      : lit.sheen === "vellum"
+        ? own.vellum
+        : null;
   return (
     <>
       <clipPath id={own.trim(piece.id)}>
         <path d={trimPath(piece)} />
       </clipPath>
+      {lit.sheen === "pearl" ? (
+        <defs>
+          <Sheen id={own.pearl(piece.id)} stops={pearlSheen(shows as Hex)} />
+        </defs>
+      ) : null}
       <g clipPath={`url(#${own.trim(piece.id)})`}>
-        {lit.sheen ? (
+        {sheen ? (
           <rect
             width={piece.width}
             height={piece.height}
-            fill={`url(#${lit.sheen})`}
+            fill={`url(#${sheen})`}
           />
         ) : null}
         {lit.foiled.map((layer) => (
@@ -963,7 +962,7 @@ export function LifelikeAssemblyView({
   // glint on each seal, which nothing covers.
   const lights: ReactNode[] = [];
   document.pieces.forEach((piece, index) => {
-    if (!shine(piece, "front", context, prefix)) return;
+    if (!shine(piece, "front", context)) return;
     const over = document.pieces.slice(index + 1);
     const covered = over.length > 0 || ribbons.length > 0 || seals.length > 0;
     lights.push(
@@ -1091,7 +1090,7 @@ export function LifelikeFaceView({
     document.pieces.find((candidate) => candidate.id === pieceId) ??
     (document.pieces[0] as Piece);
   const grains = useGrains([stocks[piece.stock].texture], pixelsPerMm);
-  const lit = shine(piece, face, context, prefix);
+  const lit = shine(piece, face, context);
   return (
     <Frame
       frame={lifelikeFrame(document, { kind: "face", piece: piece.id })}

@@ -94,6 +94,49 @@ export function oklabToHex([lightness, a, b]: Lab): Hex {
   ]);
 }
 
+/** A gradient stop: where along the light's path, its colour and opacity. */
+export type SheenStop = [offset: number, color: Hex, opacity: number];
+
+/** Pearlescent card's shimmer on light card: pale colours sliding past. */
+const PEARL: SheenStop[] = [
+  [0, "#ffffff", 0],
+  [0.32, "#ffe4ec", 0],
+  [0.4, "#ffeedd", 0.26],
+  [0.46, "#fffaf0", 0.36],
+  [0.52, "#e3f5ee", 0.24],
+  [0.58, "#e5e2fb", 0.2],
+  [0.68, "#ffffff", 0],
+  [1, "#ffffff", 0],
+];
+/** Where the shimmer is brightest. */
+const PEARL_MIDDLE = 0.47;
+
+/**
+ * The sheen of pearlescent card in a given colour. Light card shimmers with
+ * pale colours; dark card, where pale would wash it out, shows a narrower
+ * lustre of its own colour, lighter, and keeps its depth.
+ */
+export function pearlSheen(paper: Hex): SheenStop[] {
+  const [lightness, a, b] = hexToOklab(paper);
+  // 0 for light card, 1 for dark.
+  const dark = Math.min(1, Math.max(0, (0.75 - lightness) / 0.4));
+  if (dark === 0) return PEARL;
+  const lustre = oklabToHex([
+    Math.min(0.92, lightness + 0.3),
+    a * 0.85,
+    b * 0.85,
+  ]);
+  const narrow = 1 - 0.35 * dark;
+  return PEARL.map(([offset, color, opacity]) => [
+    offset === 0 || offset === 1
+      ? offset
+      : Math.round((PEARL_MIDDLE + (offset - PEARL_MIDDLE) * narrow) * 1000) /
+        1000,
+    mix(color, lustre, dark),
+    opacity * (1 - 0.15 * dark),
+  ]);
+}
+
 /** Undyed linen, in OKLab: light, with a little warmth. */
 const LINEN: Lab = [0.87, 0.0033, 0.0157];
 

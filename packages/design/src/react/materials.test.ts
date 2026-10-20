@@ -6,6 +6,7 @@ import {
   foilTones,
   hexToOklab,
   oklabToHex,
+  pearlSheen,
   stockThickness,
   tabletopColor,
 } from "./materials";
@@ -32,6 +33,37 @@ describe("foilTones", () => {
         ink,
         [...lightness].sort((a, b) => a - b),
       ]);
+    }
+  });
+});
+
+describe("pearlSheen", () => {
+  /** How far along the light's path the sheen shows at all. */
+  const reach = (stops: ReturnType<typeof pearlSheen>) => {
+    const shown = stops.filter(([, , opacity]) => opacity > 0);
+    return (shown.at(-1)?.[0] ?? 0) - (shown[0]?.[0] ?? 0);
+  };
+
+  test("shimmers in pale colours on light card", () => {
+    const [ivory, white] = [pearlSheen("#fbf7ee"), pearlSheen("#ffffff")];
+    expect(ivory).toEqual(white);
+    for (const [, color] of ivory)
+      expect(hexToOklab(color)[0]).toBeGreaterThan(0.9);
+  });
+
+  test("keeps dark card deep: a narrower lustre of its own colour", () => {
+    const navy = "#1f2a44";
+    const [paper, a, b] = hexToOklab(navy);
+    const sheen = pearlSheen(navy);
+    expect(reach(sheen)).toBeLessThan(reach(pearlSheen("#ffffff")));
+    for (const [, color, opacity] of sheen) {
+      if (opacity === 0) continue;
+      const [lightness, ...hue] = hexToOklab(color);
+      expect(lightness - paper).toBeGreaterThan(0.2);
+      expect(lightness - paper).toBeLessThan(0.4);
+      // Still blue.
+      expect(Math.sign(hue[1] ?? 0)).toBe(Math.sign(b));
+      expect(Math.abs((hue[0] ?? 0) - a)).toBeLessThan(0.03);
     }
   });
 });
