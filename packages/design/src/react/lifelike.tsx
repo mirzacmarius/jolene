@@ -111,26 +111,24 @@ function follow(amount: number): CSSProperties {
 
 /**
  * Foil as polished metal: bands of light and shade across each shape. Each
- * shape shows the middle third of the bands: mostly the metal's middle and
- * dark tones, so pale foil still reads on pale paper, crossed by one narrow
- * bright band. The glint over it moves with the light (FoilGlint).
+ * shape shows the middle third of the bands: the metal's middle and dark
+ * tones, so pale foil still reads on pale paper, with one soft light band.
+ * The glint over it moves with the light (FoilGlint).
  */
 function FoilMetal({ id, ink }: { id: string; ink: FoilInk }) {
   const tone = foilTones(ink);
   const stops: [number, Hex][] = [
     [0, tone.light],
-    [0.08, tone.mid],
-    [0.17, tone.dark],
-    [0.26, tone.mid],
-    [0.35, tone.dark],
-    [0.44, tone.mid],
-    [0.5, tone.light],
-    [0.53, tone.glint],
-    [0.56, tone.light],
-    [0.62, tone.mid],
-    [0.71, tone.dark],
-    [0.8, tone.deep],
-    [0.9, tone.mid],
+    [0.1, tone.mid],
+    [0.2, tone.dark],
+    [0.3, tone.mid],
+    [0.38, tone.dark],
+    [0.46, tone.mid],
+    [0.52, tone.light],
+    [0.57, tone.mid],
+    [0.64, tone.dark],
+    [0.74, tone.deep],
+    [0.86, tone.mid],
     [1, tone.light],
   ];
   return (
@@ -154,19 +152,21 @@ function FoilMetal({ id, ink }: { id: string; ink: FoilInk }) {
 
 /**
  * Foil's glint: a bright band with a little shade after it, sliding across
- * each shape as the light moves; clear elsewhere, over the metal.
+ * each shape as the light moves; clear elsewhere, over the metal. It stays
+ * short of the paper's own white, so thin foiled type never fades into a
+ * pale sheet where the light catches it.
  */
 function FoilGlint({ id, ink }: { id: string; ink: FoilInk }) {
   const { glint, deep } = foilTones(ink);
   const stops: [number, Hex, number][] = [
     [0, glint, 0],
-    [0.33, glint, 0],
-    [0.41, glint, 0.5],
-    [0.45, "#ffffff", 0.8],
-    [0.49, glint, 0.45],
-    [0.56, glint, 0],
-    [0.63, deep, 0.2],
-    [0.71, deep, 0],
+    [0.38, glint, 0],
+    [0.43, glint, 0.4],
+    [0.46, glint, 0.62],
+    [0.49, glint, 0.4],
+    [0.54, glint, 0],
+    [0.6, deep, 0.22],
+    [0.68, deep, 0],
     [1, deep, 0],
   ];
   return (
