@@ -4,6 +4,8 @@ import { carusel } from "./carusel";
 import { classicRoses } from "./classic-roses";
 import { eucalipt } from "./eucalipt";
 import { forest } from "./forest";
+import { geometricFlowers } from "./geometric-flowers";
+import { royalBlue } from "./royal-blue";
 import { safari } from "./safari";
 import type { Suite } from "./suite";
 import { teddyInBalon } from "./teddy-in-balon";
@@ -20,6 +22,8 @@ export {
 export const suites: Suite[] = [
   forest,
   eucalipt,
+  royalBlue,
+  geometricFlowers,
   classicRoses,
   autumn,
   teddyInBalon,
