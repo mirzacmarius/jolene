@@ -38,7 +38,7 @@ const toolUse = (id: string) =>
 const fallback = {
   type: "fallback",
   from: { model: "claude-opus-5-5" },
-  to: { model: "claude-standby" },
+  to: { model: "standby-model" },
   trigger: { type: "refusal" },
 } as unknown as BetaContentBlock;
 
@@ -131,7 +131,7 @@ describe("the answer", () => {
       cache_creation: null,
     });
     const served = {
-      model: "claude-standby",
+      model: "standby-model",
       stop_reason: "end_turn",
       usage: {
         input_tokens: 100,
@@ -140,14 +140,14 @@ describe("the answer", () => {
         cache_creation_input_tokens: 50,
         iterations: [
           attempt("message", "claude-opus-5-5", 1000),
-          attempt("fallback_message", "claude-standby", 100),
+          attempt("fallback_message", "standby-model", 100),
         ],
       },
     } as unknown as BetaMessage;
     expect(usageOf(served)).toEqual({
       usage: { input: 1100, output: 110, cacheRead: 2200, cacheWrite: 550 },
       contextTokens: 350,
-      servedBy: "claude-standby",
+      servedBy: "standby-model",
     });
 
     const plain = {
