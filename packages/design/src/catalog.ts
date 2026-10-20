@@ -41,7 +41,7 @@ export const productKindLabels: Record<ProductKind, Labels> = {
   "place-card": { ro: "Place card", en: "Place card" },
   "table-number": { ro: "Număr de masă", en: "Table number" },
   "welcome-sign": { ro: "Tablou de întâmpinare", en: "Welcome sign" },
-  "seating-chart": { ro: "Tablou cu invitații", en: "Seating chart" },
+  "seating-chart": { ro: "Tablou de așezare", en: "Seating chart" },
   "money-envelope": { ro: "Plic de bani", en: "Money envelope" },
   "favor-tag": { ro: "Etichetă pentru mărturii", en: "Favour tag" },
   "thank-you": { ro: "Card de mulțumire", en: "Thank-you card" },

@@ -15,7 +15,7 @@ One of Jolene's designs for one item of a collection, which a couple starts thei
 _Avoid_: Model, product (the product is what Shopify sells)
 
 **Item** (code: product kind):
-What a design makes: an invitation (ro: invitație), save the date, RSVP card (card de confirmare), menu (meniu), place card, table number (număr de masă), welcome sign (tablou de întâmpinare), seating chart (tablou cu invitații), money envelope (plic de bani), favour tag (etichetă pentru mărturii), thank-you card (card de mulțumire) or bridesmaid and groomsman card.
+What a design makes: an invitation (ro: invitație), save the date, RSVP card (card de confirmare), menu (meniu), place card, table number (număr de masă), welcome sign (tablou de întâmpinare), seating chart (tablou de așezare), money envelope (plic de bani), favour tag (etichetă pentru mărturii), thank-you card (card de mulțumire) or bridesmaid and groomsman card.
 _Avoid_: Product, piece (a piece is one sheet of an item)
 
 **Occasion** (ro: ocazie):
