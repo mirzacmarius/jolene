@@ -257,8 +257,10 @@ export type EnvelopeStyle = (typeof envelopeStyles)[number];
 /**
  * Typefaces offered in the studio, all from Google Fonts under the SIL Open
  * Font License, which allows print. Each was checked for Romanian (ă â î and
- * ș ț with the comma below) when it was added; Parisienne, Marcellus and Mrs
- * Saint Delafield are left out because they lack ș and ț.
+ * ș ț with the comma below) in its font files when it was added; Parisienne,
+ * Marcellus, Mrs Saint Delafield, Sacramento, Tangerine, WindSong and Lato are
+ * left out because they lack ș and ț. In each category the families run from
+ * the most formal to the most relaxed, as the studio's font picker lists them.
  */
 export const fontCategories = ["script", "serif", "sans"] as const;
 export type FontCategory = (typeof fontCategories)[number];
@@ -270,18 +272,46 @@ export interface FontFamily {
 }
 
 export const fontFamilies = {
-  "Great Vibes": { category: "script", weights: [400], italic: false },
   "Pinyon Script": { category: "script", weights: [400], italic: false },
+  "Petit Formal Script": { category: "script", weights: [400], italic: false },
+  "Imperial Script": { category: "script", weights: [400], italic: false },
+  "Great Vibes": { category: "script", weights: [400], italic: false },
+  Ballet: { category: "script", weights: [400], italic: false },
+  Corinthia: { category: "script", weights: [400, 700], italic: false },
+  "Lavishly Yours": { category: "script", weights: [400], italic: false },
+  Italianno: { category: "script", weights: [400], italic: false },
+  Ephesis: { category: "script", weights: [400], italic: false },
   Allura: { category: "script", weights: [400], italic: false },
   "Alex Brush": { category: "script", weights: [400], italic: false },
-  Italianno: { category: "script", weights: [400], italic: false },
-  Corinthia: { category: "script", weights: [400, 700], italic: false },
+  Birthstone: { category: "script", weights: [400], italic: false },
+  "Dancing Script": {
+    category: "script",
+    weights: [400, 500, 600, 700],
+    italic: false,
+  },
   "Cormorant Garamond": {
     category: "serif",
     weights: [300, 400, 500, 600, 700],
     italic: true,
   },
+  "Cormorant Upright": {
+    category: "serif",
+    weights: [300, 400, 500, 600, 700],
+    italic: false,
+  },
   "EB Garamond": {
+    category: "serif",
+    weights: [400, 500, 600, 700],
+    italic: true,
+  },
+  "Libre Caslon Text": { category: "serif", weights: [400, 700], italic: true },
+  "Libre Baskerville": {
+    category: "serif",
+    weights: [400, 500, 600, 700],
+    italic: true,
+  },
+  "Sorts Mill Goudy": { category: "serif", weights: [400], italic: true },
+  "Bodoni Moda": {
     category: "serif",
     weights: [400, 500, 600, 700],
     italic: true,
@@ -291,16 +321,23 @@ export const fontFamilies = {
     weights: [400, 500, 600, 700],
     italic: true,
   },
-  "Bodoni Moda": {
-    category: "serif",
-    weights: [400, 500, 600, 700],
-    italic: true,
-  },
-  "Libre Caslon Text": { category: "serif", weights: [400, 700], italic: true },
+  "Gilda Display": { category: "serif", weights: [400], italic: false },
+  Bellefair: { category: "serif", weights: [400], italic: false },
   Cinzel: { category: "serif", weights: [400, 500, 600, 700], italic: false },
+  "Cinzel Decorative": {
+    category: "serif",
+    weights: [400, 700, 900],
+    italic: false,
+  },
+  Lora: { category: "serif", weights: [400, 500, 600, 700], italic: true },
   Montserrat: {
     category: "sans",
     weights: [300, 400, 500, 600],
+    italic: true,
+  },
+  Raleway: {
+    category: "sans",
+    weights: [300, 400, 500, 600, 700],
     italic: true,
   },
   Jost: { category: "sans", weights: [300, 400, 500, 600], italic: true },
@@ -308,6 +345,18 @@ export const fontFamilies = {
     category: "sans",
     weights: [300, 400, 500, 600],
     italic: true,
+  },
+  "Tenor Sans": { category: "sans", weights: [400], italic: false },
+  Questrial: { category: "sans", weights: [400], italic: false },
+  Quicksand: {
+    category: "sans",
+    weights: [300, 400, 500, 600, 700],
+    italic: false,
+  },
+  Comfortaa: {
+    category: "sans",
+    weights: [300, 400, 500, 600, 700],
+    italic: false,
   },
 } as const satisfies Record<string, FontFamily>;
 export type FontFamilyName = keyof typeof fontFamilies;
