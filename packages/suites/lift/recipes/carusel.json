@@ -1,0 +1,462 @@
+{
+  "suite": "carusel",
+  "cards": [
+    {
+      "id": "invitation-front",
+      "image": "images/invitatie-botez-carusel-girl/carusel-girl.jpg",
+      "quad": [[849, 877], [2321, 877], [2321, 2970], [849, 2970]],
+      "size": [133, 189],
+      "ppmm": 11,
+      "paperSample": [4, 4, 10, 10],
+      "join": 0.6,
+      "erase": [
+        {
+          "rect": [0, 0, 133, 0.6],
+          "select": "all"
+        },
+        {
+          "rect": [0, 0, 0.6, 189],
+          "select": "all"
+        },
+        {
+          "rect": [132.4, 0, 0.6, 189],
+          "select": "all"
+        },
+        {
+          "rect": [0, 188.4, 133, 0.6],
+          "select": "all"
+        },
+        {
+          "rect": [109, 29.8, 6.5, 6.2],
+          "select": "all"
+        },
+        {
+          "rect": [42.6, 64.8, 3.8, 4],
+          "select": "all"
+        },
+        {
+          "rect": [42.3, 70, 4.3, 5],
+          "select": "all"
+        },
+        {
+          "rect": [13.5, 73.6, 4.9, 4.6],
+          "select": "all"
+        },
+        {
+          "rect": [20.6, 113.8, 4.8, 4.6],
+          "select": "all"
+        },
+        {
+          "rect": [15.5, 122.8, 5.2, 11],
+          "select": "all"
+        },
+        {
+          "rect": [20.7, 122.8, 2.5, 9.3],
+          "select": "all"
+        },
+        {
+          "rect": [23.2, 122.8, 1.2, 7.9],
+          "select": "all"
+        },
+        {
+          "rect": [24.4, 122.8, 1.1, 4.8],
+          "select": "all"
+        },
+        {
+          "rect": [20.4, 138.4, 2.0, 4.8],
+          "select": "all"
+        },
+        {
+          "rect": [22.4, 138.9, 1.4, 4.3],
+          "select": "all"
+        },
+        {
+          "rect": [23.8, 139.5, 1.3, 3.7],
+          "select": "all"
+        },
+        {
+          "rect": [27.8, 141.95, 1.2, 4.8],
+          "select": "all"
+        },
+        {
+          "rect": [29, 142.3, 1, 4.4],
+          "select": "all"
+        },
+        {
+          "rect": [30, 142.6, 1, 4.1],
+          "select": "all"
+        },
+        {
+          "rect": [31, 142.95, 1, 3.8],
+          "select": "all"
+        },
+        {
+          "rect": [32, 143.3, 1, 3.4],
+          "select": "all"
+        },
+        {
+          "rect": [33, 143.65, 1.3, 3.1],
+          "select": "all"
+        },
+        {
+          "rect": [43.3, 148.1, 3.6, 3.4],
+          "select": "all"
+        },
+        {
+          "rect": [43.3, 147.5, 3.6, 0.6],
+          "select": "light",
+          "above": 0.72,
+          "saturation": 0.35,
+          "grow": 0
+        },
+        {
+          "rect": [56.2, 149, 6.9, 6],
+          "select": "all"
+        },
+        {
+          "rect": [56.2, 148.3, 6.9, 0.7],
+          "select": "light",
+          "above": 0.72,
+          "saturation": 0.35,
+          "grow": 0
+        },
+        {
+          "rect": [36, 157.5, 72, 18],
+          "select": "all"
+        },
+        {
+          "rect": [48, 176, 45, 10],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "carusel-carousel",
+          "name": "Caruselul",
+          "rect": [18.6, 9, 98.2, 142]
+        }
+      ]
+    },
+    {
+      "id": "invitation-front-stars",
+      "image": "images/invitatie-botez-carusel-girl/carusel-girl.jpg",
+      "quad": [[849, 877], [2321, 877], [2321, 2970], [849, 2970]],
+      "size": [133, 189],
+      "ppmm": 11,
+      "paperSample": [4, 4, 10, 10],
+      "join": 0.6,
+      "erase": [
+        {
+          "rect": [0, 0, 133, 0.6],
+          "select": "all"
+        },
+        {
+          "rect": [0, 188.4, 133, 0.6],
+          "select": "all"
+        },
+        {
+          "rect": [0, 0, 0.6, 189],
+          "select": "all"
+        },
+        {
+          "rect": [132.4, 0, 0.6, 189],
+          "select": "all"
+        },
+        {
+          "rect": [20.5, 9, 77, 53.4],
+          "select": "all"
+        },
+        {
+          "rect": [49.2, 62.4, 4.6, 2.7],
+          "select": "all"
+        },
+        {
+          "rect": [97.5, 36.2, 19, 26.3],
+          "select": "all"
+        },
+        {
+          "rect": [18.6, 62.4, 23.7, 51.4],
+          "select": "all"
+        },
+        {
+          "rect": [25.4, 113.8, 16.9, 3.6],
+          "select": "all"
+        },
+        {
+          "rect": [46.6, 62.4, 72.2, 55],
+          "select": "all"
+        },
+        {
+          "rect": [41.8, 75, 4.8, 42.4],
+          "select": "all"
+        },
+        {
+          "rect": [41.8, 62.4, 4.8, 2.4],
+          "select": "all"
+        },
+        {
+          "rect": [41.8, 68.8, 4.8, 1.2],
+          "select": "all"
+        },
+        {
+          "rect": [25.8, 117.4, 91, 25.2],
+          "select": "all"
+        },
+        {
+          "rect": [34.4, 142.6, 82.4, 4.8],
+          "select": "all"
+        },
+        {
+          "rect": [46.5, 147.4, 10, 1.6],
+          "select": "all"
+        },
+        {
+          "rect": [56.5, 147.4, 6.4, 1.3],
+          "select": "all"
+        },
+        {
+          "rect": [62.9, 147.4, 35, 2],
+          "select": "all"
+        },
+        {
+          "rect": [43.4, 147.4, 3.1, 0.5],
+          "select": "all"
+        },
+        {
+          "rect": [20.4, 132.1, 2.8, 6.3],
+          "select": "all"
+        },
+        {
+          "rect": [23.2, 130.7, 1.2, 8.2],
+          "select": "all"
+        },
+        {
+          "rect": [24.4, 127.6, 1.4, 11.9],
+          "select": "all"
+        },
+        {
+          "rect": [31, 142.6, 1, 0.35],
+          "select": "all"
+        },
+        {
+          "rect": [32, 142.6, 1, 0.7],
+          "select": "all"
+        },
+        {
+          "rect": [33, 142.6, 1.4, 1.05],
+          "select": "all"
+        },
+        {
+          "rect": [36, 157.5, 72, 18],
+          "select": "all"
+        },
+        {
+          "rect": [48, 176, 45, 10],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "carusel-stars-swirl",
+          "name": "Steluțe în jurul caruselului",
+          "rect": [0, 0, 133, 189]
+        }
+      ]
+    },
+    {
+      "id": "invitation-back",
+      "image": "images/invitatie-botez-carusel-girl/carusel-girl-2-min.jpg",
+      "quad": [[849, 877], [2321, 877], [2321, 2970], [849, 2970]],
+      "size": [133, 189],
+      "ppmm": 11,
+      "paperSample": [60, 46, 12, 4],
+      "join": 0.3,
+      "erase": [
+        {
+          "rect": [0, 0, 133, 0.6],
+          "select": "all"
+        },
+        {
+          "rect": [0, 0, 0.6, 189],
+          "select": "all"
+        },
+        {
+          "rect": [132.4, 0, 0.6, 189],
+          "select": "all"
+        },
+        {
+          "rect": [0, 188.4, 133, 0.6],
+          "select": "all"
+        },
+        {
+          "rect": [8.3, 12, 22, 17],
+          "select": "all"
+        },
+        {
+          "rect": [100, 12, 33, 15],
+          "select": "all"
+        },
+        {
+          "rect": [110.3, 33.7, 2.4, 2.7],
+          "select": "all"
+        },
+        {
+          "rect": [115.9, 32.4, 2.2, 1.7],
+          "select": "all"
+        },
+        {
+          "rect": [114.9, 35.9, 4.1, 4.2],
+          "select": "all"
+        },
+        {
+          "rect": [119.8, 38.6, 2.2, 2.6],
+          "select": "all"
+        },
+        {
+          "rect": [124.3, 40.2, 2.7, 1.8],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "carusel-bow",
+          "name": "Fundița",
+          "rect": [8.3, 12, 124.7, 29.4]
+        }
+      ]
+    },
+    {
+      "id": "invitation-back-stars",
+      "image": "images/invitatie-botez-carusel-girl/carusel-girl-2-min.jpg",
+      "quad": [[849, 877], [2321, 877], [2321, 2970], [849, 2970]],
+      "size": [133, 189],
+      "ppmm": 11,
+      "paperSample": [60, 46, 12, 4],
+      "join": 0.6,
+      "erase": [
+        {
+          "rect": [0, 0, 133, 0.6],
+          "select": "all"
+        },
+        {
+          "rect": [0, 0, 0.6, 189],
+          "select": "all"
+        },
+        {
+          "rect": [132.4, 0, 0.6, 189],
+          "select": "all"
+        },
+        {
+          "rect": [32, 12, 68, 30],
+          "select": "all"
+        },
+        {
+          "rect": [8.3, 29.2, 23.8, 12.2],
+          "select": "all"
+        },
+        {
+          "rect": [100, 30.5, 5, 6.5],
+          "select": "all"
+        },
+        {
+          "rect": [105, 26.8, 6.3, 5.6],
+          "select": "all"
+        },
+        {
+          "rect": [111.3, 27.5, 6.5, 4.6],
+          "select": "all"
+        },
+        {
+          "rect": [117.8, 28.5, 4.5, 6.8],
+          "select": "all"
+        },
+        {
+          "rect": [119, 35.3, 3.3, 2.6],
+          "select": "all"
+        },
+        {
+          "rect": [122.3, 32, 9.5, 7.6],
+          "select": "all"
+        },
+        {
+          "rect": [129, 29.5, 3.5, 3],
+          "select": "all"
+        },
+        {
+          "rect": [0, 188.4, 133, 0.6],
+          "select": "all"
+        },
+        {
+          "rect": [45, 52, 46, 7],
+          "select": "dark",
+          "below": 0.6,
+          "grow": 3
+        },
+        {
+          "rect": [30, 58, 76, 16],
+          "select": "all"
+        },
+        {
+          "rect": [35, 74, 68, 7],
+          "select": "dark",
+          "below": 0.6,
+          "grow": 3
+        },
+        {
+          "rect": [32, 81, 72, 13],
+          "select": "all"
+        },
+        {
+          "rect": [45, 93, 48, 6.5],
+          "select": "all"
+        },
+        {
+          "rect": [30, 99.5, 76, 13],
+          "select": "all"
+        },
+        {
+          "rect": [45, 112, 48, 6],
+          "select": "dark",
+          "below": 0.6,
+          "grow": 3
+        },
+        {
+          "rect": [30, 118, 78, 10],
+          "select": "dark",
+          "below": 0.6,
+          "grow": 3
+        },
+        {
+          "rect": [14, 129, 108, 30],
+          "select": "dark",
+          "below": 0.6,
+          "grow": 3
+        },
+        {
+          "rect": [38, 159, 62, 12],
+          "select": "dark",
+          "below": 0.6,
+          "grow": 3
+        },
+        {
+          "rect": [30, 171, 78, 15],
+          "select": "dark",
+          "below": 0.6,
+          "grow": 3
+        }
+      ],
+      "layers": [
+        {
+          "key": "carusel-stars-left",
+          "name": "Steluțe, stânga",
+          "rect": [0, 0, 66.5, 189]
+        },
+        {
+          "key": "carusel-stars-right",
+          "name": "Steluțe, dreapta",
+          "rect": [66.5, 0, 66.5, 189]
+        }
+      ]
+    }
+  ]
+}
