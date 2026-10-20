@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 
 import { HomeChristening } from "@/components/home/christening";
 import { HomeClosing } from "@/components/home/closing";
-import { HomeCollections } from "@/components/home/collections";
 import { HomeDelivery } from "@/components/home/delivery";
 import { HomeFinishes } from "@/components/home/finishes";
 import { HomeHero } from "@/components/home/hero";
 import { HomeMotion } from "@/components/home/motion";
+import { HomePrices } from "@/components/home/prices";
 import { HomeQuestions } from "@/components/home/questions";
 import { HomeSteps } from "@/components/home/steps";
 import { HomeStory, HomeStrip } from "@/components/home/story";
@@ -38,7 +38,7 @@ export default function HomePage() {
       <HomeStory />
       <HomeSteps />
       <HomeFinishes />
-      <HomeCollections />
+      <HomePrices />
       <HomeDelivery />
       <HomeChristening />
       <HomeQuestions />

@@ -6,8 +6,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Container } from "@/components/ui/container";
+import { PillArrow, textLinkClassName } from "@/components/ui/pill";
 
-import { PillArrow, textLinkClassName } from "./pill";
 import { Eyebrow } from "./typography";
 
 const QUESTIONS = [
@@ -46,7 +46,7 @@ const QUESTIONS = [
 export function HomeQuestions() {
   return (
     <div className="border-t">
-      <Container aria-labelledby="questions-title" className="scroll-mt-16" id="intrebari">
+      <Container aria-labelledby="questions-title" className="scroll-mt-20" id="intrebari">
         <div className="grid gap-10 py-24 md:grid-cols-[1fr_1.35fr] md:py-25">
           <div className="grid content-start justify-items-start gap-5">
             <Eyebrow className="reveal" data-reveal>

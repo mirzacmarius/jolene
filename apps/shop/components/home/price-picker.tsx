@@ -4,14 +4,14 @@ import { type ReactNode, useRef } from "react";
 
 import { Tabs } from "@/components/ui/tabs";
 
-interface CollectionPickerProps {
+interface PricePickerProps {
   children: ReactNode;
   className?: string;
   defaultValue: string;
 }
 
-// Below lg the chosen collection's card sits under the list, so a choice brings it into view.
-export function CollectionPicker({ children, className, defaultValue }: CollectionPickerProps) {
+// Below lg the chosen item's card sits under the list, so a choice brings it into view.
+export function PricePicker({ children, className, defaultValue }: PricePickerProps) {
   const root = useRef<HTMLDivElement>(null);
 
   return (

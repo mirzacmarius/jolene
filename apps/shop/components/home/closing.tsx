@@ -1,13 +1,14 @@
 import { StudioLink } from "@/components/studio/studio-link";
+import { PillArrow, pillVariants } from "@/components/ui/pill";
 
-import { PillArrow, pillVariants } from "./pill";
 import { Accent, Eyebrow } from "./typography";
 
 export function HomeClosing() {
+  // -mb-20 runs the band through the footer's pt-20 gap, so the footer starts where the band ends.
   return (
     <section
       aria-labelledby="closing-title"
-      className="relative isolate overflow-hidden bg-sage px-5 py-28 text-center"
+      className="relative isolate -mb-20 overflow-hidden bg-sage px-5 pt-28 pb-48 text-center"
       data-scene
     >
       <div aria-hidden="true" className="absolute inset-0 -z-10 grid place-items-center">

@@ -2,9 +2,9 @@ import { ArrowDownIcon } from "lucide-react";
 import Image from "next/image";
 
 import { StudioLink } from "@/components/studio/studio-link";
+import { PillArrow, pillVariants } from "@/components/ui/pill";
 
 import forestSuite from "./photos/forest-suite.jpg";
-import { PillArrow, pillVariants } from "./pill";
 import { SealButton } from "./seal-button";
 import { Accent, Eyebrow } from "./typography";
 

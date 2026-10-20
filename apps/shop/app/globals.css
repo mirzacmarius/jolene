@@ -10,8 +10,8 @@
   --color-gold: var(--gold);
   --color-blush: var(--blush);
   --color-sage: var(--sage);
-  --font-sans: var(--font-jost);
-  --font-display: var(--font-cormorant);
+  --font-sans: var(--font-dm-sans);
+  --font-display: var(--font-instrument-serif);
   --font-mono: var(--font-geist-mono);
   --text-xxs: 0.625rem;
   /* Headings track tighter as they grow (Geist behavior); attaches to every text-* utility. */
@@ -180,6 +180,7 @@
   --animate-ring: ring 1.8s cubic-bezier(0.1, 0.5, 0.3, 1) both;
   --animate-rise: rise 1s both;
   --animate-settle: settle 2s ease-out both;
+  --animate-sundial: sundial 2s ease-out both;
   --animate-unveil: unveil 0.6s both;
   --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -207,6 +208,14 @@
   @keyframes settle {
     from {
       transform: scale(1.06);
+    }
+  }
+  @keyframes sundial {
+    from {
+      transform: rotate(-50deg);
+    }
+    to {
+      transform: rotate(45deg);
     }
   }
   @keyframes unveil {

@@ -9,7 +9,7 @@ const MAX_COLUMNS = 5;
 
 export function QuickLinks({ items }: { items: MenuItem[] }) {
   return (
-    <ul className="hidden md:flex items-center gap-5">
+    <ul className="hidden h-full items-center gap-10 lg:flex">
       {items.map((item) => (
         <NavItem key={item.id} item={item} />
       ))}
@@ -17,12 +17,13 @@ export function QuickLinks({ items }: { items: MenuItem[] }) {
   );
 }
 
-const TRIGGER_CLASS = "flex items-center gap-1 text-sm hover:opacity-70 transition-opacity";
+const TRIGGER_CLASS =
+  "relative flex items-center gap-1 text-xs after:absolute after:inset-x-0 after:-bottom-1.25 after:h-px after:origin-left after:scale-x-0 after:bg-current after:transition-transform after:duration-200 hover:after:scale-x-100";
 
 function NavItem({ item }: { item: MenuItem }) {
   if (item.items.length === 0) {
     return (
-      <li className="flex items-center h-16">
+      <li className="flex h-full items-center">
         <MenuLink url={item.url} className={TRIGGER_CLASS}>
           {item.title}
         </MenuLink>
@@ -33,7 +34,7 @@ function NavItem({ item }: { item: MenuItem }) {
   const columns = item.items.slice(0, MAX_COLUMNS);
 
   return (
-    <li className="group flex items-center h-16">
+    <li className="group flex h-full items-center">
       <MenuLink url={item.url} className={TRIGGER_CLASS}>
         {item.title}
         <ChevronDown className="size-3" aria-hidden="true" />

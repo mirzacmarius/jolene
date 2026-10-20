@@ -1,9 +1,10 @@
 import { cn } from "cn";
 
+import { StudioLink } from "@/components/studio/studio-link";
 import { Container } from "@/components/ui/container";
 import { Marquee } from "@/components/ui/marquee";
+import { PillArrow, textLinkClassName } from "@/components/ui/pill";
 
-import { PillArrow, textLinkClassName } from "./pill";
 import { Accent, Eyebrow } from "./typography";
 
 export function HomeStrip() {
@@ -30,7 +31,7 @@ export function HomeStrip() {
 
 export function HomeStory() {
   return (
-    <Container aria-labelledby="story-title" className="scroll-mt-16" data-scene id="poveste">
+    <Container aria-labelledby="story-title" className="scroll-mt-20" data-scene id="poveste">
       <div className="grid gap-10 py-24 md:grid-cols-[1.25fr_1fr] md:py-30">
         <div className="grid content-start justify-items-start gap-5">
           <Eyebrow className="reveal" data-reveal>
@@ -60,9 +61,9 @@ export function HomeStory() {
             hârtia, culorile și finisajele, iar previzualizarea realistă vă arată totul așa cum va
             ieși de sub tipar.
           </p>
-          <a className={cn("reveal", textLinkClassName)} data-reveal href="#colectii">
+          <StudioLink className={cn("reveal", textLinkClassName)} data-reveal path="#colectii">
             Vedeți colecțiile <PillArrow />
-          </a>
+          </StudioLink>
         </div>
       </div>
     </Container>

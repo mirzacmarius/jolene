@@ -2,7 +2,7 @@
 
 ## Marée
 
-The home page's layout, motion and marquee are adapted from Marée, a landing page by LN: https://github.com/ln-dev7/landing-pages/tree/master/landing-pages/maree. Files that adapt its code say so in their first line.
+The home page's layout, motion and marquee, and the shop's menu and footer, are adapted from Marée, a landing page by LN: https://github.com/ln-dev7/landing-pages/tree/master/landing-pages/maree. Files that adapt its code say so in their first line.
 
 ```
 MIT License

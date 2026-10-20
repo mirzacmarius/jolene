@@ -1,6 +1,7 @@
 import { cn } from "cn";
 
-import { PillArrow, textLinkClassName } from "./pill";
+import { PillArrow, textLinkClassName } from "@/components/ui/pill";
+
 import { Accent, Eyebrow } from "./typography";
 
 export function HomeDelivery() {

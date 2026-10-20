@@ -6,7 +6,7 @@ import { Accent, Eyebrow } from "./typography";
 
 export function HomeSteps() {
   return (
-    <section aria-labelledby="steps-title" className="scroll-mt-16" id="cum-functioneaza">
+    <section aria-labelledby="steps-title" className="scroll-mt-20" id="cum-functioneaza">
       <StepsExplorer
         footnote={
           <p className="font-display text-[1.4375rem] leading-[1.35] italic opacity-70">

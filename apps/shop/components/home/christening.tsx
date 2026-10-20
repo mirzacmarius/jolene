@@ -12,7 +12,7 @@ export function HomeChristening() {
   if (collections.length === 0) return null;
 
   return (
-    <Container aria-labelledby="christening-title" data-scene>
+    <Container aria-labelledby="christening-title" className="scroll-mt-20" data-scene id="botez">
       <div className="grid md:min-h-180 md:grid-cols-2 md:gap-10">
         <div className="grid content-center justify-items-start gap-5 py-20 md:py-21">
           <Eyebrow className="reveal" data-reveal>
