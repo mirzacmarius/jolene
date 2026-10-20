@@ -14,7 +14,7 @@ const app = defineApp({
      * shows the AI designer as not available yet.
      */
     ANTHROPIC_API_KEY: v.optional(v.string()),
-    /** The model the AI designer runs on; "claude-opus-5-5" when unset. */
+    /** The model the AI designer runs on; ai/config.ts has the default. */
     AI_MODEL: v.optional(v.string()),
     /** Messages one visitor may send the AI designer a day; 20 when unset. */
     AI_DAILY_LIMIT: v.optional(v.string()),

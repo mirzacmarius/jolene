@@ -56,6 +56,7 @@ export function AiDesigner({
   fields,
   assets,
   view,
+  onOpenChange,
 }: {
   designId: Id<"designs">;
   /** The design's revision, as the studio shows it. */
@@ -66,6 +67,8 @@ export function AiDesigner({
   assets: readonly AssetLink[];
   /** What the studio shows, which a snapshot draws. */
   view: PreviewView;
+  /** Told when the sheet opens or closes, for a layout that makes room. */
+  onOpenChange?: (open: boolean) => void;
 }) {
   const t = useI18n();
   const locale = useCurrentLocale();
@@ -93,6 +96,8 @@ export function AiDesigner({
   const answerRendering = useMutation(api.ai.answerRendering);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => onOpenChange?.(open), [open, onOpenChange]);
 
   // The workspace makes room for the sheet, so nothing stays under it: beside
   // the design on large screens (by --ai-sheet-width), and at the end of the

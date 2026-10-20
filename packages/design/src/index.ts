@@ -1,5 +1,6 @@
 export * from "./catalog";
 export * from "./color";
+export * from "./editing";
 export * from "./fields";
 export * from "./fonts";
 export * from "./geometry";

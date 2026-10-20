@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { type Palette, resolveColor } from "../color";
 import { resolveText } from "../fields";
 import type {
@@ -54,7 +54,13 @@ function frameTransform(layer: Layer): string {
     : `translate(${x} ${y})`;
 }
 
-export function LayerView(props: LayerProps<Layer>): ReactNode {
+/**
+ * One layer, drawn again only when it or what it is drawn with changes, so
+ * an editor previewing a change to one layer leaves the others be.
+ */
+export const LayerView = memo(function LayerView(
+  props: LayerProps<Layer>,
+): ReactNode {
   const { layer } = props;
   if (layer.hidden) return null;
   let content: ReactNode;
@@ -77,6 +83,19 @@ export function LayerView(props: LayerProps<Layer>): ReactNode {
     >
       {content}
     </g>
+  );
+}, sameDrawing);
+
+function sameDrawing(before: LayerProps<Layer>, after: LayerProps<Layer>) {
+  return (
+    before.layer === after.layer &&
+    before.paper === after.paper &&
+    before.prefix === after.prefix &&
+    before.context === after.context &&
+    // Of the design, a layer reads only its theme, occasion and language.
+    before.document.theme === after.document.theme &&
+    before.document.occasion === after.document.occasion &&
+    before.document.language === after.document.language
   );
 }
 
