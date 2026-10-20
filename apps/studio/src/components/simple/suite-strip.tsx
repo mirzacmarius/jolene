@@ -9,15 +9,15 @@ import {
   productKindLabels,
 } from "@jolene/design";
 import { Button } from "@jolene/ui/button";
-import { toast } from "@jolene/ui/toaster";
 import { cn } from "@jolene/ui/utils";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { Check, Hourglass, LoaderCircle, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { useAnswerRendering } from "../ai/rendering";
+import { useRetry } from "../ai/retry";
 import { DesignPreview } from "../design/design-preview";
 
 type Progress = FunctionReturnType<typeof api.simple.progress>[number];
@@ -69,7 +69,7 @@ export function SuiteStrip({
     api.simple.progress,
     designIds && designIds.length > 0 ? { designIds } : "skip",
   );
-  const retry = useMutation(api.ai.retry);
+  const retry = useRetry();
   const answer = useAnswerRendering();
 
   // A reply that asks to see its item is shown it whole, as it arrives, once
@@ -195,11 +195,7 @@ export function SuiteStrip({
                   variant="outline"
                   size="sm"
                   className="mt-0.5 h-6 px-2 text-[11px]"
-                  onClick={() =>
-                    void retry({ messageId: entry.replyId }).catch(() =>
-                      toast.error(t("common.error")),
-                    )
-                  }
+                  onClick={() => void retry(entry.replyId)}
                 >
                   {t("simple.strip.retry")}
                 </Button>

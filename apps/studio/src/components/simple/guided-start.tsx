@@ -26,6 +26,7 @@ import type { FunctionReturnType } from "convex/server";
 import { Check, LoaderCircle, Sparkles, X } from "lucide-react";
 import {
   type ReactNode,
+  type RefObject,
   useEffect,
   useId,
   useMemo,
@@ -34,6 +35,8 @@ import {
 } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { startOfDay } from "../ai/ai-designer";
+import { isWorking } from "../ai/conversation";
+import { useRetry } from "../ai/retry";
 import { type AssetLink, DesignPreview } from "../design/design-preview";
 import { Field } from "../workspace/fields-panel";
 import { itemRequest } from "./request";
@@ -194,6 +197,166 @@ function decline(eventId: string) {
   } catch {
     // Without storage the offer comes back on the next visit.
   }
+}
+
+type Progress = FunctionReturnType<typeof api.simple.progress>[number];
+
+/** Why the first item wasn't written, in the couple's words. */
+function failure(t: Translate, error: Progress["error"]) {
+  switch (error) {
+    case "busy":
+      return t("ai.busy");
+    case "unavailable":
+      return t("ai.unavailable");
+    case "refused":
+      return t("ai.refused");
+    default:
+      return t("simple.started.failed");
+  }
+}
+
+/**
+ * Where the collection stands once the questions are answered, as the AI
+ * designer writes it: writing, held back by a first item that failed (and
+ * running again from here), or written.
+ */
+function Started({
+  composed,
+  writes,
+  headingId,
+  headingRef,
+  onClose,
+}: {
+  composed: Composed;
+  /** The AI designer works on this deployment. */
+  writes: boolean;
+  headingId: string;
+  headingRef: RefObject<HTMLHeadingElement | null>;
+  onClose: () => void;
+}) {
+  const t = useI18n();
+  const locale = useCurrentLocale();
+  const retry = useRetry();
+  const [retrying, setRetrying] = useState(false);
+  const followed = composed.items.filter((item) => item.written);
+  const progress = useQuery(
+    api.simple.progress,
+    writes && followed.length > 0
+      ? { designIds: followed.map((item) => item.designId) }
+      : "skip",
+  );
+  const entries = followed.map((item) =>
+    progress?.find((each) => each.designId === item.designId),
+  );
+  const [lead, ...later] = entries;
+  const state = !writes
+    ? "soon"
+    : followed.length === 0
+      ? "plain"
+      : entries.some((entry) => !entry || isWorking(entry))
+        ? "writing"
+        : lead?.status === "failed" && lead.canRetry
+          ? "held"
+          : entries.some((entry) => entry?.wrote)
+            ? "written"
+            : "nothing";
+  // The items that failed with the first one run again with it.
+  const waiting =
+    later.length > 0 &&
+    later.every((entry) => entry?.status === "failed" && entry.canRetry);
+  const kept = composed.items
+    .filter(
+      (item) =>
+        !entries.some(
+          (entry) => entry?.designId === item.designId && entry.wrote,
+        ),
+    )
+    .map((item) => productKindLabels[item.kind][locale]);
+
+  const [title, ...lines] =
+    state === "soon"
+      ? [t("simple.started.soonTitle"), t("simple.started.soonLead")]
+      : state === "plain"
+        ? [t("simple.started.plainTitle"), t("simple.items.none")]
+        : state === "held"
+          ? [
+              t("simple.started.heldTitle"),
+              failure(t, lead?.error),
+              waiting ? t("simple.started.heldLead") : "",
+            ]
+          : state === "writing"
+            ? [
+                t("simple.started.title"),
+                t("simple.started.lead"),
+                followed.length < composed.items.length
+                  ? t("simple.started.some", { count: followed.length })
+                  : "",
+              ]
+            : state === "written"
+              ? [
+                  t("simple.started.writtenTitle"),
+                  t("simple.started.writtenLead"),
+                  kept.length > 0
+                    ? t("simple.started.kept", { items: kept.join(", ") })
+                    : "",
+                ]
+              : [
+                  t("simple.started.nothingTitle"),
+                  lead?.status === "failed" ? failure(t, lead.error) : "",
+                  t("simple.started.nothingLead"),
+                ];
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="scroll-mt-5 space-y-3 rounded-2xl border border-border/80 bg-background/60 p-4"
+    >
+      <Sparkles className="size-5 text-gold" aria-hidden />
+      <h2
+        id={headingId}
+        ref={headingRef}
+        tabIndex={-1}
+        className="font-display text-2xl leading-tight outline-none"
+      >
+        {title}
+      </h2>
+      <div aria-live="polite" className="space-y-3">
+        {lines.filter(Boolean).map((line) => (
+          <p
+            key={line}
+            className="text-sm leading-relaxed text-muted-foreground"
+          >
+            {line}
+          </p>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        {state === "held" && lead ? (
+          <Button
+            size="sm"
+            disabled={retrying}
+            onClick={async () => {
+              setRetrying(true);
+              await retry(lead.replyId);
+              setRetrying(false);
+            }}
+          >
+            {retrying ? (
+              <LoaderCircle aria-hidden className="animate-spin" />
+            ) : null}
+            {t("simple.strip.retry")}
+          </Button>
+        ) : null}
+        <Button
+          size="sm"
+          variant={state === "held" ? "ghost" : "default"}
+          onClick={onClose}
+        >
+          {t("simple.started.done")}
+        </Button>
+      </div>
+    </section>
+  );
 }
 
 type Phase = "offer" | "steps" | "started" | "closed";
@@ -406,44 +569,19 @@ export function GuidedStart({
       </div>
     );
 
-  if (phase === "started" && composed) {
-    const written = composed.items.filter((item) => item.written).length;
-    const [title, lead] = !writes
-      ? [t("simple.started.soonTitle"), t("simple.started.soonLead")]
-      : written === 0
-        ? [t("simple.started.plainTitle"), t("simple.items.none")]
-        : [t("simple.started.title"), t("simple.started.lead")];
+  if (phase === "started" && composed)
     return (
       <div className="space-y-6">
-        <section
-          aria-labelledby={headingId}
-          className="scroll-mt-5 space-y-3 rounded-2xl border border-border/80 bg-background/60 p-4"
-        >
-          <Sparkles className="size-5 text-gold" aria-hidden />
-          <h2
-            id={headingId}
-            ref={headingRef}
-            tabIndex={-1}
-            className="font-display text-2xl leading-tight outline-none"
-          >
-            {title}
-          </h2>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {lead}
-          </p>
-          {writes && written > 0 && written < composed.items.length ? (
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {t("simple.started.some", { count: written })}
-            </p>
-          ) : null}
-          <Button size="sm" onClick={() => go("closed")}>
-            {t("simple.started.done")}
-          </Button>
-        </section>
+        <Started
+          composed={composed}
+          writes={writes}
+          headingId={headingId}
+          headingRef={headingRef}
+          onClose={() => go("closed")}
+        />
         {children}
       </div>
     );
-  }
 
   if (!step) return children;
   const words = stepWords(t, step.id, occasion);

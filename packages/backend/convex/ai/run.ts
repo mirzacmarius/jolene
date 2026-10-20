@@ -45,7 +45,7 @@ import {
   usageOf,
 } from "./request";
 import { applyOperationsInput, setDetailsInput, toolNames } from "./tools";
-import type { aiChangeValidator, aiErrorValidator } from "./validators";
+import { type aiChangeValidator, aiErrorValidator } from "./validators";
 
 /**
  * A reply runs as a chain of steps, each one Messages API request in its own
@@ -162,12 +162,15 @@ export const step = internalAction({
     const { round, base } = run;
     const config = aiConfig();
     const client = modelClient(config);
+    // A request made again (see below) follows one the API answered in part.
+    const answeredBefore = attempt > 0;
     if (!client) {
       await ctx.runMutation(internal.ai.run.fail, {
         messageId,
         round,
         base,
         error: "unavailable",
+        answered: answeredBefore,
       });
       return null;
     }
@@ -214,12 +217,12 @@ export const step = internalAction({
         });
         return null;
       }
-      const failure = failureOf(error, writer.timedOut);
       await ctx.runMutation(internal.ai.run.fail, {
         messageId,
         round,
         base,
-        error: failure,
+        ...failureOf(error, writer.timedOut),
+        answered: answeredBefore || writer.answered,
       });
     } finally {
       clearTimeout(timer);
@@ -228,41 +231,59 @@ export const step = internalAction({
   },
 });
 
-/** What the couple is told about a request that failed; logged without secrets. */
-function failureOf(error: unknown, timedOut: boolean): Failure {
+/**
+ * How a failed request ends its reply: what the couple is told, and whether
+ * its thread can be sent again. Logged for the deployment's owner without
+ * secrets; the API's own message says what to fix.
+ */
+function failureOf(
+  error: unknown,
+  timedOut: boolean,
+): { error: Failure; endsThread?: true } {
   if (timedOut) {
     console.error("AI designer request ran past its time limit");
-    return "failed";
+    return { error: "failed" };
   }
   // Connection errors are API errors too, so they're told apart first.
   if (error instanceof Anthropic.APIConnectionError) {
     console.error("AI designer request could not connect:", error.message);
-    return "busy";
+    return { error: "busy" };
   }
-  if (error instanceof Anthropic.APIError) {
+  if (!(error instanceof Anthropic.APIError) || error.status === undefined) {
     console.error(
-      `AI designer request failed with ${error.status ?? "no status"}:`,
-      error.message,
-      error.requestID ?? "",
+      "AI designer request failed:",
+      error instanceof Error ? error.message : String(error),
     );
-    if (
-      error instanceof Anthropic.AuthenticationError ||
-      error instanceof Anthropic.PermissionDeniedError ||
-      error instanceof Anthropic.NotFoundError
-    )
-      return "unavailable";
-    if (
-      error instanceof Anthropic.RateLimitError ||
-      error instanceof Anthropic.InternalServerError
-    )
-      return "busy";
-    return "failed";
+    return { error: "failed" };
   }
-  console.error(
-    "AI designer request failed:",
-    error instanceof Error ? error.message : String(error),
-  );
-  return "failed";
+  const said = [error.message, error.requestID].filter(Boolean).join(", ");
+  const { status } = error;
+  // What the SDK retries, it has retried twice: the API is busy, or briefly
+  // out, and the same request can go through in a moment.
+  if (status === 408 || status === 409 || status === 429 || status >= 500) {
+    console.error(`AI designer request failed for now: ${said}`);
+    return { error: "busy" };
+  }
+  // The key, the account or the deployment's settings: no request goes
+  // through until they are fixed. A credit balance too low and a beta the
+  // organization doesn't have come as 400s.
+  if (
+    status === 401 ||
+    status === 402 ||
+    status === 403 ||
+    status === 404 ||
+    (status === 400 && /credit balance|anthropic-beta/i.test(error.message))
+  ) {
+    console.error(
+      `AI designer can't make requests until ANTHROPIC_API_KEY, the account's credits or AI_MODEL are fixed: ${said}`,
+    );
+    return { error: "unavailable" };
+  }
+  // Anything else the API turns away (a 400, a 413), it would turn away
+  // again: the thread can't be sent as it is, and the next message starts
+  // a new one.
+  console.error(`AI designer request was turned away: ${said}`);
+  return { error: "failed", endsThread: true };
 }
 
 /**
@@ -275,6 +296,8 @@ class ReplyWriter {
   readonly signal = this.controller.signal;
   wanted = true;
   timedOut = false;
+  /** The API began to answer, which it bills for. */
+  answered = false;
   private text = "";
   private readonly notes: string[] = [];
   private lastWrite = 0;
@@ -289,6 +312,7 @@ class ReplyWriter {
   ) {}
 
   onEvent = (event: BetaRawMessageStreamEvent) => {
+    this.answered = true;
     if (event.type === "content_block_start") {
       if (event.content_block.type === "thinking") this.notes.push("");
       else if (event.content_block.type === "text" && this.text)
@@ -445,21 +469,26 @@ async function hydrate(
   );
 }
 
-/** Ends a round that failed, keeping what earlier rounds wrote. */
+/**
+ * Ends a round that failed, keeping what earlier rounds wrote. A reply the
+ * API never answered any of doesn't count toward the day's limits.
+ */
 export const fail = internalMutation({
   args: {
     messageId: v.id("aiMessages"),
     round: v.number(),
     base: baseValidator,
-    error: v.union(
-      v.literal("refused"),
-      v.literal("busy"),
-      v.literal("unavailable"),
-      v.literal("failed"),
-    ),
+    error: aiErrorValidator,
+    /** The thread can't be sent again: the next message starts a new one. */
+    endsThread: v.optional(v.literal(true)),
+    /** The API began to answer this round, which it bills for. */
+    answered: v.boolean(),
   },
   returns: v.null(),
-  handler: async (ctx, { messageId, round, base, error }) => {
+  handler: async (
+    ctx,
+    { messageId, round, base, error, endsThread, answered },
+  ) => {
     const message = await ctx.db.get("aiMessages", messageId);
     if (!inRound(message, round)) return null;
     const now = Date.now();
@@ -467,6 +496,8 @@ export const fail = internalMutation({
       ...base,
       status: "failed",
       error,
+      ...(endsThread ? { endsThread } : {}),
+      ...(!answered && !message.usage ? { refunded: true as const } : {}),
       finishedAt: now,
       updatedAt: now,
     });

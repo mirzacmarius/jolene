@@ -27,7 +27,8 @@ export const aiStatusValidator = v.union(
  * Why a reply failed, for the studio to word in the visitor's language:
  * "refused" when the model declined the request, "busy" when the API is
  * overloaded or rate limited (try again soon), "unavailable" when the
- * deployment's key or model is wrong, "failed" for anything else.
+ * deployment's key, its account's credits or its model are wrong, "failed"
+ * for anything else.
  */
 export const aiErrorValidator = v.union(
   v.literal("refused"),

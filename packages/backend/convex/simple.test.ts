@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import Anthropic from "@anthropic-ai/sdk";
 import type { BetaMessageStreamParams } from "@anthropic-ai/sdk/resources/beta/messages";
 import {
   type DesignDocument,
@@ -110,6 +111,35 @@ function standInModel() {
   return requests;
 }
 
+/**
+ * The stand-in, overloaded until told otherwise: while it is, every request
+ * fails as the API's would.
+ */
+function failingModel() {
+  const model = {
+    overloaded: true,
+    requests: [] as BetaMessageStreamParams[],
+  };
+  setTestModelClient({
+    async stream(request, onEvent, signal) {
+      model.requests.push(structuredClone(request));
+      if (model.overloaded)
+        throw new Anthropic.InternalServerError(
+          529,
+          {
+            type: "error",
+            error: { type: "overloaded_error", message: "Overloaded" },
+          },
+          "Overloaded",
+          new Headers(),
+        );
+      const turn = standInTurn(request);
+      return await play(turn.content, turn.stop, onEvent, signal, 0);
+    },
+  });
+  return model;
+}
+
 beforeEach(() => {
   setEnv({ ANTHROPIC_API_KEY: "test-key" });
 });
@@ -146,6 +176,10 @@ const progressOf = async ({ couple }: Setup, designIds: Id<"designs">[]) =>
     ]),
   );
 
+/** The AI designer's messages the couple has used, all told. */
+const usedToday = async ({ couple }: Setup) =>
+  (await couple.query(api.ai.availability, { since: 0 })).used;
+
 const documentOf = async ({ couple }: Setup, designId: Id<"designs">) => {
   const data = await couple.query(api.designs.get, { designId });
   if (!data) throw new Error("No design");
@@ -174,6 +208,18 @@ function contextOf(requests: BetaMessageStreamParams[], item: string) {
       return context.text;
   }
   throw new Error(`No request for the ${item}`);
+}
+
+/** The item a request writes, as its first message's context names it. */
+function itemOf(request: BetaMessageStreamParams) {
+  const first = request.messages[0];
+  if (!first || typeof first.content === "string") return undefined;
+  for (const block of first.content)
+    if (block.type === "text") {
+      const found = /<composition item="([^"]+)"/.exec(block.text);
+      if (found) return found[1];
+    }
+  return undefined;
 }
 
 async function expectError(promise: Promise<unknown>, code: string) {
@@ -413,8 +459,10 @@ describe("simple mode", () => {
     ).toEqual(["stopped", "pending", "stopped"]);
     await setup.t.finishAllScheduledFunctions(() => {});
 
-    // The save-the-date is written on its own, without wording to echo.
+    // The save-the-date is written on its own, without wording to echo;
+    // the items stopped before they began don't count.
     expect(requests).toHaveLength(2);
+    expect(await usedToday(setup)).toBe(1);
     const later = contextOf(requests, "Save the date");
     expect(later).toContain('first="false"');
     expect(later).toContain("its wording wasn't finished");
@@ -436,6 +484,101 @@ describe("simple mode", () => {
       "done",
       "done",
     ]);
+  });
+
+  test("holds the collection back while the invitation fails, and writes it all when it runs again", async () => {
+    const setup = await setUp();
+    const model = failingModel();
+    const { items } = await setup.couple.mutation(api.simple.compose, {
+      designId: setup.designId,
+      items: [request("invitation"), request("save-the-date"), request("menu")],
+      tone: "classic",
+      language: "ro",
+      locale: "ro",
+    });
+    const ids = items.map((item) => item.designId);
+    await setup.t.finishAllScheduledFunctions(() => {});
+
+    // Only the invitation was asked for; the others failed with it, and
+    // none of them counts toward the day.
+    expect(model.requests).toHaveLength(1);
+    const failed = await setup.couple.query(api.simple.progress, {
+      designIds: ids,
+    });
+    expect(
+      failed.map((each) => [each.status, each.error, each.canRetry]),
+    ).toEqual([
+      ["failed", "busy", true],
+      ["failed", "busy", true],
+      ["failed", "busy", true],
+    ]);
+    expect(await usedToday(setup)).toBe(0);
+
+    // Running the invitation again takes the others along, in its voice.
+    model.overloaded = false;
+    await setup.couple.mutation(api.ai.retry, {
+      messageId: failed[0]!.replyId,
+    });
+    expect(Object.values(await progressOf(setup, ids))).toEqual([
+      "pending",
+      "waiting",
+      "waiting",
+    ]);
+    await setup.t.finishAllScheduledFunctions(() => {});
+    const written = await setup.couple.query(api.simple.progress, {
+      designIds: ids,
+    });
+    expect(written.map((each) => [each.status, each.wrote])).toEqual([
+      ["done", true],
+      ["done", true],
+      ["done", true],
+    ]);
+    expect(contextOf(model.requests, "Menu")).toContain(
+      "Cu binecuvântarea părinților",
+    );
+    expect(await usedToday(setup)).toBe(3);
+  });
+
+  test("writes an item on its own when it runs again before the invitation", async () => {
+    const setup = await setUp();
+    const model = failingModel();
+    const { items } = await setup.couple.mutation(api.simple.compose, {
+      designId: setup.designId,
+      items: [request("invitation"), request("menu")],
+      language: "ro",
+      locale: "ro",
+    });
+    const ids = items.map((item) => item.designId);
+    await setup.t.finishAllScheduledFunctions(() => {});
+    const [invitation, menu] = await setup.couple.query(api.simple.progress, {
+      designIds: ids,
+    });
+
+    model.overloaded = false;
+    await setup.couple.mutation(api.ai.retry, { messageId: menu!.replyId });
+    await setup.t.finishAllScheduledFunctions(() => {});
+    expect(Object.values(await progressOf(setup, ids))).toEqual([
+      "failed",
+      "done",
+    ]);
+    expect(contextOf(model.requests, "Menu")).toContain(
+      "its wording wasn't finished",
+    );
+
+    // The invitation runs again on its own: the menu is written already.
+    const before = model.requests.length;
+    await setup.couple.mutation(api.ai.retry, {
+      messageId: invitation!.replyId,
+    });
+    await setup.t.finishAllScheduledFunctions(() => {});
+    expect(Object.values(await progressOf(setup, ids))).toEqual([
+      "done",
+      "done",
+    ]);
+    expect(new Set(model.requests.slice(before).map(itemOf))).toEqual(
+      new Set(["Invitation"]),
+    );
+    expect(await usedToday(setup)).toBe(2);
   });
 
   test("leaves out items whose design is still busy", async () => {

@@ -210,20 +210,31 @@ export default {
     failed: "Your collection couldn't be started. Please try again.",
     started: {
       title: "The AI designer is writing your collection",
-      lead: "The invitation first, then the other items in the same voice. Follow each one under the design, and carry on meanwhile.",
+      lead: "The invitation first, then the other items in the same tone. Follow each one under the design, and carry on meanwhile.",
       some: "Today it writes {count} of them; the others keep Jolene's wording until you ask it again.",
       soonTitle: "Your collection is ready",
       soonLead:
         "Each item has Jolene's wording and your details. The AI designer, who will write the wording for you, isn't available yet.",
       plainTitle: "Your collection is ready",
       plainLead: "Each item has Jolene's wording and your details.",
+      heldTitle: "The AI designer couldn't start your collection",
+      heldLead:
+        "The other items wait for the first one: try again, and it writes them all in the same tone.",
+      failed: "Something went wrong with the first item.",
+      writtenTitle: "Your collection is written",
+      writtenLead:
+        "Each item now has its own wording, in the same tone. You'll find them under the design, to change whenever you like.",
+      kept: "These kept Jolene's wording: {items}.",
+      nothingTitle: "The AI designer didn't write your collection",
+      nothingLead:
+        "The items keep Jolene's wording and your details. You can ask the AI designer again on each one.",
       done: "Done",
     },
     request: {
       lead: "Write {wording}: {tone}, in {language}.",
       leadPlain: "Write {wording}, in {language}.",
       follow:
-        "Write {wording} in the same voice as the rest of the collection, in {language}.",
+        "Write {wording} in the same tone as the rest of the collection, in {language}.",
       line: "Open it with our own line: “{line}”.",
       tones: {
         weddingClassic: "a classic tone, with our parents' blessing",

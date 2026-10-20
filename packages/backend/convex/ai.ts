@@ -6,9 +6,15 @@ import type { Id } from "./_generated/dataModel";
 import { type MutationCtx, mutation, query } from "./_generated/server";
 import { aiConfig, MAX_MESSAGE_LENGTH, MAX_SNAPSHOT_BYTES } from "./ai/config";
 import { describeView } from "./ai/context";
-import { checkLimits } from "./ai/limits";
+import {
+  checkLimits,
+  messagesLeft,
+  messagesUsed,
+  requireRoom,
+} from "./ai/limits";
 import {
   beginReply,
+  begun,
   canRetry,
   isWorking,
   latestMessage,
@@ -25,7 +31,7 @@ import {
 } from "./ai/validators";
 import { requireOwnDesign } from "./designs";
 import { saveRevision } from "./designs/versions";
-import { afterReply } from "./simple/compose";
+import { afterReply, beginOnItsOwn, waitAgain } from "./simple/compose";
 import { requireUser } from "./utils/auth";
 import { errors } from "./utils/errors";
 import { languageValidator } from "./utils/validators";
@@ -141,16 +147,11 @@ export const availability = query({
         limit: config.dailyLimit,
         used: 0,
       };
-    const sent = await ctx.db
-      .query("aiMessages")
-      .withIndex("by_ownerId_and_role", (q) =>
-        q
-          .eq("ownerId", userId)
-          .eq("role", "couple")
-          .gte("_creationTime", since),
-      )
-      .take(config.dailyLimit);
-    return { configured: true, limit: config.dailyLimit, used: sent.length };
+    return {
+      configured: true,
+      limit: config.dailyLimit,
+      used: await messagesUsed(ctx, userId, since, config.dailyLimit),
+    };
   },
 });
 
@@ -206,7 +207,8 @@ export const send = mutation({
 
 /**
  * Stops a reply. What it changed so far stays, each change undoable; what it
- * was writing stops where it is.
+ * was writing stops where it is. A reply stopped before its first request
+ * is refunded.
  */
 export const stop = mutation({
   args: { messageId: v.id("aiMessages") },
@@ -216,10 +218,14 @@ export const stop = mutation({
     if (!isWorking(message)) return null;
     await closeRendering(ctx, message);
     const now = Date.now();
+    const unasked =
+      (message.status === "waiting" || message.status === "pending") &&
+      !message.usage;
     await ctx.db.patch("aiMessages", messageId, {
       status: "stopped",
       rendering: undefined,
       pendingResults: undefined,
+      ...(unasked ? { refunded: true as const } : {}),
       finishedAt: now,
       updatedAt: now,
     });
@@ -228,7 +234,12 @@ export const stop = mutation({
   },
 });
 
-/** Runs the latest reply's failed request again. */
+/**
+ * Runs the latest reply's failed request again. A refunded reply counts
+ * again, within the day's limits. A collection's first item takes the items
+ * that failed with it along (simple/compose.ts), and one of those items
+ * begins on its own.
+ */
 export const retry = mutation({
   args: { messageId: v.id("aiMessages") },
   returns: v.null(),
@@ -237,14 +248,29 @@ export const retry = mutation({
     const latest = await latestMessage(ctx, message.designId);
     if (latest?._id !== messageId || !canRetry(message))
       throw new ConvexError(errors.notFound);
-    if (!aiConfig().configured) throw new ConvexError(errors.aiUnavailable);
+    const config = aiConfig();
+    if (!config.configured) throw new ConvexError(errors.aiUnavailable);
+    const now = Date.now();
+    const left = await messagesLeft(ctx, message.ownerId, config, now);
+    if (message.refunded) requireRoom(left);
     await ctx.db.patch("aiMessages", messageId, {
-      status: "pending",
       error: undefined,
+      refunded: undefined,
       finishedAt: undefined,
-      updatedAt: Date.now(),
+      updatedAt: now,
     });
+    if (!begun(message)) {
+      const reply = await ctx.db.get("aiMessages", messageId);
+      if (reply) await beginOnItsOwn(ctx, reply);
+      return null;
+    }
+    await ctx.db.patch("aiMessages", messageId, { status: "pending" });
     await ctx.scheduler.runAfter(0, internal.ai.run.step, { messageId });
+    await waitAgain(
+      ctx,
+      message,
+      Math.min(left.visitor, left.everyone) - (message.refunded ? 1 : 0),
+    );
     return null;
   },
 });

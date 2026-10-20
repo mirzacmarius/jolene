@@ -21,7 +21,7 @@ export type Message = FunctionReturnType<typeof api.ai.messages>[number];
 type Change = Message["changes"][number];
 
 /** A reply still being written, or waiting to be. */
-export const isWorking = (message: Message | undefined) =>
+export const isWorking = (message: Pick<Message, "status"> | undefined) =>
   message?.status === "waiting" ||
   message?.status === "pending" ||
   message?.status === "streaming" ||

@@ -44,6 +44,13 @@ export async function latestMessage(ctx: QueryCtx, designId: Id<"designs">) {
     .first();
 }
 
+/**
+ * Whether the reply has begun (beginReply): its thread is settled and the
+ * couple's words are written into it. A composition's later item that
+ * failed with the first item never began.
+ */
+export const begun = (reply: Doc<"aiMessages">) => reply.prompt !== undefined;
+
 /** A reply that failed for a passing reason can run its request again. */
 export const canRetry = (message: Doc<"aiMessages">) =>
   message.role === "designer" &&

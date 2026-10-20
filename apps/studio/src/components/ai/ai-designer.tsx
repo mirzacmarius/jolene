@@ -25,6 +25,7 @@ import type { AssetLink, PreviewView } from "../design/design-preview";
 import { Composer } from "./composer";
 import { Conversation, isWorking } from "./conversation";
 import { useAnswerRendering, useUploadImage } from "./rendering";
+import { useRetry } from "./retry";
 import { takeSnapshot, viewName } from "./snapshot";
 
 /**
@@ -91,7 +92,7 @@ export function AiDesigner({
   );
   const send = useMutation(api.ai.send);
   const stop = useMutation(api.ai.stop);
-  const retry = useMutation(api.ai.retry);
+  const retry = useRetry();
   const undo = useMutation(api.ai.undo);
   const upload = useUploadImage();
   const answerRendering = useAnswerRendering();
@@ -258,11 +259,7 @@ export function AiDesigner({
           lead={t("ai.lead")}
           onSuggestion={(text) => void submit(text)}
           onUndo={onUndo}
-          onRetry={(messageId) =>
-            void retry({ messageId }).catch(() =>
-              toast.error(t("common.error")),
-            )
-          }
+          onRetry={(messageId) => void retry(messageId)}
         />
         <Composer
           draft={draft}

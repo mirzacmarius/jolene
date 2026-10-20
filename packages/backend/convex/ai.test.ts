@@ -691,6 +691,10 @@ describe("the AI designer", () => {
       changes: [],
     });
     expect((await designOf(setup)).design.revision).toBe(1);
+    // The API had begun to answer, so the message counts.
+    expect(
+      await setup.couple.query(api.ai.availability, { since: 0 }),
+    ).toMatchObject({ used: 1 });
   });
 
   test("has a stand-in for local development, set by AI_STAND_IN", async () => {
@@ -776,6 +780,130 @@ describe("the AI designer", () => {
       text: "Gata.",
     });
     expect(requests[1]?.messages).toEqual(requests[0]?.messages ?? []);
+  });
+
+  test("tells a problem with the account from a request the API turns away", async () => {
+    const setup = await setUp();
+    const turnedAway =
+      (status: number, message: string, type = "invalid_request_error") =>
+      async () => {
+        throw Anthropic.APIError.generate(
+          status,
+          { type: "error", error: { type, message } },
+          undefined,
+          new Headers({ "request-id": "req_test" }),
+        );
+      };
+    const requests = fakeModel(
+      turnedAway(
+        400,
+        "Your credit balance is too low to access the Anthropic API.",
+      ),
+      turnedAway(
+        400,
+        "Unexpected value(s) `example-2026-01-01` for the `anthropic-beta` header.",
+      ),
+      turnedAway(402, "There is a problem with billing.", "billing_error"),
+      turnedAway(401, "invalid x-api-key", "authentication_error"),
+      turnedAway(400, "messages.1.content.0: Input tag 'example' found"),
+      answer({ content: [text("Bună ziua!")] }),
+    );
+
+    // The key, the account or the settings: nothing the couple can change,
+    // and the request can run again once they are fixed.
+    for (const words of ["Unu", "Doi", "Trei", "Patru"]) {
+      await talk(setup, words);
+      expect(await replyOf(setup)).toMatchObject({
+        status: "failed",
+        error: "unavailable",
+        canRetry: true,
+      });
+    }
+
+    // Anything else the API turns away, it would turn away again: the next
+    // message starts a new thread.
+    await talk(setup, "Cinci");
+    expect(await replyOf(setup)).toMatchObject({
+      status: "failed",
+      error: "failed",
+      canRetry: false,
+    });
+    await talk(setup, "Șase");
+    expect(await replyOf(setup)).toMatchObject({ status: "done" });
+    expect(requests[5]?.messages).toHaveLength(1);
+
+    // Requests the API turned away don't count toward the day.
+    expect(
+      await setup.couple.query(api.ai.availability, { since: 0 }),
+    ).toMatchObject({ used: 1 });
+  });
+
+  test("counts a reply the API never answered only when it runs again", async () => {
+    setEnv({ ANTHROPIC_API_KEY: "test-key", AI_DAILY_LIMIT: "1" });
+    const setup = await setUp();
+    fakeModel(
+      async () => {
+        throw new Anthropic.InternalServerError(
+          529,
+          {
+            type: "error",
+            error: { type: "overloaded_error", message: "Overloaded" },
+          },
+          "Overloaded",
+          new Headers(),
+        );
+      },
+      answer({ content: [text("Bună!")] }),
+      answer({ content: [text("Gata.")] }),
+    );
+    const used = async () =>
+      (await setup.couple.query(api.ai.availability, { since: 0 })).used;
+    await talk(setup, "Verde");
+    const failed = await replyOf(setup);
+    expect(failed).toMatchObject({ status: "failed", canRetry: true });
+    expect(await used()).toBe(0);
+
+    // The day's one message goes to another design meanwhile.
+    const other = await setup.couple.mutation(api.designs.start, {
+      template: "sample-invitation",
+    });
+    await setup.couple.mutation(api.ai.send, {
+      designId: other,
+      text: "Bună",
+      locale: "ro",
+    });
+    await setup.t.finishAllScheduledFunctions(() => {});
+    expect(await used()).toBe(1);
+    await expectError(
+      setup.couple.mutation(api.ai.retry, { messageId: failed._id }),
+      "ai-limit",
+    );
+
+    setEnv({ ANTHROPIC_API_KEY: "test-key", AI_DAILY_LIMIT: "2" });
+    await setup.couple.mutation(api.ai.retry, { messageId: failed._id });
+    await setup.t.finishAllScheduledFunctions(() => {});
+    expect(await replyOf(setup)).toMatchObject({
+      status: "done",
+      text: "Gata.",
+    });
+    expect(await used()).toBe(2);
+  });
+
+  test("doesn't count a reply stopped before its request", async () => {
+    const setup = await setUp();
+    const requests = fakeModel();
+    const replyId = await setup.couple.mutation(api.ai.send, {
+      designId: setup.designId,
+      text: "Verde",
+      locale: "ro",
+    });
+    await setup.couple.mutation(api.ai.stop, { messageId: replyId });
+    await setup.t.finishAllScheduledFunctions(() => {});
+    expect(requests).toHaveLength(0);
+    expect(await replyOf(setup)).toMatchObject({ status: "stopped" });
+    expect(
+      await setup.couple.query(api.ai.availability, { since: 0 }),
+    ).toMatchObject({ used: 0 });
   });
 
   test("starts a new thread after a refusal, without the declined request", async () => {

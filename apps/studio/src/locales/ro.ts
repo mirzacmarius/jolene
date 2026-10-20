@@ -219,6 +219,17 @@ export default {
         "Fiecare piesă are textul Jolene și detaliile voastre. Designerul AI, care vă va scrie textul, nu este disponibil încă.",
       plainTitle: "Colecția voastră e gata",
       plainLead: "Fiecare piesă are textul Jolene și detaliile voastre.",
+      heldTitle: "Designerul AI nu a putut începe colecția",
+      heldLead:
+        "Celelalte piese o așteaptă pe prima: încercați din nou și le scrie pe toate, în același ton.",
+      failed: "Ceva nu a mers cu prima piesă.",
+      writtenTitle: "Colecția voastră e scrisă",
+      writtenLead:
+        "Fiecare piesă are acum textul ei, în același ton. Le găsiți sub design și le puteți schimba oricând.",
+      kept: "Au păstrat textul Jolene: {items}.",
+      nothingTitle: "Designerul AI nu a scris colecția",
+      nothingLead:
+        "Piesele păstrează textul Jolene și detaliile voastre. Îi puteți cere din nou designerului AI pe fiecare piesă.",
       done: "Gata",
     },
     request: {

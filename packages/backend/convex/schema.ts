@@ -196,10 +196,16 @@ export default defineSchema({
     /** The round's other tool results while the rendering is awaited, JSON. */
     pendingResults: v.optional(v.string()),
     /**
-     * The thread can't go on (a refusal, a context too long): the next
-     * message starts a new one.
+     * The thread can't go on (a refusal, a context too long, a request the
+     * API turns away): the next message starts a new one.
      */
     endsThread: v.optional(v.boolean()),
+    /**
+     * The reply ended before the API answered any of it (it failed at once,
+     * or was stopped before it began), so its message doesn't count toward
+     * the day's limits. Running it again counts it again.
+     */
+    refunded: v.optional(v.literal(true)),
     /**
      * What the thread's requests are made with (model, system prompt and
      * tools), hashed: when a deploy changes it, the next message starts a
@@ -210,8 +216,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_designId", ["designId"])
-    .index("by_ownerId_and_role", ["ownerId", "role"])
-    .index("by_role", ["role"]),
+    .index("by_ownerId_and_role_and_refunded", ["ownerId", "role", "refunded"])
+    .index("by_role_and_refunded", ["role", "refunded"]),
 
   /**
    * The AI designer's conversations as the Messages API reads them: one row
