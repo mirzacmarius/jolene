@@ -1,12 +1,9 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import {
-  applyOperations,
-  assetKeys,
-  type DesignDocument,
-} from "@jolene/design";
+import { assetKeys, type DesignDocument } from "@jolene/design";
 import { ConvexError, v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { type MutationCtx, mutation, query } from "./_generated/server";
+import { applyToDesign } from "./designs/apply";
 import { saveRevision } from "./designs/versions";
 import schema from "./schema";
 import { resolveAssets, resolvedAssetValidator } from "./utils/assets";
@@ -19,7 +16,10 @@ const documentOf = (stored: { document: unknown }) =>
   stored.document as DesignDocument;
 
 /** One of the signed-in visitor's designs; anyone else's reads as not found. */
-async function requireOwnDesign(ctx: MutationCtx, designId: Id<"designs">) {
+export async function requireOwnDesign(
+  ctx: MutationCtx,
+  designId: Id<"designs">,
+) {
   const ownerId = await requireUser(ctx);
   const design = await ctx.db.get("designs", designId);
   if (!design || design.ownerId !== ownerId)
@@ -197,30 +197,13 @@ export const apply = mutation({
   returns: applyResult,
   handler: async (ctx, args) => {
     const design = await requireOwnDesign(ctx, args.designId);
-    if (
-      args.expectedRevision !== undefined &&
-      args.expectedRevision !== design.revision
-    ) {
-      return {
-        ok: false as const,
-        reason: "stale" as const,
-        message: `The design is at revision ${design.revision}, not ${args.expectedRevision}`,
-        revision: design.revision,
-      };
-    }
-    const result = applyOperations(documentOf(design), args.operations);
-    if (!result.ok)
-      return {
-        ok: false as const,
-        reason: "invalid" as const,
-        message: result.error,
-        revision: design.revision,
-      };
-    const revision = await saveRevision(ctx, design, result.document, {
+    const applied = await applyToDesign(ctx, design, args.operations, {
       author: "person",
       note: args.note,
+      expectedRevision: args.expectedRevision,
     });
-    return { ok: true as const, revision };
+    if (!applied.ok) return applied;
+    return { ok: true as const, revision: applied.revision };
   },
 });
 
