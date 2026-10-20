@@ -729,7 +729,7 @@ export function lifelikeFrame(
       }
     }
   }
-  const margin = Math.max(box.width, box.height) * 0.04 + 3;
+  const margin = Math.max(box.width, box.height) * 0.03 + 2;
   return {
     x: box.x - margin,
     y: box.y - margin,
