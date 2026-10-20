@@ -1,0 +1,139 @@
+{
+  "suite": "boho",
+  "cards": [
+    {
+      "id": "invitation",
+      "image": "images/invitatie-botez-boho/312916752_492270982919745_7410846740146577353_n.jpeg",
+      "quad": [[563.5, 332], [1324.5, 341.5], [1319, 1406], [559, 1414]],
+      "size": [133, 184],
+      "erase": [
+        {
+          "rect": [29.5, 31, 79, 22],
+          "select": "all"
+        },
+        {
+          "rect": [47, 55.5, 41, 7.5],
+          "select": "all"
+        },
+        {
+          "rect": [23, 82, 49, 12.5],
+          "select": "all"
+        },
+        {
+          "rect": [77, 82, 28, 12.5],
+          "select": "all"
+        },
+        {
+          "rect": [28, 99.5, 80, 8.5],
+          "select": "all"
+        },
+        {
+          "rect": [72, 74.5, 3, 3],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "boho-church",
+          "name": "Biserica",
+          "rect": [38, 61, 17, 21],
+          "recolorable": true
+        },
+        {
+          "key": "boho-plate",
+          "name": "Farfuria și tacâmurile",
+          "rect": [82, 66, 21, 16],
+          "recolorable": true
+        },
+        {
+          "key": "boho-leaves-corner",
+          "name": "Frunzele din colț",
+          "rect": [101.6, 136, 31.4, 48]
+        },
+        {
+          "key": "boho-bassinet",
+          "name": "Pătuțul și ursulețul",
+          "rect": [18, 104, 95, 80]
+        },
+        {
+          "key": "boho-branch-left",
+          "name": "Ramura din stânga",
+          "rect": [0, 5, 32, 145]
+        },
+        {
+          "key": "boho-sprigs-right",
+          "name": "Ramurile din dreapta",
+          "rect": [110, 30, 23, 75]
+        }
+      ],
+      "keepWhole": 0.97,
+      "join": 0.75
+    },
+    {
+      "id": "invitation-cloud",
+      "image": "images/invitatie-botez-boho/244708256_1754135174786593_6616156377681614265_n.jpeg",
+      "quad": [[363.5, 274], [979.5, 296], [957, 1180], [329.5, 1137]],
+      "size": [133, 184],
+      "paperWindow": 35,
+      "erase": [
+        {
+          "rect": [36, 62.5, 45, 36],
+          "select": "all"
+        },
+        {
+          "rect": [81, 67, 17, 32],
+          "select": "all"
+        },
+        {
+          "rect": [62.5, 0, 7, 2.6],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "boho-mobile",
+          "name": "Norișorul cu picături",
+          "rect": [36, 0, 62, 67.5]
+        }
+      ]
+    },
+    {
+      "id": "money-envelope",
+      "image": "images/plic-de-bani-botez-boho/plic_bani_botez_boho_boy.jpg",
+      "quad": [[170, 296], [1420, 298], [1429.5, 1007], [159.5, 1008]],
+      "size": [175, 100],
+      "paperSample": [95, 4, 40, 14],
+      "erase": [
+        {
+          "rect": [90, 25, 63, 17],
+          "select": "all"
+        },
+        {
+          "rect": [82, 64, 78, 8],
+          "select": "all"
+        },
+        {
+          "rect": [64, 84, 100, 7],
+          "select": "all"
+        }
+      ],
+      "layers": [
+        {
+          "key": "boho-bassinet-leaves",
+          "name": "Pătuțul și frunzele din stânga",
+          "rect": [0, 10, 70, 82]
+        },
+        {
+          "key": "boho-airplane",
+          "name": "Avionul",
+          "rect": [108, 40, 27, 20]
+        },
+        {
+          "key": "boho-leaves-right",
+          "name": "Frunzele din dreapta",
+          "rect": [155, 60, 20, 40]
+        }
+      ]
+    }
+  ]
+}
