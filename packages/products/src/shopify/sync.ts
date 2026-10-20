@@ -1,5 +1,6 @@
 import type { Catalog, FeeKey } from "../catalog";
 import { fees } from "../catalog";
+import { namespace, types } from "../order";
 import { apiVersion, type Document } from "./documents";
 import {
   choiceDefinition,
@@ -13,11 +14,9 @@ import {
   lineOptionDefinition,
   lineOptionUpsert,
   mostExtras,
-  namespace,
   productInput,
   productMetafieldDefinitions,
   type Status,
-  types,
 } from "./inputs";
 import type { Checker } from "./schema";
 
@@ -220,6 +219,10 @@ class Sync {
             input.handle,
           ] as const,
       ),
+      // The workshop's order list reads orders with these.
+      ["orders", { after: null }, "orders"],
+      ["orderLines", { id: "gid://shopify/Order/0", after: null }, "orders"],
+      ["orderNodes", { ids: [product] }, "orders"],
       ["setStatus", { id: product, status: "ACTIVE" }, "activate"],
       ["setStatus", { id: product, status: "UNLISTED" }, "unlist"],
       [
@@ -272,7 +275,33 @@ class Sync {
       this.say(
         "The app can't read orders yet (read_orders), which the workshop's order list needs.",
       );
+    else await this.orders(store);
     return missing.length === 0;
+  }
+
+  /**
+   * Reads the open orders as the workshop's order list does, which Shopify
+   * may refuse though the app has read_orders: it also asks apps reading
+   * orders for its approval of how they handle customer data.
+   */
+  private async orders(store: Store) {
+    try {
+      const { orders } = await store.request<{
+        orders: { nodes: unknown[]; pageInfo: { hasNextPage: boolean } };
+      }>("orders", { after: null });
+      const open = orders.pageInfo.hasNextPage
+        ? `${orders.nodes.length} or more`
+        : orders.nodes.length || "none";
+      this.say(
+        `The workshop's order list reads the store's orders: ${open} open.`,
+      );
+    } catch (error) {
+      this.say(
+        `The workshop's order list can't read the store's orders: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   /**

@@ -1,12 +1,26 @@
+import { keys, namespace } from "../order";
+
 /**
- * The Admin API calls the sync makes, in the API version below. Every one
- * is checked against that version's schema before the sync calls the store
- * (schema.ts).
+ * The Admin API calls the sync and the workshop make, in the API version
+ * below. Every one is checked against that version's schema before the sync
+ * calls the store (schema.ts), so each plan checks the workshop's too.
  */
 export const apiVersion = "2026-10";
 
 const userErrors = "userErrors { field message }";
 const page = "pageInfo { hasNextPage endCursor }";
+
+/** What the workshop reads of an order's line. */
+const orderLine = `
+  id
+  title
+  variantTitle
+  currentQuantity
+  customAttributes { key value }
+  originalUnitPriceSet { shopMoney { amount currencyCode } }
+  variant { id }
+  product { id }
+`;
 
 export const documents = {
   access: /* GraphQL */ `
@@ -140,6 +154,59 @@ export const documents = {
             }
           }
         }
+      }
+    }
+  `,
+  // The workshop's order list (packages/backend/convex/workshop) reads the
+  // open orders with these, oldest first, then what their lines point to.
+  // The page sizes keep each call under the Admin API's limit of 1,000
+  // points on its cost.
+  orders: /* GraphQL */ `
+    query Orders($after: String) {
+      orders(
+        first: 8
+        after: $after
+        query: "status:open -fulfillment_status:fulfilled"
+        sortKey: PROCESSED_AT
+      ) {
+        nodes {
+          id
+          legacyResourceId
+          name
+          processedAt
+          test
+          note
+          displayFinancialStatus
+          displayFulfillmentStatus
+          lineItems(first: 15) {
+            nodes { ${orderLine} }
+            ${page}
+          }
+        }
+        ${page}
+      }
+    }
+  `,
+  orderLines: /* GraphQL */ `
+    query OrderLines($id: ID!, $after: String) {
+      order(id: $id) {
+        lineItems(first: 50, after: $after) {
+          nodes { ${orderLine} }
+          ${page}
+        }
+      }
+    }
+  `,
+  orderNodes: /* GraphQL */ `
+    query OrderNodes($ids: [ID!]!) {
+      nodes(ids: $ids) {
+        id
+        ... on Product {
+          lineOptions: metafield(namespace: "${namespace}", key: "${keys.lineOptions}") { value }
+          minQuantity: metafield(namespace: "${namespace}", key: "${keys.minQuantity}") { value }
+        }
+        ... on ProductVariant { title product { title } }
+        ... on Metaobject { fields { key value } }
       }
     }
   `,

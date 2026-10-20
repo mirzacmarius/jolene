@@ -7,6 +7,7 @@ import {
   type Product,
 } from "../catalog";
 import { slug } from "../lift/text";
+import { extrasHandle, keys, namespace, types } from "../order";
 
 /**
  * How the catalog sits in Shopify, as the inputs of the Admin API's
@@ -14,20 +15,6 @@ import { slug } from "../lift/text";
  * Jolene edits in Shopify's admin; a product points to its line options, its
  * fees and its minimum through metafields the shop reads.
  */
-
-export const namespace = "jolene";
-
-export const types = {
-  choice: "jolene_choice",
-  lineOption: "jolene_line_option",
-} as const;
-
-/** The product metafields the shop reads, under `namespace`. */
-export const keys = {
-  lineOptions: "line_options",
-  minQuantity: "min_quantity",
-  fees: "fees",
-} as const;
 
 /** The IDs the store gives what the sync creates, looked up as it goes. */
 export type Ids = {
@@ -388,7 +375,7 @@ export function feeProductInput(handle: string, creating?: { status: Status }) {
  * its own beside it: a variant for each price they can add up to.
  */
 export const extras = {
-  handle: "optiuni-suplimentare",
+  handle: extrasHandle,
   title: "Opțiuni suplimentare",
   option: "Preț pe bucată",
   /** Lei: every choice costs a multiple of it. */

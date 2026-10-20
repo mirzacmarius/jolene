@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { Catalog } from "../catalog";
 import { readCatalog } from "../files";
+import { keys, types } from "../order";
 import type { Document } from "./documents";
-import { extras, feeHandles, keys, types } from "./inputs";
+import { extras, feeHandles } from "./inputs";
 import { type Mode, type Store, type SyncOptions, sync } from "./sync";
 
 /** A few products of the catalog, with the options and categories they use. */
@@ -250,6 +251,8 @@ class FakeStore implements Store {
       case "publish":
         this.published.set(v.id, v.publicationId);
         return { publishablePublish: { userErrors: [] } };
+      case "orders":
+        return { orders: page([]) };
       case "media":
         return {
           nodes: v.ids.map((id: string) => {
@@ -397,6 +400,19 @@ describe("sync", () => {
       expect(store.products.get(handle)?.status).toBe("UNLISTED");
     for (const id of store.collections.values())
       expect(store.published.get(id)).toBe("gid://shopify/Publication/2");
+  });
+
+  test("says whether the workshop's order list can read orders", async () => {
+    const catalog = await sample(...handles);
+    const store = new FakeStore();
+    const outcome = await run(catalog, "plan", store);
+    expect(outcome.report).toContain(
+      "The workshop's order list reads the store's orders: none open.",
+    );
+    store.scopes = store.scopes.filter((scope) => scope !== "read_orders");
+    const without = await run(catalog, "plan", store);
+    expect(without.report).toContain("The app can't read orders yet");
+    expect(without.problems).toEqual([]);
   });
 
   test("stops before writing when the app lacks a scope", async () => {
