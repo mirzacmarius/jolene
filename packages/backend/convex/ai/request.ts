@@ -87,6 +87,13 @@ export function promptVersion(config: AiConfig): string {
   );
 }
 
+/** Where the answer's last fallback block is, or -1 without one. */
+function lastFallback(content: BetaContentBlock[]): number {
+  for (let index = content.length - 1; index >= 0; index--)
+    if (content[index]?.type === "fallback") return index;
+  return -1;
+}
+
 /**
  * The answer's content as it goes back on later requests. After a fallback
  * mid-answer, the declined model's thinking and unfinished tool calls before
@@ -94,7 +101,7 @@ export function promptVersion(config: AiConfig): string {
  * everything else goes back exactly as received.
  */
 export function echoable(content: BetaContentBlock[]): BetaContentBlockParam[] {
-  const boundary = content.findLastIndex((block) => block.type === "fallback");
+  const boundary = lastFallback(content);
   return content.filter(
     (block, index) =>
       index >= boundary ||
@@ -107,7 +114,7 @@ export function echoable(content: BetaContentBlock[]): BetaContentBlockParam[] {
 
 /** The tool calls to run: those after the last fallback block, if any. */
 export function toolCalls(content: BetaContentBlock[]) {
-  const boundary = content.findLastIndex((block) => block.type === "fallback");
+  const boundary = lastFallback(content);
   return content
     .slice(boundary + 1)
     .filter((block) => block.type === "tool_use");

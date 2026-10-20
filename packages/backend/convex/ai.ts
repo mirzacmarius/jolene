@@ -284,7 +284,9 @@ export const send = mutation({
       latest.prompt === prompt &&
       (latest.contextTokens ?? 0) <= THREAD_TOKEN_LIMIT;
     const thread = goesOn ? latest.thread : (latest?.thread ?? 0) + 1;
-    const lastSent = recent.findLast((message) => message.role === "couple");
+    const lastSent = [...recent]
+      .reverse()
+      .find((message) => message.role === "couple");
     const undone = recent.flatMap((message) =>
       (message.changes ?? []).flatMap((change) =>
         change.undoneAt !== undefined &&
