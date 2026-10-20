@@ -8,6 +8,20 @@ export {
   requestGrains,
   useGrains,
 } from "./grain";
+export {
+  LifelikeAssemblyView,
+  LifelikeFaceView,
+  type LifelikeFaceViewProps,
+  type LifelikeView,
+  type LifelikeViewProps,
+  lifelikeFrame,
+} from "./lifelike";
+export {
+  lightX,
+  lightY,
+  stockThickness,
+  tabletopColor,
+} from "./materials";
 export { createCanvasMeasure, useCanvasMeasure } from "./measure";
 export {
   type AssetResolver,
