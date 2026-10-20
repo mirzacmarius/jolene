@@ -26,7 +26,7 @@ The store is reached through a Dev Dashboard app installed on it, with the scope
 
 The **Products** workflow (`.github/workflows/products.yml`) runs `scripts/sync.ts`:
 
-- **plan** checks each call the sync would make against the Admin API's 2026-10 schema (from `@shopify/dev-mcp`), then reads the store and reports what it already has. Every pull request that changes this package runs one.
+- **plan** checks each call the sync would make against the Admin API's 2026-10 schema (from `@shopify/dev-mcp`), and the workshop's order list's calls too (`orders`, `orderLines`, `orderNodes`), then reads the store and reports what it already has and whether the order list can read its orders (docs/adr/0009). Every pull request that changes this package runs one.
 - **draft** creates what the store lacks: the definitions, choices, order options, collections, the fee and extras products, and every product as a draft, with its photos fetched by Shopify from jolene.ro. It adds the products to the shop's sales channel, where they stay hidden while they are drafts, and reports the photos Shopify couldn't fetch.
 - **publish** then puts the drafts on sale, the fees and extras unlisted, and adds the collections to the sales channel. A product Jolene archived stays archived.
 

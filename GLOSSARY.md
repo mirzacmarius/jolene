@@ -161,3 +161,11 @@ _Avoid_: MOQ
 **Fee** (ro: taxă):
 A one-off charge on an order, such as for diacritics or an urgent order, sold as a product of its own.
 _Avoid_: Surcharge (what a paper adds to a variant's price)
+
+**Order** (ro: comandă):
+What a customer paid for at checkout, as Shopify keeps it: its lines with their order options and proofs, its fees, its payment. It is open until the workshop marks it shipped in Shopify.
+_Avoid_: Purchase, cart (before checkout), event (a couple's wedding)
+
+**Workshop** (ro: atelier):
+Jolene's people who print, assemble and ship, and their page in the studio, `/studio/atelier`: the open orders, oldest first, each line with its proof, what the customer chose and what to check before printing. It opens only to the Google accounts on its list.
+_Avoid_: Admin, back office, production dashboard
