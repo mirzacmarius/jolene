@@ -9,6 +9,7 @@ import {
 import {
   type DesignDocument,
   fieldsFor,
+  formatDate,
   type Language,
   type Occasion,
   type ProductKind,
@@ -180,20 +181,28 @@ function toneSample(
   }
 }
 
-/** The guided start offered once per event; set when it is answered or declined. */
+/**
+ * The guided start is offered once per event, and once in each collection
+ * the couple hasn't made yet when their details are in: both are set when
+ * either offer is answered or declined.
+ */
 const DECLINED = "jolene.studio.guidedStart.";
 
-function wasDeclined(eventId: string) {
+const declinedKey = (eventId: string, suite?: string) =>
+  suite ? `${DECLINED}${eventId}.${suite}` : DECLINED + eventId;
+
+function wasDeclined(eventId: string, suite?: string) {
   try {
-    return window.localStorage.getItem(DECLINED + eventId) === "1";
+    return window.localStorage.getItem(declinedKey(eventId, suite)) === "1";
   } catch {
     return false;
   }
 }
 
-function decline(eventId: string) {
+function decline(eventId: string, suite: string) {
   try {
-    window.localStorage.setItem(DECLINED + eventId, "1");
+    window.localStorage.setItem(declinedKey(eventId), "1");
+    window.localStorage.setItem(declinedKey(eventId, suite), "1");
   } catch {
     // Without storage the offer comes back on the next visit.
   }
@@ -359,15 +368,17 @@ function Started({
   );
 }
 
-type Phase = "offer" | "steps" | "started" | "closed";
+/** "known" offers to make the collection with the details already given. */
+type Phase = "offer" | "known" | "steps" | "started" | "closed";
 
 /**
  * Simple mode's guided start, in the Details tab: a few friendly questions,
  * each one skippable, whose answers go to the event as they are given, then
  * the items to make. The AI designer then writes the wording of each item
  * and lays it out, the invitation first; without it, the items start in
- * Jolene's wording. Offered when the event has no details yet, and there to
- * open again above the details.
+ * Jolene's wording. Offered when the event has no details yet, and again in
+ * each collection the couple hasn't made: their details are already in, so
+ * they only choose the items. There to open again above the details.
  */
 export function GuidedStart({
   data,
@@ -387,15 +398,18 @@ export function GuidedStart({
   const document = data.design.document as DesignDocument;
   const { event } = data;
   const occasion = event.occasion;
+  const suiteSlug = data.template.suite.slug;
   const headingId = useId();
   const headingRef = useRef<HTMLHeadingElement>(null);
   const againRef = useRef<HTMLButtonElement>(null);
 
-  const [phase, setPhase] = useState<Phase>(() =>
-    Object.keys(event.fields).length === 0 && !wasDeclined(event._id)
-      ? "offer"
-      : "closed",
-  );
+  const [phase, setPhase] = useState<Phase>(() => {
+    if (Object.keys(event.fields).length === 0)
+      return wasDeclined(event._id) ? "closed" : "offer";
+    return data.composed || wasDeclined(event._id, suiteSlug)
+      ? "closed"
+      : "known";
+  });
   const [index, setIndex] = useState(0);
   const [tone, setTone] = useState<Tone | undefined>(event.wording?.tone);
   const [line, setLine] = useState(event.wording?.line ?? "");
@@ -417,7 +431,7 @@ export function GuidedStart({
   const asking = phase === "steps";
   const suite = useQuery(
     api.catalog.suite,
-    asking ? { slug: data.template.suite.slug } : "skip",
+    asking ? { slug: suiteSlug } : "skip",
   );
   const collection = useQuery(
     api.simple.collection,
@@ -477,6 +491,19 @@ export function GuidedStart({
     [data.assets, suite, collection],
   );
 
+  // Who and when, as the couple gave them, for the offer that reuses them.
+  const summary = [
+    occasion === "wedding"
+      ? [values.partner1, values.partner2]
+          .map((name) => name?.trim())
+          .filter(Boolean)
+          .join(" & ")
+      : values.child?.trim(),
+    values.date ? formatDate(values.date, "long", locale) : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   const left = availability
     ? Math.max(0, availability.limit - availability.used)
     : 0;
@@ -508,7 +535,7 @@ export function GuidedStart({
         language: writes ? language : document.language,
         locale,
       });
-      decline(event._id);
+      decline(event._id, suiteSlug);
       setComposed(result);
       go("started", 0);
     } catch {
@@ -558,7 +585,7 @@ export function GuidedStart({
               variant="ghost"
               size="sm"
               onClick={() => {
-                decline(event._id);
+                decline(event._id, suiteSlug);
                 go("closed");
               }}
             >
@@ -569,6 +596,59 @@ export function GuidedStart({
         {children}
       </div>
     );
+
+  if (phase === "known") {
+    // Straight to the items, by way of the tone when none is chosen yet.
+    const next = steps.findIndex(
+      (each) => each.id === (writes && !event.wording ? "tone" : "items"),
+    );
+    return (
+      <div className="space-y-6">
+        <section
+          aria-labelledby={headingId}
+          className="space-y-3 rounded-2xl border border-border/80 bg-background/60 p-4"
+        >
+          <Sparkles className="size-5 text-gold" aria-hidden />
+          <h2 id={headingId} className="font-display text-2xl leading-tight">
+            {t("simple.known.title")}
+          </h2>
+          {summary ? (
+            <p className="font-display text-lg leading-snug">{summary}</p>
+          ) : null}
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {availability?.configured === false
+              ? t("simple.known.leadSoon")
+              : event.wording
+                ? t("simple.known.lead")
+                : t("simple.known.leadTone")}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <Button
+              size="sm"
+              disabled={availability === undefined}
+              onClick={() => go("steps", next)}
+            >
+              {t("simple.known.choose")}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => go("steps", 0)}>
+              {t("simple.known.review")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                decline(event._id, suiteSlug);
+                go("closed");
+              }}
+            >
+              {t("simple.known.later")}
+            </Button>
+          </div>
+        </section>
+        {children}
+      </div>
+    );
+  }
 
   if (phase === "started" && composed)
     return (
@@ -815,7 +895,7 @@ export function GuidedStart({
           aria-label={t("simple.close")}
           title={t("simple.close")}
           onClick={() => {
-            decline(event._id);
+            decline(event._id, suiteSlug);
             go("closed");
           }}
         >

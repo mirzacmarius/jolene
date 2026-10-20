@@ -17,25 +17,29 @@ import { useMemo } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { DesignPreview } from "../design/design-preview";
 import { StartDesignButton } from "../design/start-design-button";
+import { useEventFields } from "../design/use-event-fields";
 
-/** One collection: its invitation large, then every piece it holds. */
+/**
+ * One collection: its invitation large, then every piece it holds, with the
+ * couple's details once they've given them.
+ */
 export function SuiteView() {
   const t = useI18n();
   const locale = useCurrentLocale();
   const { suite: slug } = useParams<{ suite: string }>();
   const data = useQuery(api.catalog.suite, { slug });
+  const own = useEventFields();
   const lead = data?.templates[0];
   const leadDocument = lead?.document as DesignDocument | undefined;
   const fields = useMemo(
     () =>
       data
-        ? previewFields(
-            data.suite.occasion,
-            leadDocument?.language ?? "ro",
-            data.suite.sampleFields,
-          )
+        ? previewFields(data.suite.occasion, leadDocument?.language ?? "ro", {
+            ...data.suite.sampleFields,
+            ...own[data.suite.occasion],
+          })
         : {},
-    [data, leadDocument?.language],
+    [data, leadDocument?.language, own],
   );
 
   if (data === undefined) return <SuiteSkeleton />;

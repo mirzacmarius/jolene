@@ -134,6 +134,17 @@ export default {
       start: "Să începem",
       later: "Completez eu detaliile",
     },
+    known: {
+      title: "Facem această colecție cu detaliile voastre?",
+      lead: "Nu e nevoie să le scrieți din nou: alegeți piesele, iar designerul AI scrie fiecare piesă cu toți cei pe care i-ați numit, în același ton.",
+      leadTone:
+        "Nu e nevoie să le scrieți din nou: alegeți piesele și tonul, iar designerul AI scrie fiecare piesă cu toți cei pe care i-ați numit.",
+      leadSoon:
+        "Nu e nevoie să le scrieți din nou: alegeți piesele, iar fiecare pornește cu detaliile voastre. Designerul AI, care vă va scrie textul, nu este disponibil încă.",
+      choose: "Alegeți piesele",
+      review: "Verificați detaliile",
+      later: "Nu acum",
+    },
     again: "Răspundeți la câteva întrebări",
     progress: "Pasul {current} din {total}",
     back: "Înapoi",
