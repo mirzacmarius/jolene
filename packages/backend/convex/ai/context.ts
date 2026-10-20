@@ -165,7 +165,11 @@ export interface ContextInput {
   undone: string[];
   /** The conversation so far, for a thread that starts afresh. */
   recap?: string;
-  snapshot: boolean;
+  /**
+   * The studio's drawing of what it shows: attached to the message, or left
+   * out as the same as the model last saw. None when the studio sent none.
+   */
+  snapshot?: "attached" | "seen";
   /** How the couple wants their collection's wording, when they've said. */
   wording?: WordingContext;
   /** The item's place in a composition, when simple mode asked for it. */
@@ -229,6 +233,10 @@ function wordingSection(wording: WordingContext): string[] {
       : `written in ${languageNames[wording.language]}, in the tone that suits the collection.`,
     "Follow it whenever you write words for one of their items, unless they ask otherwise.",
   ];
+  if (wording.tone)
+    sentences.push(
+      "The tone decides whose voice the words speak in and how they sound: a template's words show only what an item says, so write them anew in this tone rather than keeping their voice.",
+    );
   if (wording.line)
     sentences.push(
       `Their own line, to use where it fits best (usually the invitation's opening) and as they wrote it: ${JSON.stringify(wording.line)}.`,
@@ -263,11 +271,17 @@ function compositionSection(composition: CompositionContext): string[] {
   return lines;
 }
 
+const snapshotNotes = {
+  attached: ' snapshot="attached below"',
+  seen: ' snapshot="as you last saw it"',
+  none: "",
+};
+
 /** The context block that opens each of the couple's messages. */
 export function messageContext(input: ContextInput): string {
   const lines = [
     "<context>",
-    `<studio language="${input.locale}" showing="${describeView(input.view)}"${input.snapshot ? ' snapshot="attached below"' : ""} />`,
+    `<studio language="${input.locale}" showing="${describeView(input.view)}"${snapshotNotes[input.snapshot ?? "none"]} />`,
     `<item kind="${input.document.kind}" name="${productKindLabels[input.document.kind].en}" collection="${input.collection.name}" styles="${input.collection.styles.map((style) => suiteStyleLabel(style, "en")).join(", ")}" />`,
   ];
   if (input.recap)

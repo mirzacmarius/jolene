@@ -28,8 +28,12 @@ import type { AssetLink, PreviewView } from "../design/design-preview";
  * doesn't depend on what else the page shows.
  */
 
-/** The snapshot's long side, in pixels. */
-const LONG_SIDE = 1600;
+/**
+ * The snapshot's long side, in pixels: a face's smallest lines still read,
+ * and the model counts about 1,000 tokens for it, where 1600 pixels took
+ * 2,500. Every message and rendering carries one.
+ */
+const LONG_SIDE = 1000;
 
 /** Bigger than this, the snapshot goes as a JPEG to fit the API's limit. */
 const MAX_PNG_BYTES = 3_750_000;
@@ -320,4 +324,19 @@ export async function takeSnapshot({
 /** "assembly", or a face as "piece:face": how the backend names a view. */
 export function viewName(view: PreviewView): string {
   return view.kind === "assembly" ? "assembly" : `${view.piece}:${view.face}`;
+}
+
+/** The view a name stands for, when the design has it; the fallback if not. */
+export function viewNamed(
+  name: string | undefined,
+  design: DesignDocument,
+  fallback: PreviewView,
+): PreviewView {
+  if (name === "assembly") return { kind: "assembly" };
+  const [pieceId, faceName] = name?.split(":") ?? [];
+  const piece = design.pieces.find((each) => each.id === pieceId);
+  const face = faceNames.find((each) => each === faceName);
+  return piece && face && piece[face]
+    ? { kind: "face", piece: piece.id, face }
+    : fallback;
 }

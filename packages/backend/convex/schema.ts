@@ -187,11 +187,24 @@ export default defineSchema({
     /** The design's revision and the details, as the AI designer knows them. */
     seen: v.optional(v.object({ revision: v.number(), details: v.string() })),
     /**
+     * The latest drawing of the design its thread has shown the model, a
+     * snapshot or a rendering: the revision, the view and the details drawn.
+     * A message that would show the same again goes without its snapshot.
+     */
+    looked: v.optional(
+      v.object({ revision: v.number(), view: v.string(), details: v.string() }),
+    ),
+    /**
      * The rendering the reply waits for: the tool call that asked, and the
      * revision the studio should show.
      */
     rendering: v.optional(
-      v.object({ toolUseId: v.string(), revision: v.number() }),
+      v.object({
+        toolUseId: v.string(),
+        revision: v.number(),
+        /** The view asked for, when not the one the couple is looking at. */
+        view: v.optional(v.string()),
+      }),
     ),
     /** The round's other tool results while the rendering is awaited, JSON. */
     pendingResults: v.optional(v.string()),

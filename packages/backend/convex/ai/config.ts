@@ -66,6 +66,16 @@ export const REQUEST_TIME_LIMIT_MS = 9 * 60_000;
  */
 export const THREAD_TOKEN_LIMIT = 100_000;
 
+/** How long the API keeps a thread's prompt cached after its last request. */
+export const CACHE_LIFETIME_MS = 5 * 60_000;
+
+/**
+ * The limit for a thread whose cache has expired: going on writes the whole
+ * thread to the cache again, which past this costs more than starting afresh
+ * with a recap.
+ */
+export const PAUSED_THREAD_TOKEN_LIMIT = 30_000;
+
 /** The longest message a couple can send. */
 export const MAX_MESSAGE_LENGTH = 2000;
 

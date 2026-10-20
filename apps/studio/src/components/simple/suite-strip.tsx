@@ -72,8 +72,8 @@ export function SuiteStrip({
   const retry = useRetry();
   const answer = useAnswerRendering();
 
-  // A reply that asks to see its item is shown it whole, as it arrives, once
-  // its revision has reached here.
+  // A reply that asks to see its item is shown the view it named, or the
+  // item whole as it arrives, once its revision has reached here.
   const details = useRef(values);
   useEffect(() => {
     details.current = values;
@@ -93,7 +93,11 @@ export function SuiteStrip({
         continue;
       const document = design.document as DesignDocument;
       void answer(
-        { messageId: entry.replyId, toolUseId: entry.rendering.toolUseId },
+        {
+          messageId: entry.replyId,
+          toolUseId: entry.rendering.toolUseId,
+          view: entry.rendering.view,
+        },
         {
           design: document,
           fields: previewFields(

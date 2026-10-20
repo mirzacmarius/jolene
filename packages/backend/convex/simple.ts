@@ -111,7 +111,11 @@ export const progress = query({
       canRetry: v.boolean(),
       /** The rendering it waits for (ai.answerRendering). */
       rendering: v.optional(
-        v.object({ toolUseId: v.string(), revision: v.number() }),
+        v.object({
+          toolUseId: v.string(),
+          revision: v.number(),
+          view: v.optional(v.string()),
+        }),
       ),
     }),
   ),

@@ -236,6 +236,8 @@ export default {
       follow:
         "Write {wording} in the same tone as the rest of the collection, in {language}.",
       line: "Open it with our own line: “{line}”.",
+      lineEnded: "Open it with our own line: “{line}”",
+      civil: "Put the civil ceremony on the invitation too.",
       tones: {
         weddingClassic: "a classic tone, with our parents' blessing",
         weddingRomantic: "a romantic tone",

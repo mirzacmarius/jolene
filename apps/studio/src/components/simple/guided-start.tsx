@@ -500,6 +500,7 @@ export function GuidedStart({
             tone,
             line,
             language,
+            civil,
           }),
         })),
         ...(writes && tone ? { tone } : {}),

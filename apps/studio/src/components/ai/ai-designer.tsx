@@ -177,24 +177,30 @@ export function AiDesigner({
   };
 
   // A reply asked to see the design: while the sheet is open, the studio
-  // draws it as it shows it once its revision has arrived here, and measures
-  // its words. Simple mode's view of the collection may answer it instead.
+  // draws the view it asked for, or the one it shows, once its revision has
+  // arrived here, and measures its words. Simple mode's view of the
+  // collection may answer it instead.
   const asked =
     open &&
     latest?.status === "rendering" &&
     latest.rendering &&
     revision >= latest.rendering.revision
-      ? { messageId: latest._id, toolUseId: latest.rendering.toolUseId }
+      ? {
+          messageId: latest._id,
+          toolUseId: latest.rendering.toolUseId,
+          view: latest.rendering.view,
+        }
       : undefined;
   const askedId = asked?.toolUseId;
   const askedMessage = asked?.messageId;
+  const askedView = asked?.view;
   useEffect(() => {
     if (askedId && askedMessage)
       void answerRendering(
-        { messageId: askedMessage, toolUseId: askedId },
+        { messageId: askedMessage, toolUseId: askedId, view: askedView },
         current.current,
       );
-  }, [askedId, askedMessage, answerRendering]);
+  }, [askedId, askedMessage, askedView, answerRendering]);
 
   const onUndo = useCallback(
     async (messageId: Id<"aiMessages">, change: number) => {

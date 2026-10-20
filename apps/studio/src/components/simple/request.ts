@@ -55,7 +55,8 @@ function toneKey(occasion: Occasion, tone: Tone): ToneKey | undefined {
 
 /**
  * The request for one item. The item written first carries the tone and the
- * couple's own line; the others ask to follow it.
+ * couple's own line; the others ask to follow it. The invitation also says
+ * whether the civil ceremony goes on it, as the couple chose.
  */
 export function itemRequest(
   t: Translate,
@@ -66,6 +67,7 @@ export function itemRequest(
     tone,
     line,
     language,
+    civil,
   }: {
     kind: ProductKind;
     first: boolean;
@@ -73,22 +75,38 @@ export function itemRequest(
     tone: Tone | undefined;
     line: string;
     language: Language;
+    /** The couple asked for the civil ceremony on the invitation. */
+    civil: boolean;
   },
 ): string {
   const wording = t(wordingKeys[kind]);
   const languageName = t(languageKeys[language]);
+  const sentences: string[] = [];
   if (!first)
-    return t("simple.request.follow", { wording, language: languageName });
-  const asked = tone && toneKey(occasion, tone);
-  const opening = asked
-    ? t("simple.request.lead", {
-        wording,
-        tone: t(asked),
-        language: languageName,
-      })
-    : t("simple.request.leadPlain", { wording, language: languageName });
+    sentences.push(
+      t("simple.request.follow", { wording, language: languageName }),
+    );
+  else {
+    const asked = tone && toneKey(occasion, tone);
+    sentences.push(
+      asked
+        ? t("simple.request.lead", {
+            wording,
+            tone: t(asked),
+            language: languageName,
+          })
+        : t("simple.request.leadPlain", { wording, language: languageName }),
+    );
+  }
+  if (kind === "invitation" && occasion === "wedding" && civil)
+    sentences.push(t("simple.request.civil"));
   const own = line.trim();
-  return own
-    ? `${opening} ${t("simple.request.line", { line: own })}`
-    : opening;
+  if (first && own)
+    sentences.push(
+      // A line that ends a sentence of its own takes no second stop.
+      /[.!?…]$/.test(own)
+        ? t("simple.request.lineEnded", { line: own })
+        : t("simple.request.line", { line: own }),
+    );
+  return sentences.join(" ");
 }

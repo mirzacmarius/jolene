@@ -43,7 +43,16 @@ export const setDetailsInput = z.object({
     .describe("What changed, in a few words in the studio's language."),
 });
 
-export const lookAtDesignInput = z.object({});
+export const lookAtDesignInput = z.object({
+  view: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe(
+      'What to see: "assembly" for the whole item as it arrives, or one face as "piece:face", such as "card:back". Left out, the view the couple is looking at.',
+    ),
+});
 
 export const toolNames = {
   applyOperations: "apply_operations",
@@ -82,7 +91,7 @@ export const tools: BetaTool[] = [
   {
     name: toolNames.lookAtDesign,
     description:
-      "Shows you the design as the couple's studio draws it now (the view they are looking at), with each text layer measured in the real fonts. Call it after a change whose result depends on how it looks, or when the couple asks how it looks. It waits for the studio for up to 20 seconds; when no studio answers, carry on without it.",
+      "Shows you the design as the couple's studio draws it now, with each text layer measured in the real fonts: the view the couple is looking at, or the one you name, such as the face your change is on. Call it after a change whose result depends on how it looks, or when the couple asks how it looks; one view at a time. It waits for the studio for up to 20 seconds; when no studio answers, carry on without it.",
     input_schema: inputSchema(lookAtDesignInput),
     eager_input_streaming: true,
   },

@@ -36,14 +36,14 @@ export function toneBrief(tone: Tone, occasion: Occasion): string {
   switch (tone) {
     case "classic":
       return occasion === "christening"
-        ? 'classic and formal, in the traditional order, naming the holy christening ("Taina Sfântului Botez", "the holy christening")'
+        ? 'classic and formal, in the parents\' voice and the traditional order, naming the holy christening ("Taina Sfântului Botez", "the holy christening")'
         : 'classic and formal, in the traditional order, opening with the parents\' blessing ("Cu binecuvântarea părinților", "Together with their parents")';
     case "romantic":
       return "romantic and warm: a lyrical opening about the two of them, the invitation itself kept gentle";
     case "modern":
       return 'modern and short: few, direct words ("Ne căsătorim!", "We\'re getting married!") and only the essential details';
     case "tender":
-      return "tender and gentle, about the child as a small miracle and the family's joy";
+      return "tender and gentle, in the parents' voice, about the child as a small miracle and the family's joy";
     case "playful":
       return 'playful and light, often in the child\'s own voice ("Vă aștept la botezul meu!", "Come to my christening!")';
   }

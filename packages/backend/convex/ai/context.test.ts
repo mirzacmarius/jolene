@@ -24,7 +24,7 @@ const input: ContextInput = {
   used: ["partner1", "partner2"],
   collection: { name: "Eucalyptus", styles: ["botanic"] },
   undone: [],
-  snapshot: true,
+  snapshot: "attached",
 };
 
 describe("the context of a message", () => {
@@ -73,7 +73,9 @@ describe("the context of a message", () => {
       detailsChanged: false,
       undone: ["Softer greens"],
       recap: "The couple: Hello",
+      snapshot: "seen",
     });
+    expect(context).toContain('snapshot="as you last saw it" />');
     expect(context).toContain('<design revision="4" unchanged="true">');
     expect(context).toContain('<details unchanged="true">');
     expect(context).not.toContain('"pieces"');
@@ -97,6 +99,10 @@ describe("the context of a message", () => {
     );
     expect(first).toContain(
       'as they wrote it: "Iubirea \\"nu\\" cere nimic".</wording>',
+    );
+    // The tone wins over the template's voice.
+    expect(first).toContain(
+      "write them anew in this tone rather than keeping their voice.",
     );
     expect(first).toContain('<composition item="Invitation" first="true">');
     expect(first).toContain("in this order: Invitation, Menu.");

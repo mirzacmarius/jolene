@@ -5,7 +5,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { type MutationCtx, mutation, query } from "./_generated/server";
 import { aiConfig, MAX_MESSAGE_LENGTH, MAX_SNAPSHOT_BYTES } from "./ai/config";
-import { describeView } from "./ai/context";
+import { describeView, detailsKey } from "./ai/context";
 import {
   checkLimits,
   messagesLeft,
@@ -92,9 +92,16 @@ const shownMessage = v.object({
   error: v.optional(aiErrorValidator),
   /** The latest reply, failed for a passing reason: it can run again. */
   canRetry: v.boolean(),
-  /** The rendering the reply waits for, and the revision to draw. */
+  /**
+   * The rendering the reply waits for, the revision to draw and the view,
+   * when it isn't the one the couple is looking at.
+   */
   rendering: v.optional(
-    v.object({ toolUseId: v.string(), revision: v.number() }),
+    v.object({
+      toolUseId: v.string(),
+      revision: v.number(),
+      view: v.optional(v.string()),
+    }),
   ),
 });
 
@@ -292,7 +299,13 @@ export const undo = mutation({
     const message = await requireOwnMessage(ctx, args.messageId);
     const change = message.changes?.[args.change];
     if (!change) throw new ConvexError(errors.notFound);
-    if (change.undoneAt !== undefined) return null;
+    // A joined change is undone with the change it joined, which the studio
+    // shows in its place.
+    if (
+      change.undoneAt !== undefined ||
+      (change.kind === "design" && change.joined)
+    )
+      return null;
     const design = await ctx.db.get("designs", message.designId);
     if (!design) throw new ConvexError(errors.notFound);
     const now = Date.now();
@@ -401,6 +414,7 @@ export const answerRendering = mutation({
       return true;
     }
     const view = shownView(args.view, design.document as DesignDocument);
+    const event = await ctx.db.get("events", design.eventId);
     const report = {
       revision: args.revision,
       showing: describeView(view),
@@ -411,14 +425,25 @@ export const answerRendering = mutation({
           }
         : {}),
     };
-    await resumeWithRendering(ctx, message, {
-      type: "tool_result",
-      tool_use_id: args.toolUseId,
-      content: [
-        { type: "text", text: JSON.stringify(report) },
-        ...(snapshot ? [storedImage(snapshot)] : []),
-      ],
-    });
+    await resumeWithRendering(
+      ctx,
+      message,
+      {
+        type: "tool_result",
+        tool_use_id: args.toolUseId,
+        content: [
+          { type: "text", text: JSON.stringify(report) },
+          ...(snapshot ? [storedImage(snapshot)] : []),
+        ],
+      },
+      snapshot && event
+        ? {
+            revision: args.revision,
+            view,
+            details: detailsKey(event.fields),
+          }
+        : undefined,
+    );
     return true;
   },
 });

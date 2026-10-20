@@ -205,18 +205,21 @@ function Reply({
       ) : null}
       {message.changes.length > 0 ? (
         <ul className="space-y-1.5">
-          {message.changes.map((change, index) => (
-            <ChangeCard
-              // A reply's changes only grow, in order.
-              // biome-ignore lint/suspicious/noArrayIndexKey: see above
-              key={index}
-              change={change}
-              laterChanges={
-                change.kind === "design" && revision > change.revision
-              }
-              onUndo={() => onUndo(message._id, index)}
-            />
-          ))}
+          {message.changes.map((change, index) =>
+            // A joined change is told in the note of the one it joined.
+            change.kind === "design" && change.joined ? null : (
+              <ChangeCard
+                // A reply's changes only grow, in order.
+                // biome-ignore lint/suspicious/noArrayIndexKey: see above
+                key={index}
+                change={change}
+                laterChanges={
+                  change.kind === "design" && revision > change.revision
+                }
+                onUndo={() => onUndo(message._id, index)}
+              />
+            ),
+          )}
         </ul>
       ) : null}
       {message.status === "waiting" ? (

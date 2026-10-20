@@ -23,6 +23,7 @@ import {
 } from "../_generated/server";
 import { applyToDesign } from "../designs/apply";
 import { afterReply } from "../simple/compose";
+import { changedParts, joinChange } from "./changes";
 import {
   aiConfig,
   MAX_ROUNDS,
@@ -32,7 +33,7 @@ import {
 } from "./config";
 import { compactDocument, detailsKey } from "./context";
 import { modelClient } from "./model";
-import type { StoredImage } from "./reply";
+import { type StoredImage, viewsOf } from "./reply";
 import { layoutReport } from "./report";
 import {
   addUsage,
@@ -44,7 +45,12 @@ import {
   toolCalls,
   usageOf,
 } from "./request";
-import { applyOperationsInput, setDetailsInput, toolNames } from "./tools";
+import {
+  applyOperationsInput,
+  lookAtDesignInput,
+  setDetailsInput,
+  toolNames,
+} from "./tools";
 import { type aiChangeValidator, aiErrorValidator } from "./validators";
 
 /**
@@ -548,7 +554,60 @@ const invalidInput = (call: BetaToolUseBlock, problems: string) =>
 interface Outcome {
   result: ToolResult;
   change?: Change;
+  /** The place of the reply's earlier change this one joins. */
+  joins?: number;
   seen?: Partial<{ revision: number; details: string }>;
+}
+
+/**
+ * The place of the reply's earlier change that a change reworks (a colour
+ * tried and taken back, a size put back as it was): the first whose parts,
+ * as it and the changes joined to it left them, this one changes again.
+ * Undoing any change after that one would bring back what the reply itself
+ * set aside, so they all become one change. None once the couple has undone
+ * one of the reply's changes.
+ */
+async function reworkedChange(
+  ctx: MutationCtx,
+  design: Doc<"designs">,
+  after: DesignDocument,
+  changes: Change[],
+): Promise<number | undefined> {
+  if (
+    changes.some(
+      (change) => change.kind === "design" && change.undoneAt !== undefined,
+    )
+  )
+    return undefined;
+  const heads = changes.flatMap((change, index) =>
+    change.kind === "design" && !change.joined
+      ? [{ revision: change.revision, index }]
+      : [],
+  );
+  const starts = await Promise.all(
+    heads.map(({ revision }) =>
+      ctx.db
+        .query("designVersions")
+        .withIndex("by_designId_and_revision", (q) =>
+          q.eq("designId", design._id).lt("revision", revision),
+        )
+        .order("desc")
+        .first(),
+    ),
+  );
+  const before = design.document as DesignDocument;
+  const touched = changedParts(before, after);
+  for (const [place, { index }] of heads.entries()) {
+    const start = starts[place]?.document as DesignDocument | undefined;
+    const end =
+      place + 1 < heads.length
+        ? (starts[place + 1]?.document as DesignDocument | undefined)
+        : before;
+    if (!start || !end) return undefined;
+    const own = changedParts(start, end);
+    if ([...touched].some((part) => own.has(part))) return index;
+  }
+  return undefined;
 }
 
 /** apply_operations: the editor's path, as its own version by "ai". */
@@ -556,6 +615,7 @@ async function applyOperationsTool(
   ctx: MutationCtx,
   message: Doc<"aiMessages">,
   call: BetaToolUseBlock,
+  changes: Change[],
 ): Promise<Outcome> {
   const input = applyOperationsInput.safeParse(call.input);
   if (!input.success)
@@ -590,6 +650,7 @@ async function applyOperationsTool(
       event?.fields ?? {},
     ),
   );
+  const joins = await reworkedChange(ctx, design, applied.document, changes);
   return {
     result: {
       type: "tool_result",
@@ -605,6 +666,7 @@ async function applyOperationsTool(
       revision: applied.revision,
       note: input.data.note,
     },
+    ...(joins === undefined ? {} : { joins }),
     seen: { revision: applied.revision },
   };
 }
@@ -779,9 +841,9 @@ export const finish = internalMutation({
     }
 
     const results: (ToolResult | null)[] = [];
-    const changes = [...(message.changes ?? [])];
+    let changes = message.changes ?? [];
     let seen = message.seen;
-    let rendering: string | undefined;
+    let rendering: { toolUseId: string; view?: string } | undefined;
     for (const call of calls) {
       // An input cut off at max_tokens can still look whole: don't run it.
       if (answer.stop_reason === "max_tokens") {
@@ -796,14 +858,35 @@ export const finish = internalMutation({
       let outcome: Outcome;
       switch (call.name) {
         case toolNames.applyOperations:
-          outcome = await applyOperationsTool(ctx, message, call);
+          outcome = await applyOperationsTool(ctx, message, call, changes);
           break;
         case toolNames.setDetails:
           outcome = await setDetailsTool(ctx, message, call);
           break;
-        case toolNames.lookAtDesign:
+        case toolNames.lookAtDesign: {
+          const input = lookAtDesignInput.safeParse(call.input);
+          if (!input.success) {
+            outcome = { result: invalidInput(call, input.error.message) };
+            break;
+          }
+          const { view } = input.data;
+          if (view !== undefined) {
+            const design = await ctx.db.get("designs", message.designId);
+            const views = design
+              ? viewsOf(design.document as DesignDocument)
+              : [];
+            if (!views.includes(view)) {
+              outcome = {
+                result: toolError(
+                  call.id,
+                  `The design has no view "${view}". Its views: ${views.join(", ")}.`,
+                ),
+              };
+              break;
+            }
+          }
           if (rendering === undefined) {
-            rendering = call.id;
+            rendering = { toolUseId: call.id, ...(view ? { view } : {}) };
             results.push(null);
             continue;
           }
@@ -812,10 +895,13 @@ export const finish = internalMutation({
               type: "tool_result",
               tool_use_id: call.id,
               content:
-                "The rendering for your other look_at_design call answers this one too.",
+                rendering.view === view
+                  ? "The rendering for your other look_at_design call answers this one too."
+                  : "The studio draws one view at a time: ask for this one again once you have seen the other.",
             },
           };
           break;
+        }
         default:
           outcome = {
             result: toolError(
@@ -825,7 +911,11 @@ export const finish = internalMutation({
           };
       }
       results.push(outcome.result);
-      if (outcome.change) changes.push(outcome.change);
+      if (outcome.change)
+        changes =
+          outcome.joins !== undefined && outcome.change.kind === "design"
+            ? joinChange(changes, outcome.joins, outcome.change)
+            : [...changes, outcome.change];
       if (outcome.seen)
         seen = {
           revision: outcome.seen.revision ?? seen?.revision ?? 0,
@@ -844,13 +934,13 @@ export const finish = internalMutation({
       await ctx.db.patch("aiMessages", messageId, {
         ...kept,
         status: "rendering",
-        rendering: { toolUseId: rendering, revision: design?.revision ?? 0 },
+        rendering: { ...rendering, revision: design?.revision ?? 0 },
         pendingResults: JSON.stringify(results),
       });
       await ctx.scheduler.runAfter(
         RENDERING_TIMEOUT_MS,
         internal.ai.run.renderingTimedOut,
-        { messageId, toolUseId: rendering },
+        { messageId, toolUseId: rendering.toolUseId },
       );
       return null;
     }
@@ -886,6 +976,8 @@ export async function resumeWithRendering(
   ctx: MutationCtx,
   message: Doc<"aiMessages">,
   rendering: StoredToolResult,
+  /** What the rendering drew, when it carries a drawing. */
+  looked?: Doc<"aiMessages">["looked"],
 ) {
   await ctx.db.insert("aiTurns", {
     designId: message.designId,
@@ -900,6 +992,7 @@ export async function resumeWithRendering(
     status: "streaming",
     rendering: undefined,
     pendingResults: undefined,
+    ...(looked ? { looked } : {}),
     updatedAt: Date.now(),
   });
   await ctx.scheduler.runAfter(0, internal.ai.run.step, {

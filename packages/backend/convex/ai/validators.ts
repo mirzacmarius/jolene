@@ -49,6 +49,11 @@ export const aiChangeValidator = v.union(
     note: v.string(),
     /** When the couple undid it. */
     undoneAt: v.optional(v.number()),
+    /**
+     * Part of the reply's earlier change it reworks: undone with it, and
+     * told in its note rather than shown on its own.
+     */
+    joined: v.optional(v.boolean()),
   }),
   v.object({
     kind: v.literal("details"),

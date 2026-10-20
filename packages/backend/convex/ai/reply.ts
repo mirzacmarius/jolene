@@ -8,7 +8,12 @@ import { internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { toneBrief } from "../simple/tones";
-import { aiConfig, THREAD_TOKEN_LIMIT } from "./config";
+import {
+  aiConfig,
+  CACHE_LIFETIME_MS,
+  PAUSED_THREAD_TOKEN_LIMIT,
+  THREAD_TOKEN_LIMIT,
+} from "./config";
 import {
   type CompositionContext,
   detailsKey,
@@ -68,14 +73,21 @@ export function storedImage(storageId: Id<"_storage">): StoredImage {
   return { type: "image", source: { type: "stored", storageId } };
 }
 
+/** The views the studio can draw of a design: "assembly", then each face. */
+export function viewsOf(document: DesignDocument): string[] {
+  return [
+    "assembly",
+    ...document.pieces.flatMap((piece) =>
+      faceNames
+        .filter((name) => piece[name])
+        .map((name) => `${piece.id}:${name}`),
+    ),
+  ];
+}
+
 /** The view the studio named, if the design has it: "assembly" or "piece:face". */
 export function shownView(view: string | undefined, document: DesignDocument) {
-  if (!view || view === "assembly") return "assembly";
-  const [piece, face] = view.split(":");
-  const known = document.pieces.find((candidate) => candidate.id === piece);
-  return known && faceNames.some((name) => name === face && known[name])
-    ? view
-    : "assembly";
+  return view && viewsOf(document).includes(view) ? view : "assembly";
 }
 
 /**
@@ -148,8 +160,11 @@ export async function queueReply(
 
 /**
  * Begins a queued reply: settles the thread it goes on (a thread goes on
- * while the API can read it whole and as it was), writes the couple's turn
- * with the context of the design as it is now, and starts the first request.
+ * while the API can read it whole and as it was, and while going on costs
+ * less than starting afresh), writes the couple's turn with the context of
+ * the design as it is now, and starts the first request. The studio's
+ * snapshot goes with the turn unless the thread has shown the model the
+ * same drawing already.
  */
 export async function beginReply(
   ctx: MutationCtx,
@@ -177,11 +192,17 @@ export async function beginReply(
   const details = detailsKey(event.fields);
   const locale = sent.locale ?? reply.locale ?? "ro";
 
+  const now = Date.now();
+  // Once the cache has expired, going on writes the whole thread again.
+  const paused =
+    latest?.finishedAt !== undefined &&
+    now - latest.finishedAt > CACHE_LIFETIME_MS;
   const goesOn =
     latest?.role === "designer" &&
     !latest.endsThread &&
     latest.prompt === prompt &&
-    (latest.contextTokens ?? 0) <= THREAD_TOKEN_LIMIT;
+    (latest.contextTokens ?? 0) <=
+      (paused ? PAUSED_THREAD_TOKEN_LIMIT : THREAD_TOKEN_LIMIT);
   const thread = goesOn ? latest.thread : (latest?.thread ?? 0) + 1;
   const lastSent = [...recent]
     .reverse()
@@ -189,15 +210,27 @@ export async function beginReply(
   const undone = recent.flatMap((message) =>
     (message.changes ?? []).flatMap((change) =>
       change.undoneAt !== undefined &&
-      change.undoneAt > (lastSent?._creationTime ?? 0)
+      change.undoneAt > (lastSent?._creationTime ?? 0) &&
+      !(change.kind === "design" && change.joined)
         ? [change.note]
         : [],
     ),
   );
+  const view = shownView(options.view, document);
+  const look = { revision: design.revision, view, details };
+  const known = goesOn ? latest.looked : undefined;
+  const snapshot = sent.snapshot
+    ? known?.revision === look.revision &&
+      known.view === look.view &&
+      known.details === look.details
+      ? ("seen" as const)
+      : ("attached" as const)
+    : undefined;
+  const looked = snapshot === "attached" ? look : known;
   const wording = event.wording;
   const context = messageContext({
     locale,
-    view: shownView(options.view, document),
+    view,
     revision: design.revision,
     document,
     designChanged: !goesOn || latest.seen?.revision !== design.revision,
@@ -214,7 +247,7 @@ export async function beginReply(
     },
     undone,
     recap: goesOn || recent.length === 0 ? undefined : recapOf(recent),
-    snapshot: Boolean(sent.snapshot),
+    snapshot,
     ...(wording
       ? {
           wording: {
@@ -234,7 +267,6 @@ export async function beginReply(
     ...(options.composition ? { composition: options.composition } : {}),
   });
 
-  const now = Date.now();
   await ctx.db.patch("aiMessages", sent._id, { thread });
   await ctx.db.insert("aiTurns", {
     designId: design._id,
@@ -243,7 +275,9 @@ export async function beginReply(
     role: "user",
     content: JSON.stringify([
       { type: "text", text: context },
-      ...(sent.snapshot ? [storedImage(sent.snapshot)] : []),
+      ...(snapshot === "attached" && sent.snapshot
+        ? [storedImage(sent.snapshot)]
+        : []),
       { type: "text", text: sent.text },
     ]),
   });
@@ -252,6 +286,7 @@ export async function beginReply(
     thread,
     prompt,
     seen: { revision: design.revision, details },
+    ...(looked ? { looked } : {}),
     updatedAt: now,
   });
   await ctx.scheduler.runAfter(0, internal.ai.run.step, {

@@ -360,6 +360,77 @@ describe("the AI designer", () => {
     expect(context).toContain('<details unchanged="true">');
   });
 
+  test("sends the studio's snapshot only when it shows something new", async () => {
+    const setup = await setUp();
+    const requests = fakeModel(
+      answer({ content: [text("Bună ziua.")] }),
+      answer({ content: [text("Da, așa arată.")] }),
+      answer({ content: [softerGreens(1)], stop: "tool_use" }),
+      answer({ content: [text("Gata.")] }),
+      answer({ content: [text("Cu plăcere.")] }),
+    );
+    const send = async (text: string, view = "card:front") => {
+      const snapshot = await setup.t.run((ctx) =>
+        ctx.storage.store(new Blob([pixel], { type: "image/png" })),
+      );
+      await setup.couple.mutation(api.ai.send, {
+        designId: setup.designId,
+        text,
+        locale: "ro",
+        view,
+        snapshot,
+      });
+      await setup.t.finishAllScheduledFunctions(() => {});
+    };
+    const images = (request: BetaMessageStreamParams | undefined) => {
+      const turn = request?.messages.at(-1)?.content;
+      return typeof turn === "string"
+        ? 0
+        : (turn ?? []).filter((block) => block.type === "image").length;
+    };
+
+    await send("Bună");
+    expect(images(requests[0])).toBe(1);
+    expect(wordsOf(requests[0])).toContain('snapshot="attached below"');
+    // Nothing changed since: the model has seen it.
+    await send("Așa arată?");
+    expect(images(requests[1])).toBe(0);
+    expect(wordsOf(requests[1])).toContain('snapshot="as you last saw it"');
+    // The same design shown another way is new to it.
+    await send("Verde mai blând", "assembly");
+    expect(images(requests[2])).toBe(1);
+    // And so is the design its own change made.
+    await send("Mulțumim!", "assembly");
+    expect(images(requests[4])).toBe(1);
+  });
+
+  test("starts a big thread afresh once its cache has expired", async () => {
+    const setup = await setUp();
+    const requests = fakeModel(
+      answer({ content: [text("Bună ziua.")] }),
+      answer({ content: [text("Da.")] }),
+      answer({ content: [text("Desigur.")] }),
+    );
+    await talk(setup, "Bună");
+    const grown = async () => {
+      const reply = await replyOf(setup);
+      await setup.t.run((ctx) =>
+        ctx.db.patch("aiMessages", reply._id, { contextTokens: 40_000 }),
+      );
+    };
+    // A big thread goes on while its cache is warm.
+    await grown();
+    setSystemTime(new Date(Date.now() + 4 * 60_000));
+    await talk(setup, "Încă ceva");
+    expect(requests[1]?.messages).toHaveLength(3);
+    // After a pause, it starts afresh with a recap.
+    await grown();
+    setSystemTime(new Date(Date.now() + 6 * 60_000));
+    await talk(setup, "Și încă ceva");
+    expect(requests[2]?.messages).toHaveLength(1);
+    expect(wordsOf(requests[2])).toContain("<earlier>");
+  });
+
   test("is told the design changed since, and tries again on the current revision", async () => {
     const setup = await setUp();
     const requests = fakeModel(
@@ -558,6 +629,82 @@ describe("the AI designer", () => {
     await expectError(
       stranger.mutation(api.ai.undo, { messageId: first._id, change: 0 }),
       "not-found",
+    );
+  });
+
+  test("joins a change that reworks one of its own to it, with those between", async () => {
+    const setup = await setUp();
+    const original = (await designOf(setup)).document;
+    const palette =
+      (colours: Record<string, string>, note: string) => (revision: number) =>
+        call("apply_operations", {
+          revision,
+          operations: [{ op: "setPalette", palette: colours }],
+          note,
+        });
+    const requests = fakeModel(
+      answer({ content: [softerGreens(1)], stop: "tool_use" }),
+      answer({
+        content: [palette({ art: "#7d9486" }, "Ilustrații mai reci")(2)],
+        stop: "tool_use",
+      }),
+      answer({
+        content: [palette({ accent: "#56664a" }, "Verdele de la început")(3)],
+        stop: "tool_use",
+      }),
+      answer({
+        content: [text("Am păstrat verdele, ilustrațiile sunt mai reci.")],
+      }),
+      answer({
+        content: [palette({ ink: "#2b2925" }, "Text mai închis")(4)],
+        stop: "tool_use",
+      }),
+      answer({ content: [text("Gata.")] }),
+      answer({ content: [text("Am înțeles.")] }),
+    );
+    await talk(setup, "Culori mai reci");
+    const [, first] = await messagesOf(setup);
+    if (!first) throw new Error("No reply");
+    expect(first.changes).toEqual([
+      {
+        kind: "design",
+        revision: 2,
+        note: "Verde mai blând · Ilustrații mai reci · Verdele de la început",
+      },
+      {
+        kind: "design",
+        revision: 3,
+        note: "Ilustrații mai reci",
+        joined: true,
+      },
+      {
+        kind: "design",
+        revision: 4,
+        note: "Verdele de la început",
+        joined: true,
+      },
+    ]);
+
+    // Another reply's change is its own, though it touches the same colours.
+    await talk(setup, "Și textul mai închis");
+    expect((await replyOf(setup)).changes).toEqual([
+      { kind: "design", revision: 5, note: "Text mai închis" },
+    ]);
+
+    // A joined change is undone with the change it joined.
+    await setup.couple.mutation(api.ai.undo, {
+      messageId: first._id,
+      change: 1,
+    });
+    expect((await designOf(setup)).design.revision).toBe(5);
+    await setup.couple.mutation(api.ai.undo, {
+      messageId: first._id,
+      change: 0,
+    });
+    expect((await designOf(setup)).document).toEqual(original);
+    await talk(setup, "Așa e bine");
+    expect(wordsOf(requests[6])).toContain(
+      "The couple undid these changes of yours since your last reply: Verde mai blând · Ilustrații mai reci · Verdele de la început; Text mai închis.",
     );
   });
 
@@ -1030,6 +1177,51 @@ describe("looking at the design", () => {
         view: "assembly",
       }),
     ).toBe(false);
+  });
+
+  test("looks at the view it names, one view at a time", async () => {
+    const setup = await setUp();
+    const requests = fakeModel(
+      answer({
+        content: [
+          call("look_at_design", { view: "card:back" }),
+          call("look_at_design", { view: "vellum:front" }),
+          call("look_at_design", { view: "assembly" }),
+          call("look_at_design", { view: "vellum:front" }),
+        ],
+        stop: "tool_use",
+      }),
+      answer({ content: [text("Calcul arată bine.")] }),
+    );
+    await talk(setup, "Cum arată calcul?");
+    const waiting = await replyOf(setup);
+    expect(waiting).toMatchObject({
+      status: "rendering",
+      rendering: { revision: 1, view: "vellum:front" },
+    });
+    await setup.couple.mutation(api.ai.answerRendering, {
+      messageId: waiting._id,
+      toolUseId: waiting.rendering?.toolUseId ?? "",
+      revision: 1,
+      view: "vellum:front",
+      layers: [],
+    });
+    await setup.t.finishAllScheduledFunctions(() => {});
+
+    const [missing, seen, other, same] = resultsIn(requests[1]);
+    expect(missing).toMatchObject({ is_error: true });
+    expect(missing?.content).toBe(
+      'The design has no view "card:back". Its views: assembly, card:front, vellum:front.',
+    );
+    expect(parsed(seen)).toMatchObject({
+      showing: "the front of the piece 'vellum'",
+    });
+    expect(other?.content).toBe(
+      "The studio draws one view at a time: ask for this one again once you have seen the other.",
+    );
+    expect(same?.content).toBe(
+      "The rendering for your other look_at_design call answers this one too.",
+    );
   });
 
   test("goes on without it when no studio answers", async () => {

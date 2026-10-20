@@ -6,7 +6,7 @@ import type { DesignDocument, Fields } from "@jolene/design";
 import { useMutation } from "convex/react";
 import { useCallback } from "react";
 import type { AssetLink, PreviewView } from "../design/design-preview";
-import { takeSnapshot, viewName } from "./snapshot";
+import { takeSnapshot, viewName, viewNamed } from "./snapshot";
 
 /** What the studio draws for the AI designer: a design as it shows it. */
 export interface Shown {
@@ -22,6 +22,8 @@ export interface Shown {
 export interface RenderingRequest {
   messageId: Id<"aiMessages">;
   toolUseId: string;
+  /** The view it asked for ("assembly" or "piece:face"), if not the shown one. */
+  view?: string;
 }
 
 /**
@@ -53,23 +55,24 @@ export function useUploadImage() {
 }
 
 /**
- * Answers a reply that asked to see the design: draws it as shown, measures
- * its words in the page's fonts and hands both over. A drawing that fails
- * still gets an answer, so the reply goes on without it.
+ * Answers a reply that asked to see the design: draws the view it named, or
+ * the one shown, measures its words in the page's fonts and hands both over.
+ * A drawing that fails still gets an answer, so the reply goes on without it.
  */
 export function useAnswerRendering() {
   const upload = useUploadImage();
   const answerRendering = useMutation(api.ai.answerRendering);
   return useCallback(
-    async (request: RenderingRequest, shown: Shown) => {
+    async ({ view: asked, ...request }: RenderingRequest, shown: Shown) => {
       if (claimed.has(request.toolUseId)) return;
       claimed.add(request.toolUseId);
+      const view = viewNamed(asked, shown.design, shown.view);
       let snapshot: Id<"_storage"> | undefined;
       let layers:
         | Awaited<ReturnType<typeof takeSnapshot>>["layers"]
         | undefined;
       try {
-        const shot = await takeSnapshot(shown);
+        const shot = await takeSnapshot({ ...shown, view });
         layers = shot.layers;
         snapshot = await upload(shot.image);
       } catch (error) {
@@ -78,7 +81,7 @@ export function useAnswerRendering() {
       await answerRendering({
         ...request,
         revision: shown.revision,
-        view: viewName(shown.view),
+        view: viewName(view),
         snapshot,
         layers,
       }).catch(() => {});

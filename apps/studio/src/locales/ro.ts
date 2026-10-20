@@ -91,9 +91,9 @@ export default {
     stop: "Opriți",
     try: "Încercați",
     warmer: "Culori mai calde",
-    dateUnderNames: "Pune data sub numele noastre",
-    dateUnderChild: "Pune data sub numele copilului",
-    writeWording: "Scrie textul invitației",
+    dateUnderNames: "Puneți data sub numele noastre",
+    dateUnderChild: "Puneți data sub numele copilului",
+    writeWording: "Scrieți textul invitației",
     airier: "Mai mult spațiu între rânduri",
     thinking: "Se gândește…",
     working: "Lucrează…",
@@ -238,6 +238,8 @@ export default {
       follow:
         "Scrieți {wording} în același ton cu restul colecției, în {language}.",
       line: "Începeți cu rândul nostru: „{line}”.",
+      lineEnded: "Începeți cu rândul nostru: „{line}”",
+      civil: "Treceți pe invitație și cununia civilă.",
       tones: {
         weddingClassic: "ton clasic, cu binecuvântarea părinților",
         weddingRomantic: "ton romantic",
