@@ -1,10 +1,12 @@
 import { autumn } from "./autumn";
 import { boho } from "./boho";
+import { carusel } from "./carusel";
 import { classicRoses } from "./classic-roses";
 import { eucalipt } from "./eucalipt";
 import { forest } from "./forest";
 import { safari } from "./safari";
 import type { Suite } from "./suite";
+import { teddyInBalon } from "./teddy-in-balon";
 
 export { forest } from "./forest";
 export {
@@ -20,6 +22,8 @@ export const suites: Suite[] = [
   eucalipt,
   classicRoses,
   autumn,
+  teddyInBalon,
+  carusel,
   safari,
   boho,
 ];
