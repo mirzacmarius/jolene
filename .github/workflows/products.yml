@@ -1,0 +1,69 @@
+name: Products
+# Puts the catalog in packages/products/catalog in the Shopify store, with
+# the Dev Dashboard app's credentials (README in packages/products). A pull
+# request that changes the catalog runs a plan, which only reads the store;
+# drafts and publishing run by hand from the Actions tab.
+on:
+  pull_request:
+    paths:
+      - 'packages/products/**'
+      - '.github/workflows/products.yml'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'plan reads the store, draft creates what it lacks as drafts, publish puts the drafts on sale'
+        type: choice
+        options: [plan, draft, publish]
+        default: plan
+      publication:
+        description: "The shop's sales channel, by name or ID, when the store has more than one headless storefront"
+        required: false
+      overwrite:
+        description: 'Also update what the store already has from the catalog'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One run at a time writes to the store; a newer one waits.
+concurrency:
+  group: products
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      # The Admin API's schema, which every call is checked against before
+      # the store is called, comes in Shopify's dev MCP package.
+      - name: Get the Admin API's schema
+        run: |
+          npm pack @shopify/dev-mcp@1.17.0 --pack-destination "$RUNNER_TEMP"
+          tar -xzf "$RUNNER_TEMP/shopify-dev-mcp-1.17.0.tgz" -C "$RUNNER_TEMP" package/dist/data/admin_2026-10.json.gz
+      - name: Sync
+        working-directory: packages/products
+        run: |
+          args=("$MODE" --schema "$RUNNER_TEMP/package/dist/data/admin_2026-10.json.gz" --out "$RUNNER_TEMP/products")
+          if [ -n "$PUBLICATION" ]; then args+=(--publication "$PUBLICATION"); fi
+          if [ "$OVERWRITE" = "true" ]; then args+=(--overwrite); fi
+          bun scripts/sync.ts "${args[@]}"
+        env:
+          MODE: ${{ inputs.mode || 'plan' }}
+          PUBLICATION: ${{ inputs.publication }}
+          OVERWRITE: ${{ inputs.overwrite }}
+          SHOPIFY_STORE_DOMAIN: ${{ vars.SHOPIFY_STORE_DOMAIN }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+      - name: Report
+        if: always()
+        run: cat "$RUNNER_TEMP/products/report.md" >> "$GITHUB_STEP_SUMMARY" || true
