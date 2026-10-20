@@ -1,12 +1,9 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import {
-  applyOperations,
-  assetKeys,
-  type DesignDocument,
-} from "@jolene/design";
+import { assetKeys, type DesignDocument } from "@jolene/design";
 import { ConvexError, v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { type MutationCtx, mutation, query } from "./_generated/server";
+import { applyToDesign } from "./designs/apply";
 import { saveRevision } from "./designs/versions";
 import schema from "./schema";
 import { resolveAssets, resolvedAssetValidator } from "./utils/assets";
@@ -19,12 +16,52 @@ const documentOf = (stored: { document: unknown }) =>
   stored.document as DesignDocument;
 
 /** One of the signed-in visitor's designs; anyone else's reads as not found. */
-async function requireOwnDesign(ctx: MutationCtx, designId: Id<"designs">) {
+export async function requireOwnDesign(
+  ctx: MutationCtx,
+  designId: Id<"designs">,
+) {
   const ownerId = await requireUser(ctx);
   const design = await ctx.db.get("designs", designId);
   if (!design || design.ownerId !== ownerId)
     throw new ConvexError(errors.notFound);
   return design;
+}
+
+/**
+ * A new design of the event, a copy of the template, whose first version is
+ * the template itself.
+ */
+export async function createDesign(
+  ctx: MutationCtx,
+  {
+    ownerId,
+    eventId,
+    template,
+  }: {
+    ownerId: Id<"users">;
+    eventId: Id<"events">;
+    template: Doc<"templates">;
+  },
+) {
+  const document = documentOf(template);
+  const now = Date.now();
+  const designId = await ctx.db.insert("designs", {
+    ownerId,
+    eventId,
+    templateId: template._id,
+    kind: template.kind,
+    document,
+    revision: 1,
+    updatedAt: now,
+  });
+  await ctx.db.insert("designVersions", {
+    designId,
+    revision: 1,
+    document,
+    author: "template",
+    updatedAt: now,
+  });
+  return designId;
 }
 
 /**
@@ -42,12 +79,11 @@ export const start = mutation({
       .withIndex("by_slug", (q) => q.eq("slug", args.template))
       .unique();
     if (!template || template.retired) throw new ConvexError(errors.notFound);
-    const document = documentOf(template);
-    const now = Date.now();
+    const { occasion } = documentOf(template);
     const event = await ctx.db
       .query("events")
       .withIndex("by_ownerId_and_occasion", (q) =>
-        q.eq("ownerId", ownerId).eq("occasion", document.occasion),
+        q.eq("ownerId", ownerId).eq("occasion", occasion),
       )
       .order("desc")
       .first();
@@ -55,27 +91,11 @@ export const start = mutation({
       event?._id ??
       (await ctx.db.insert("events", {
         ownerId,
-        occasion: document.occasion,
+        occasion,
         fields: {},
-        updatedAt: now,
+        updatedAt: Date.now(),
       }));
-    const designId = await ctx.db.insert("designs", {
-      ownerId,
-      eventId,
-      templateId: template._id,
-      kind: template.kind,
-      document,
-      revision: 1,
-      updatedAt: now,
-    });
-    await ctx.db.insert("designVersions", {
-      designId,
-      revision: 1,
-      document,
-      author: "template",
-      updatedAt: now,
-    });
-    return designId;
+    return await createDesign(ctx, { ownerId, eventId, template });
   },
 });
 
@@ -197,30 +217,13 @@ export const apply = mutation({
   returns: applyResult,
   handler: async (ctx, args) => {
     const design = await requireOwnDesign(ctx, args.designId);
-    if (
-      args.expectedRevision !== undefined &&
-      args.expectedRevision !== design.revision
-    ) {
-      return {
-        ok: false as const,
-        reason: "stale" as const,
-        message: `The design is at revision ${design.revision}, not ${args.expectedRevision}`,
-        revision: design.revision,
-      };
-    }
-    const result = applyOperations(documentOf(design), args.operations);
-    if (!result.ok)
-      return {
-        ok: false as const,
-        reason: "invalid" as const,
-        message: result.error,
-        revision: design.revision,
-      };
-    const revision = await saveRevision(ctx, design, result.document, {
+    const applied = await applyToDesign(ctx, design, args.operations, {
       author: "person",
       note: args.note,
+      expectedRevision: args.expectedRevision,
     });
-    return { ok: true as const, revision };
+    if (!applied.ok) return applied;
+    return { ok: true as const, revision: applied.revision };
   },
 });
 

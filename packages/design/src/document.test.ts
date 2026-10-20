@@ -179,6 +179,27 @@ describe("applyOperations", () => {
     expect(sprig && "tint" in sprig).toBe(false);
   });
 
+  test("fits a picture to its frame, and words only their own way", () => {
+    const refit = (layer: string, value: "cover" | "shrink") =>
+      applyOperations(invitation, [
+        {
+          op: "updateLayer",
+          piece: "card",
+          face: "front",
+          layer,
+          set: { fit: value },
+        },
+      ]);
+    const covered = refit("sprig", "cover");
+    if (!covered.ok) throw new Error(covered.error);
+    const sprig = covered.document.pieces[0]?.front.layers.find(
+      (l) => l.id === "sprig",
+    );
+    expect(sprig?.type === "image" && sprig.fit).toBe("cover");
+    expect(refit("names", "cover").ok).toBe(false);
+    expect(refit("sprig", "shrink").ok).toBe(false);
+  });
+
   test("sets a face background through updatePiece", () => {
     const result = applyOperations(invitation, [
       { op: "updatePiece", piece: "card", set: { background: "#fdf6ee" } },

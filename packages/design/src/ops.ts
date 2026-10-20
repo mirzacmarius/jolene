@@ -55,7 +55,8 @@ const layerChangesSchema = z
     overrides: textStyleOverridesSchema,
     align: z.enum(["left", "center", "right"]),
     valign: z.enum(["top", "middle", "bottom"]),
-    fit: z.enum(["none", "shrink"]),
+    /** "none" or "shrink" for words, "contain", "cover" or "fill" for a picture. */
+    fit: z.enum(["none", "shrink", "contain", "cover", "fill"]),
     minSize: z.number().positive(),
     asset: z.string().min(1),
     /** null takes the tint off. */

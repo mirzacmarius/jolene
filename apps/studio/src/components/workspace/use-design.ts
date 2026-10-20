@@ -92,6 +92,23 @@ export function useFieldDrafts({
   const unsent = useRef<Record<string, string>>({});
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+  // Details saved elsewhere (by the AI designer, or in another tab) show
+  // here too, except the ones typed here and not sent yet.
+  const known = useRef(saved);
+  useEffect(() => {
+    const before = known.current;
+    known.current = saved;
+    const changed = Object.keys({ ...before, ...saved }).filter(
+      (key) =>
+        (before[key] ?? "") !== (saved[key] ?? "") && !(key in unsent.current),
+    );
+    if (changed.length > 0)
+      setValues((current) => ({
+        ...current,
+        ...Object.fromEntries(changed.map((key) => [key, saved[key] ?? ""])),
+      }));
+  }, [saved]);
+
   const flush = useCallback(() => {
     clearTimeout(timer.current);
     const batch = Object.fromEntries(

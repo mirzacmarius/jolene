@@ -2,10 +2,19 @@ import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import {
+  aiChangeValidator,
+  aiErrorValidator,
+  aiRoleValidator,
+  aiStatusValidator,
+  aiUsageValidator,
+} from "./ai/validators";
+import { toneValidator } from "./simple/tones";
+import {
   authorValidator,
   documentValidator,
   fieldsValidator,
   labelsValidator,
+  languageValidator,
   occasionValidator,
   productKindValidator,
 } from "./utils/validators";
@@ -97,6 +106,18 @@ export default defineSchema({
     ownerId: v.id("users"),
     occasion: occasionValidator,
     fields: fieldsValidator,
+    /**
+     * How the couple wants their collection's wording, from simple mode's
+     * questions: its tone, a line of their own and the cards' language. The
+     * AI designer reads it with every message, so later items follow it.
+     */
+    wording: v.optional(
+      v.object({
+        tone: v.optional(toneValidator),
+        line: v.optional(v.string()),
+        language: languageValidator,
+      }),
+    ),
     updatedAt: v.number(),
   }).index("by_ownerId_and_occasion", ["ownerId", "occasion"]),
 
@@ -131,4 +152,118 @@ export default defineSchema({
     restoredFrom: v.optional(v.number()),
     updatedAt: v.number(),
   }).index("by_designId_and_revision", ["designId", "revision"]),
+
+  /**
+   * Each design's conversation with the AI designer as the studio shows it:
+   * the couple's words, the replies and the changes each reply made. What
+   * the Messages API reads back is kept in aiTurns.
+   */
+  aiMessages: defineTable({
+    designId: v.id("designs"),
+    ownerId: v.id("users"),
+    role: aiRoleValidator,
+    /** The couple's words, or the reply as far as it is written. */
+    text: v.string(),
+    status: aiStatusValidator,
+    /** The conversation with the API the message belongs to (see aiTurns). */
+    thread: v.number(),
+    /** The studio's language when the couple wrote, which the reply is in. */
+    locale: v.optional(languageValidator),
+    /** The rendering of the design the couple's words came with. */
+    snapshot: v.optional(v.id("_storage")),
+    /** Short notes on what the AI designer is doing, written as it works. */
+    notes: v.optional(v.array(v.string())),
+    changes: v.optional(v.array(aiChangeValidator)),
+    error: v.optional(aiErrorValidator),
+    usage: v.optional(aiUsageValidator),
+    /** The model that answered when a server-side fallback stood in. */
+    servedBy: v.optional(v.string()),
+    /** The composition a reply writes an item of, for simple mode. */
+    composition: v.optional(v.id("compositions")),
+    /** Requests the reply has made; a reply makes at most a few. */
+    rounds: v.optional(v.number()),
+    /** Input tokens of the reply's latest request: how long the thread is. */
+    contextTokens: v.optional(v.number()),
+    /** The design's revision and the details, as the AI designer knows them. */
+    seen: v.optional(v.object({ revision: v.number(), details: v.string() })),
+    /**
+     * The latest drawing of the design its thread has shown the model, a
+     * snapshot or a rendering: the revision, the view and the details drawn.
+     * A message that would show the same again goes without its snapshot.
+     */
+    looked: v.optional(
+      v.object({ revision: v.number(), view: v.string(), details: v.string() }),
+    ),
+    /**
+     * The rendering the reply waits for: the tool call that asked, and the
+     * revision the studio should show.
+     */
+    rendering: v.optional(
+      v.object({
+        toolUseId: v.string(),
+        revision: v.number(),
+        /** The view asked for, when not the one the couple is looking at. */
+        view: v.optional(v.string()),
+      }),
+    ),
+    /** The round's other tool results while the rendering is awaited, JSON. */
+    pendingResults: v.optional(v.string()),
+    /**
+     * The thread can't go on (a refusal, a context too long, a request the
+     * API turns away): the next message starts a new one.
+     */
+    endsThread: v.optional(v.boolean()),
+    /**
+     * The reply ended before the API answered any of it (it failed at once,
+     * or was stopped before it began), so its message doesn't count toward
+     * the day's limits. Running it again counts it again.
+     */
+    refunded: v.optional(v.literal(true)),
+    /**
+     * What the thread's requests are made with (model, system prompt and
+     * tools), hashed: when a deploy changes it, the next message starts a
+     * new thread.
+     */
+    prompt: v.optional(v.string()),
+    finishedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_designId", ["designId"])
+    .index("by_ownerId_and_role_and_refunded", ["ownerId", "role", "refunded"])
+    .index("by_role_and_refunded", ["role", "refunded"]),
+
+  /**
+   * The AI designer's conversations as the Messages API reads them: one row
+   * per API message, sent back verbatim and in order with every later request
+   * of the same thread, thinking included. Kept apart from aiMessages because
+   * a reply's rounds can outgrow one document.
+   */
+  aiTurns: defineTable({
+    designId: v.id("designs"),
+    thread: v.number(),
+    messageId: v.id("aiMessages"),
+    role: v.union(v.literal("user"), v.literal("assistant")),
+    /** The content blocks as JSON; images refer to stored files. */
+    content: v.string(),
+  }).index("by_designId_and_thread", ["designId", "thread"]),
+
+  /**
+   * Simple mode's AI flow over one event's collection: the AI designer writes
+   * the wording of each item the couple chose and lays it out, each in its
+   * design's own conversation. The first item (the invitation, when chosen)
+   * is written first; the others then begin with its wording to follow.
+   */
+  compositions: defineTable({
+    ownerId: v.id("users"),
+    eventId: v.id("events"),
+    suiteId: v.id("suites"),
+    /**
+     * The items the AI designer writes, first item first, each with the
+     * reply writing it. Items the day's messages didn't cover aren't here.
+     */
+    items: v.array(
+      v.object({ designId: v.id("designs"), replyId: v.id("aiMessages") }),
+    ),
+    updatedAt: v.number(),
+  }).index("by_eventId_and_suiteId", ["eventId", "suiteId"]),
 });
