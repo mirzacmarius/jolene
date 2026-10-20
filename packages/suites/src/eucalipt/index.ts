@@ -601,7 +601,7 @@ const moneyEnvelope: DesignDocumentInput = {
             style: "script",
             overrides: { font: "Great Vibes", size: 34, lineHeight: 1 },
             text: "&",
-            frame: { x: 93, y: 33, width: 18, height: 15 },
+            frame: { x: 91, y: 33, width: 18, height: 15 },
           },
           {
             id: "partner2",
