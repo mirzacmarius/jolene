@@ -12,7 +12,7 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-4 sm:px-6 lg:px-8">
         <Link
           href="/studio"
-          className="flex items-baseline gap-2 rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className="flex items-center gap-3 rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <Logo />
           <span className="hidden text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground sm:inline">

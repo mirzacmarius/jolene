@@ -34,6 +34,9 @@ export async function generateMetadata() {
   return {
     title: { default: t("common.appName"), template: "%s · Jolene" },
     description: t("common.description"),
+    // The icons and the share image are files in app/studio, made by
+    // brand/generate.py; this asks X to show that image large.
+    twitter: { card: "summary_large_image" },
   };
 }
 

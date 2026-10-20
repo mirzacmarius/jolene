@@ -18,6 +18,7 @@ designs and an AI co-designer, then order printed.
 | `packages/suites` | Jolene's collections as templates, with their artwork (lifted from jolene.ro by `lift/`) and a sheet that draws every template (`bun run preview` there) |
 | `packages/ui` | Shared UI components (shadcn/Tailwind) |
 | `tooling/typescript` | Shared TypeScript config |
+| `brand` | Jolene's logo, and the script that makes every icon and share image from it |
 
 ## Getting started
 
