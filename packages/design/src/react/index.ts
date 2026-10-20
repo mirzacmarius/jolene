@@ -1,4 +1,15 @@
 export { AssemblyView, type AssemblyViewProps } from "./assembly";
+export {
+  type Camera,
+  cameraTransform,
+  clampCamera,
+  fitBox,
+  fittedCamera,
+  mostZoom,
+  panCamera,
+  type Size,
+  zoomCamera,
+} from "./camera";
 export { FaceView, type FaceViewProps, paperColor } from "./face";
 export {
   type GrainKind,
