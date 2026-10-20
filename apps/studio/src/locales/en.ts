@@ -122,6 +122,15 @@ export default {
     stillWorking: "The AI designer is still working on your last message.",
     undoFailed: "That change couldn't be undone.",
   },
+  preview: {
+    showing: "Preview",
+    lifelike: "Lifelike",
+    flat: "Flat",
+    zoom: "Zoom",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
+    fit: "See it all",
+  },
   myDesigns: {
     title: "My designs",
     lead: "Your designs are kept in this browser. Accounts that carry them to any device come with ordering.",

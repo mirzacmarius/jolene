@@ -30,11 +30,8 @@ import {
   useState,
 } from "react";
 import { useI18n } from "@/locales/client";
-import {
-  type AssetLink,
-  DesignPreview,
-  useAssetResolver,
-} from "../../design/design-preview";
+import { type AssetLink, useAssetResolver } from "../../design/design-preview";
+import { PreviewStage } from "../../design/preview-stage";
 import { StylePanel } from "../style-panel";
 import { Canvas } from "./canvas";
 import { Inspector } from "./inspector/inspector";
@@ -311,14 +308,13 @@ export function ExpertEditor<K extends string>({
               onEditText={(id) => editText(id)}
             />
           ) : (
-            <div className="min-h-0 flex-1 px-12 pt-6 pb-10">
-              <DesignPreview
+            <div className="relative flex min-h-0 flex-1 flex-col pt-6">
+              <PreviewStage
                 document={document}
                 fields={fields}
                 assets={allAssets}
                 view={{ kind: "assembly" }}
                 title={title}
-                className="size-full drop-shadow-[0_18px_30px_rgba(43,38,32,0.12)]"
               />
             </div>
           )}

@@ -4,10 +4,12 @@ import type { DesignDocument, FaceName, Fields } from "@jolene/design";
 import {
   AssemblyView,
   FaceView,
+  LifelikeAssemblyView,
+  LifelikeFaceView,
   type RenderContext,
   useCanvasMeasure,
 } from "@jolene/design/react";
-import { useMemo } from "react";
+import { type CSSProperties, useMemo } from "react";
 
 /** A file a design draws, as the backend resolves it from its key. */
 export interface AssetLink {
@@ -31,21 +33,31 @@ export type PreviewView =
 /**
  * A design as it will look printed: the whole item together, or one side of
  * one piece. Text is measured with the browser's fonts once they've loaded.
+ * Lifelike, it's a photograph of the printed item on a table, paper, foil and
+ * all; otherwise it's drawn flat, exactly as it prints, with its guides when
+ * asked.
  */
 export function DesignPreview({
   document,
   fields,
   assets,
   view = { kind: "assembly" },
+  lifelike = false,
+  pixelsPerMm,
   title,
   className,
+  style,
 }: {
   document: DesignDocument;
   fields: Fields;
   assets: readonly AssetLink[] | undefined;
   view?: PreviewView;
+  lifelike?: boolean;
+  /** Device pixels to the millimetre where a lifelike view shows. */
+  pixelsPerMm?: number;
   title?: string;
   className?: string;
+  style?: CSSProperties;
 }) {
   const measure = useCanvasMeasure();
   const resolve = useAssetResolver(assets);
@@ -53,12 +65,35 @@ export function DesignPreview({
     () => ({ fields, assets: resolve, measure }),
     [fields, resolve, measure],
   );
+  if (lifelike)
+    return view.kind === "assembly" ? (
+      <LifelikeAssemblyView
+        document={document}
+        context={context}
+        pixelsPerMm={pixelsPerMm}
+        title={title}
+        className={className}
+        style={style}
+      />
+    ) : (
+      <LifelikeFaceView
+        document={document}
+        piece={view.piece}
+        face={view.face}
+        context={context}
+        pixelsPerMm={pixelsPerMm}
+        title={title}
+        className={className}
+        style={style}
+      />
+    );
   return view.kind === "assembly" ? (
     <AssemblyView
       document={document}
       context={context}
       title={title}
       className={className}
+      style={style}
     />
   ) : (
     <FaceView
@@ -69,6 +104,7 @@ export function DesignPreview({
       context={context}
       title={title}
       className={className}
+      style={style}
     />
   );
 }

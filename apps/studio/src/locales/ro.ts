@@ -124,6 +124,15 @@ export default {
     stillWorking: "Designerul AI lucrează încă la mesajul anterior.",
     undoFailed: "Schimbarea nu a putut fi anulată.",
   },
+  preview: {
+    showing: "Previzualizare",
+    lifelike: "Realist",
+    flat: "Plat",
+    zoom: "Mărire",
+    zoomIn: "Măriți",
+    zoomOut: "Micșorați",
+    fit: "Vedeți tot",
+  },
   myDesigns: {
     title: "Designurile mele",
     lead: "Designurile se păstrează în acest browser. Contul, care le duce pe orice dispozitiv, vine odată cu comanda online.",

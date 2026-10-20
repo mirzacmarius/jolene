@@ -33,6 +33,8 @@ export function createCanvasMeasure(): Measure {
     const css = `${font.italic ? "italic " : ""}${font.weight} ${REFERENCE_PX}px ${fontStack(font.family)}`;
     const key = `${css}|${text}`;
     let width = cache.get(key);
+    // Only a text whose fonts have loaded is measured and kept, so asking
+    // the fonts again (which is slow) is needed only for a new text.
     if (width === undefined) {
       if (!loaded(css, text)) {
         // A web font comes in subsets by alphabet, and the browser fetches
