@@ -1,4 +1,5 @@
 import { forest } from "./forest";
+import { geometricFlowers } from "./geometric-flowers";
 import { royalBlue } from "./royal-blue";
 import type { Suite } from "./suite";
 
@@ -10,4 +11,4 @@ export {
 } from "./suite";
 
 /** Jolene's collections, in the order the gallery shows them. */
-export const suites: Suite[] = [forest, royalBlue];
+export const suites: Suite[] = [forest, royalBlue, geometricFlowers];
