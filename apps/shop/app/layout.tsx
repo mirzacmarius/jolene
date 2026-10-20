@@ -88,11 +88,14 @@ export const generateMetadata = async (): Promise<Metadata> => {
     generator: shopConfig.site.name,
     metadataBase: new URL(shopConfig.site.url),
     openGraph: {
-      images: [{ url: "/og-default.png", width: 1200, height: 628 }],
+      images: [{ alt: shopConfig.site.name, height: 630, url: "/og-default.png", width: 1200 }],
     },
     title: {
       default: shopConfig.site.name,
       template: `%s | ${shopConfig.site.name}`,
+    },
+    twitter: {
+      card: "summary_large_image",
     },
   };
 };
