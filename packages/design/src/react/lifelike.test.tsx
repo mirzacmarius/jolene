@@ -58,6 +58,38 @@ describe("lifelike views", () => {
     expect(markup).not.toContain("data:image/png");
   });
 
+  // Moving the light repaints only the layer it's set on: the still one,
+  // with its shadows and grain, must not depend on it.
+  test("keep what moves with the light in a layer of its own", () => {
+    const markup = renderToStaticMarkup(
+      <LifelikeAssemblyView document={invitation} context={context} />,
+    );
+    const [still = "", light = ""] = markup.split("<svg").slice(1);
+    expect(still).not.toContain(lightX);
+    expect(light).toContain("data-lifelike-light");
+    expect(light).toContain(lightX);
+    // The card alone, printed in ink only, has nothing to catch the light.
+    const card = {
+      ...invitation,
+      pieces: invitation.pieces.filter((piece) => piece.id === "card"),
+      accessories: [],
+    };
+    const matte = change(card, [
+      {
+        op: "updateLayer",
+        piece: "card",
+        face: "front",
+        layer: "names",
+        set: { ink: "print" },
+      },
+    ]);
+    expect(
+      renderToStaticMarkup(
+        <LifelikeAssemblyView document={matte} context={context} />,
+      ),
+    ).not.toContain("data-lifelike-light");
+  });
+
   test("draw one side of one piece", () => {
     const markup = renderToStaticMarkup(
       <LifelikeFaceView

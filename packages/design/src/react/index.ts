@@ -15,6 +15,7 @@ export {
   type LifelikeView,
   type LifelikeViewProps,
   lifelikeFrame,
+  moveLight,
 } from "./lifelike";
 export {
   lightX,

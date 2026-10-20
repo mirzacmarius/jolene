@@ -3,7 +3,13 @@ import { type Ink, paperTextures, stocks } from "../catalog";
 import { type Hex, mix } from "../color";
 import { resolveText } from "../fields";
 import { assemblyBounds, type Box, trimPath } from "../geometry";
-import type { DesignDocument, FaceName, Piece } from "../schema";
+import type {
+  Accessory,
+  DesignDocument,
+  FaceName,
+  Layer,
+  Piece,
+} from "../schema";
 import { placeTransform } from "./assembly";
 import { defIds } from "./defs";
 import { EnvelopeView, envelopeBox, envelopeLayout } from "./envelope";
@@ -13,13 +19,20 @@ import { LayerView } from "./layers";
 import {
   type FoilInk,
   foilTones,
+  isFoil,
   lightX,
   lightY,
   stockThickness,
 } from "./materials";
-import { LifelikeRibbon } from "./ribbon";
+import {
+  LifelikeRibbon,
+  RibbonCover,
+  RibbonSheen,
+  ribbonBox,
+  ribbonShines,
+} from "./ribbon";
 import { type RenderContext, svgId } from "./shared";
-import { LifelikeWaxSeal } from "./wax-seal";
+import { LifelikeWaxSeal, SealGlint, sealOutline } from "./wax-seal";
 
 /**
  * The lifelike preview: a design as a photograph of the printed suite lying
@@ -28,7 +41,36 @@ import { LifelikeWaxSeal } from "./wax-seal";
  * lies under it, and the envelope lies behind. It reads the same document as
  * every other view and draws nothing the print file doesn't: the plain
  * renderer (FaceView, AssemblyView) stays exact for proofs and print.
+ *
+ * Each view is two SVGs, one over the other. The first holds all that stays
+ * still and is drawn once. The second holds only what moves with the light:
+ * foil's glint, spot UV's gloss, pearl and vellum's sheen, satin's shine and
+ * the glint on the wax, each hidden where something lies over it. The page
+ * moves the light on the second alone (moveLight): changing a custom
+ * property repaints everything under the element it's set on, and the first
+ * SVG, with its shadows and grain, costs too much to repaint as the pointer
+ * moves.
  */
+
+type Seal = Extract<Accessory, { kind: "wax-seal" }>;
+type Ribbon = Extract<Accessory, { kind: "ribbon" }>;
+
+/** Marks the SVG of a lifelike view that moves with the light. */
+const LIGHT_LAYER = "data-lifelike-light";
+
+/**
+ * Moves the light over every lifelike view inside `container`: from -1 at the
+ * left or top to 1 at the right or bottom, 0 0 in the middle. Only the views'
+ * light layers change, so nothing else repaints.
+ */
+export function moveLight(container: ParentNode, x: number, y: number) {
+  for (const layer of container.querySelectorAll<SVGElement>(
+    `[${LIGHT_LAYER}]`,
+  )) {
+    layer.style.setProperty(lightX, x.toFixed(3));
+    layer.style.setProperty(lightY, y.toFixed(3));
+  }
+}
 
 const foils = [
   "foil-gold",
@@ -45,10 +87,18 @@ const lifelikeIds = (prefix: string) => ({
   pearl: `${prefix}-pearl`,
   vellum: `${prefix}-vellum-sheen`,
   /**
-   * Spot UV is drawn a second time, as if in silver foil, under this prefix,
-   * whose silver is a clear gloss: the layer's own shapes, catching the light.
+   * Foil layers are drawn again in the light layer under this prefix, whose
+   * foils are their moving glint.
+   */
+  glint: `${prefix}-glint`,
+  /**
+   * Spot UV is drawn again in the light layer, as if in silver foil, under
+   * this prefix, whose silver is a clear gloss: the layer's own shapes,
+   * catching the light.
    */
   gloss: `${prefix}-gloss`,
+  trim: (piece: string) => `${prefix}-trim-${piece}`,
+  cover: (name: string) => `${prefix}-cover-${name}`,
 });
 
 /** Moves with the light, `amount` user units at the pointer's furthest. */
@@ -60,12 +110,12 @@ function follow(amount: number): CSSProperties {
 }
 
 /**
- * Foil as polished metal: bands of light and shade across each shape, which
- * slide as the light moves. Each shape shows the middle third of the bands
- * (more as the light moves): mostly the metal's middle and dark tones, so
- * pale foil still reads on pale paper, crossed by one narrow bright band.
+ * Foil as polished metal: bands of light and shade across each shape. Each
+ * shape shows the middle third of the bands: mostly the metal's middle and
+ * dark tones, so pale foil still reads on pale paper, crossed by one narrow
+ * bright band. The glint over it moves with the light (FoilGlint).
  */
-function FoilPaint({ id, ink }: { id: string; ink: FoilInk }) {
+function FoilMetal({ id, ink }: { id: string; ink: FoilInk }) {
   const tone = foilTones(ink);
   const stops: [number, Hex][] = [
     [0, tone.light],
@@ -96,13 +146,54 @@ function FoilPaint({ id, ink }: { id: string; ink: FoilInk }) {
         width="1"
         height="1"
       >
+        <rect x="-1" y="-1" width="3" height="3" fill={`url(#${id}-metal)`} />
+      </pattern>
+    </>
+  );
+}
+
+/**
+ * Foil's glint: a bright band with a little shade after it, sliding across
+ * each shape as the light moves; clear elsewhere, over the metal.
+ */
+function FoilGlint({ id, ink }: { id: string; ink: FoilInk }) {
+  const { glint, deep } = foilTones(ink);
+  const stops: [number, Hex, number][] = [
+    [0, glint, 0],
+    [0.33, glint, 0],
+    [0.41, glint, 0.5],
+    [0.45, "#ffffff", 0.8],
+    [0.49, glint, 0.45],
+    [0.56, glint, 0],
+    [0.63, deep, 0.2],
+    [0.71, deep, 0],
+    [1, deep, 0],
+  ];
+  return (
+    <>
+      <linearGradient id={`${id}-band`} x1="0" y1="0" x2="1" y2="0.55">
+        {stops.map(([offset, color, opacity]) => (
+          <stop
+            key={offset}
+            offset={offset}
+            stopColor={color}
+            stopOpacity={opacity}
+          />
+        ))}
+      </linearGradient>
+      <pattern
+        id={id}
+        patternContentUnits="objectBoundingBox"
+        width="1"
+        height="1"
+      >
         <rect
           x="-1"
           y="-1"
           width="3"
           height="3"
-          fill={`url(#${id}-metal)`}
-          style={follow(-0.5)}
+          fill={`url(#${id}-band)`}
+          style={follow(-0.6)}
         />
       </pattern>
     </>
@@ -256,9 +347,8 @@ function LifelikeDefs({
   return (
     <defs>
       {foils.map((ink) => (
-        <FoilPaint key={ink} id={ids.ink(ink)} ink={ink} />
+        <FoilMetal key={ink} id={ids.ink(ink)} ink={ink} />
       ))}
-      <GlossPaint id={defIds(own.gloss).ink("foil-silver")} />
       <ReliefFilters emboss={ids.emboss} deboss={ids.deboss} />
       {paperTextures.map((kind) => {
         const url = grains(kind);
@@ -288,6 +378,20 @@ function LifelikeDefs({
         <stop offset="0.55" stopColor="#000000" stopOpacity="0.04" />
         <stop offset="1" stopColor="#000000" stopOpacity="0.22" />
       </linearGradient>
+    </defs>
+  );
+}
+
+/** The light layer's paints: foil's glint, gloss, and the sheens. */
+function LightDefs({ prefix }: { prefix: string }) {
+  const own = lifelikeIds(prefix);
+  const glints = defIds(own.glint);
+  return (
+    <defs>
+      {foils.map((ink) => (
+        <FoilGlint key={ink} id={glints.ink(ink)} ink={ink} />
+      ))}
+      <GlossPaint id={defIds(own.gloss).ink("foil-silver")} />
       <Sheen
         id={own.pearl}
         stops={[
@@ -371,45 +475,18 @@ function PieceShadow({ piece, prefix }: { piece: Piece; prefix: string }) {
 }
 
 /**
- * Over the printing: spot UV's gloss, the paper's grain, pearl's shimmer or
- * vellum's sheen, the fall of the light, and the cut edge catching it.
+ * Over the printing: the paper's grain, the fall of the light, and the cut
+ * edge catching it.
  */
-function PieceFinish({
-  document,
-  piece,
-  face,
-  context,
-  prefix,
-  grains,
-}: PieceProps) {
+function PieceFinish({ piece, prefix, grains }: PieceProps) {
   const own = lifelikeIds(prefix);
   const stock = stocks[piece.stock];
   const area = { x: 0, y: 0, width: piece.width, height: piece.height };
-  const glossy = (piece[face]?.layers ?? []).filter(
-    (layer) =>
-      layer.ink === "spot-uv" && (layer.type !== "image" || layer.tint),
-  );
   const grain = grains(stock.texture);
   return (
     <>
-      {glossy.map((layer) => (
-        <LayerView
-          key={layer.id}
-          layer={{ ...layer, ink: "foil-silver" satisfies Ink }}
-          document={document}
-          paper={paperColor(piece, document)}
-          prefix={own.gloss}
-          context={context}
-        />
-      ))}
       {grain ? (
         <rect {...area} fill={`url(#${own.grain(stock.texture)})`} />
-      ) : null}
-      {stock.texture === "pearl" ? (
-        <rect {...area} fill={`url(#${own.pearl})`} />
-      ) : null}
-      {stock.translucent ? (
-        <rect {...area} fill={`url(#${own.vellum})`} />
       ) : null}
       <rect {...area} fill={`url(#${own.light})`} />
       <path
@@ -418,6 +495,92 @@ function PieceFinish({
         stroke={`url(#${own.bevel})`}
         strokeWidth={stock.translucent ? 0.3 : 0.5}
       />
+    </>
+  );
+}
+
+/** Whether a layer is printed in its ink: images only when tinted. */
+function inked(layer: Layer, context: RenderContext) {
+  if (layer.type !== "image") return true;
+  return Boolean(
+    layer.tint && layer.asset && context.assets(layer.asset)?.recolorable,
+  );
+}
+
+/** What on one side of a sheet catches the light as it moves. */
+function shine(
+  piece: Piece,
+  face: FaceName,
+  context: RenderContext,
+  prefix: string,
+) {
+  const own = lifelikeIds(prefix);
+  const stock = stocks[piece.stock];
+  const layers = (piece[face]?.layers ?? []).filter(
+    (layer) => !layer.hidden && inked(layer, context),
+  );
+  const foiled = layers.filter((layer) => isFoil(layer.ink));
+  const glossy = layers.filter((layer) => layer.ink === "spot-uv");
+  const sheen =
+    stock.texture === "pearl"
+      ? own.pearl
+      : stock.translucent
+        ? own.vellum
+        : null;
+  return foiled.length || glossy.length || sheen
+    ? { foiled, glossy, sheen }
+    : null;
+}
+
+/**
+ * The light on one side of a sheet: pearl's shimmer or vellum's sheen
+ * across it, foil's glint and spot UV's gloss on their shapes.
+ */
+function PieceLight({
+  document,
+  piece,
+  face,
+  context,
+  prefix,
+}: Omit<PieceProps, "grains">) {
+  const own = lifelikeIds(prefix);
+  const lit = shine(piece, face, context, prefix);
+  if (!lit) return null;
+  const paper = paperColor(piece, document);
+  return (
+    <>
+      <clipPath id={own.trim(piece.id)}>
+        <path d={trimPath(piece)} />
+      </clipPath>
+      <g clipPath={`url(#${own.trim(piece.id)})`}>
+        {lit.sheen ? (
+          <rect
+            width={piece.width}
+            height={piece.height}
+            fill={`url(#${lit.sheen})`}
+          />
+        ) : null}
+        {lit.foiled.map((layer) => (
+          <LayerView
+            key={layer.id}
+            layer={layer}
+            document={document}
+            paper={paper}
+            prefix={own.glint}
+            context={context}
+          />
+        ))}
+        {lit.glossy.map((layer) => (
+          <LayerView
+            key={layer.id}
+            layer={{ ...layer, ink: "foil-silver" satisfies Ink }}
+            document={document}
+            paper={paper}
+            prefix={own.gloss}
+            context={context}
+          />
+        ))}
+      </g>
     </>
   );
 }
@@ -601,38 +764,136 @@ export interface LifelikeViewProps {
   style?: CSSProperties;
 }
 
+/**
+ * The view's two SVGs, one over the other, in a box that takes the class
+ * and style: the still one first, then the light layer when anything
+ * catches the light. The light layer gets a compositing layer of its own,
+ * so repainting it leaves the other alone; it's redrawn fresh when the
+ * screen's density changes, so a zoom leaves it sharp.
+ */
 function Frame({
   frame,
   title,
   className,
   style,
+  pixelsPerMm,
+  light,
   children,
 }: {
   frame: Box;
   title?: string;
   className?: string;
   style?: CSSProperties;
+  pixelsPerMm?: number;
+  light: ReactNode;
   children: ReactNode;
 }) {
+  const viewBox = `${frame.x} ${frame.y} ${frame.width} ${frame.height}`;
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox={`${frame.x} ${frame.y} ${frame.width} ${frame.height}`}
-      width="100%"
-      role="img"
-      aria-label={title}
-      className={className}
-      style={{
-        aspectRatio: `${frame.width} / ${frame.height}`,
-        display: "block",
-        // Shadows fall past the frame, onto the table around it.
-        overflow: "visible",
-        ...style,
-      }}
+    <div className={className} style={{ position: "relative", ...style }}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox={viewBox}
+        width="100%"
+        height="100%"
+        role="img"
+        aria-label={title}
+        style={{
+          aspectRatio: `${frame.width} / ${frame.height}`,
+          display: "block",
+          // Shadows fall past the frame, onto the table around it.
+          overflow: "visible",
+        }}
+      >
+        {title ? <title>{title}</title> : null}
+        {children}
+      </svg>
+      {light ? (
+        <svg
+          key={pixelsPerMm}
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox={viewBox}
+          width="100%"
+          height="100%"
+          aria-hidden
+          {...{ [LIGHT_LAYER]: "" }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            overflow: "visible",
+            pointerEvents: "none",
+            willChange: "transform",
+          }}
+        >
+          {light}
+        </svg>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * A mask hiding the light on whatever lies under the given things: sheets
+ * (vellum lets some light through), ribbons and their bows, and seals. It
+ * spans only `region`, where the light it masks falls, to stay quick to
+ * draw.
+ */
+function Cover({
+  id,
+  region,
+  pieces,
+  ribbons,
+  bows,
+  seals,
+  bounds,
+}: {
+  id: string;
+  region: Box;
+  pieces: Piece[];
+  ribbons: Ribbon[];
+  /** Ribbons whose bow alone covers. */
+  bows: Ribbon[];
+  seals: Seal[];
+  bounds: Box;
+}) {
+  return (
+    <mask
+      id={id}
+      maskUnits="userSpaceOnUse"
+      x={region.x}
+      y={region.y}
+      width={region.width}
+      height={region.height}
     >
-      {title ? <title>{title}</title> : null}
-      {children}
-    </svg>
+      <rect {...region} fill="#ffffff" />
+      {pieces.map((piece) => (
+        <path
+          key={piece.id}
+          d={trimPath(piece)}
+          transform={placeTransform(piece)}
+          fill={stocks[piece.stock].translucent ? "#999999" : "#000000"}
+        />
+      ))}
+      {ribbons.map((ribbon) => (
+        <RibbonCover key={ribbon.id} ribbon={ribbon} bounds={bounds} />
+      ))}
+      {bows.map((ribbon) => (
+        <RibbonCover
+          key={ribbon.id}
+          ribbon={ribbon}
+          bounds={bounds}
+          band={false}
+        />
+      ))}
+      {seals.map((seal) => (
+        <path
+          key={seal.id}
+          d={sealOutline(seal.id, seal.diameter / 2)}
+          transform={`translate(${seal.x} ${seal.y})`}
+          fill="#000000"
+        />
+      ))}
+    </mask>
   );
 }
 
@@ -649,9 +910,17 @@ export function LifelikeAssemblyView({
   style,
 }: LifelikeViewProps) {
   const prefix = svgId(useId(), "lifelike");
+  const own = lifelikeIds(prefix);
   const grains = useGrains(grainsOf(document), pixelsPerMm);
   const bounds = assemblyBounds(document);
+  const frame = lifelikeFrame(document, { kind: "assembly" });
   const envelope = envelopeLayout(document);
+  const ribbons = document.accessories.filter(
+    (accessory): accessory is Ribbon => accessory.kind === "ribbon",
+  );
+  const seals = document.accessories.filter(
+    (accessory): accessory is Seal => accessory.kind === "wax-seal",
+  );
   let stack: ReactNode[] = envelope
     ? [
         <EnvelopeView
@@ -694,49 +963,114 @@ export function LifelikeAssemblyView({
       ];
     } else stack.push(drawn);
   }
+
+  // The light on each sheet, hidden under all that lies over it; then the
+  // shine on each ribbon, hidden under its bow and the seals; then the
+  // glint on each seal, which nothing covers.
+  const lights: ReactNode[] = [];
+  document.pieces.forEach((piece, index) => {
+    if (!shine(piece, "front", context, prefix)) return;
+    const over = document.pieces.slice(index + 1);
+    const covered = over.length > 0 || ribbons.length > 0 || seals.length > 0;
+    lights.push(
+      <Fragment key={piece.id}>
+        {covered ? (
+          <Cover
+            id={own.cover(piece.id)}
+            region={placedBox(piece)}
+            pieces={over}
+            ribbons={ribbons}
+            bows={[]}
+            seals={seals}
+            bounds={bounds}
+          />
+        ) : null}
+        <g mask={covered ? `url(#${own.cover(piece.id)})` : undefined}>
+          <g transform={placeTransform(piece)}>
+            <PieceLight
+              document={document}
+              piece={piece}
+              face="front"
+              context={context}
+              prefix={prefix}
+            />
+          </g>
+        </g>
+      </Fragment>,
+    );
+  });
+  for (const ribbon of ribbons.filter(ribbonShines)) {
+    const covered = ribbon.bow || seals.length > 0;
+    lights.push(
+      <Fragment key={ribbon.id}>
+        {covered ? (
+          <Cover
+            id={own.cover(ribbon.id)}
+            region={ribbonBox(ribbon, bounds)}
+            pieces={[]}
+            ribbons={[]}
+            bows={ribbon.bow ? [ribbon] : []}
+            seals={seals}
+            bounds={bounds}
+          />
+        ) : null}
+        <g mask={covered ? `url(#${own.cover(ribbon.id)})` : undefined}>
+          <RibbonSheen ribbon={ribbon} bounds={bounds} prefix={prefix} />
+        </g>
+      </Fragment>,
+    );
+  }
+  for (const seal of seals)
+    lights.push(<SealGlint key={seal.id} seal={seal} prefix={prefix} />);
+
   return (
     <Frame
-      frame={lifelikeFrame(document, { kind: "assembly" })}
+      frame={frame}
       title={title}
       className={className}
       style={style}
+      pixelsPerMm={pixelsPerMm}
+      light={
+        lights.length > 0 ? (
+          <>
+            <LightDefs prefix={prefix} />
+            {lights}
+          </>
+        ) : null
+      }
     >
       <LifelikeDefs prefix={prefix} grains={grains} />
       {stack}
-      {document.accessories.map((accessory) =>
-        accessory.kind === "ribbon" ? (
-          <LifelikeRibbon
-            key={accessory.id}
-            ribbon={accessory}
-            bounds={bounds}
-            prefix={prefix}
-          />
-        ) : null,
-      )}
+      {ribbons.map((ribbon) => (
+        <LifelikeRibbon
+          key={ribbon.id}
+          ribbon={ribbon}
+          bounds={bounds}
+          prefix={prefix}
+        />
+      ))}
       {/* Seals last: wax is pressed over any ribbon. */}
-      {document.accessories.map((accessory) =>
-        accessory.kind === "ribbon" ? null : (
-          <LifelikeWaxSeal
-            key={accessory.id}
-            seal={accessory}
-            prefix={prefix}
-            initials={
-              accessory.motif.kind === "initials"
-                ? resolveText(accessory.motif.text, {
-                    fields: context.fields,
-                    occasion: document.occasion,
-                    language: document.language,
-                  })
-                : ""
-            }
-            motif={
-              accessory.motif.kind === "asset"
-                ? context.assets(accessory.motif.asset)
-                : undefined
-            }
-          />
-        ),
-      )}
+      {seals.map((seal) => (
+        <LifelikeWaxSeal
+          key={seal.id}
+          seal={seal}
+          prefix={prefix}
+          initials={
+            seal.motif.kind === "initials"
+              ? resolveText(seal.motif.text, {
+                  fields: context.fields,
+                  occasion: document.occasion,
+                  language: document.language,
+                })
+              : ""
+          }
+          motif={
+            seal.motif.kind === "asset"
+              ? context.assets(seal.motif.asset)
+              : undefined
+          }
+        />
+      ))}
     </Frame>
   );
 }
@@ -763,12 +1097,28 @@ export function LifelikeFaceView({
     document.pieces.find((candidate) => candidate.id === pieceId) ??
     (document.pieces[0] as Piece);
   const grains = useGrains([stocks[piece.stock].texture], pixelsPerMm);
+  const lit = shine(piece, face, context, prefix);
   return (
     <Frame
       frame={lifelikeFrame(document, { kind: "face", piece: piece.id })}
       title={title}
       className={className}
       style={style}
+      pixelsPerMm={pixelsPerMm}
+      light={
+        lit ? (
+          <>
+            <LightDefs prefix={prefix} />
+            <PieceLight
+              document={document}
+              piece={piece}
+              face={face}
+              context={context}
+              prefix={prefix}
+            />
+          </>
+        ) : null
+      }
     >
       <LifelikeDefs prefix={prefix} grains={grains} />
       <LifelikePiece

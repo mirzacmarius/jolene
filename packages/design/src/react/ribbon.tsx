@@ -33,10 +33,48 @@ const looks: Record<
 const tone = (color: Hex, amount: number) =>
   amount >= 0 ? mix(color, "#ffffff", amount) : mix(color, "#000000", -amount);
 
+/** Where a ribbon lies: drawn along x in its own frame, then turned into place. */
+export function ribbonLayout(ribbon: RibbonSpec, bounds: Box) {
+  const horizontal = ribbon.orientation === "horizontal";
+  // From one edge of the stack to the other, just round its edges.
+  const overhang = 0.8;
+  const length = (horizontal ? bounds.width : bounds.height) + 2 * overhang;
+  const w =
+    ribbon.material === "twine" ? Math.min(ribbon.width, 3.2) : ribbon.width;
+  const centre = {
+    x: horizontal ? bounds.x + bounds.width / 2 : bounds.x + ribbon.offset,
+    y: horizontal ? bounds.y + ribbon.offset : bounds.y + bounds.height / 2,
+  };
+  const frame = horizontal
+    ? `translate(${bounds.x - overhang} ${centre.y})`
+    : `translate(${centre.x} ${bounds.y - overhang}) rotate(90)`;
+  const band = { x: 0, y: -w / 2, width: length, height: w };
+  return { length, w, centre, frame, band };
+}
+
+/** The box a ribbon's band covers, in the assembly's millimetres. */
+export function ribbonBox(ribbon: RibbonSpec, bounds: Box): Box {
+  const { length, w, centre } = ribbonLayout(ribbon, bounds);
+  return ribbon.orientation === "horizontal"
+    ? {
+        x: centre.x - length / 2,
+        y: centre.y - w / 2,
+        width: length,
+        height: w,
+      }
+    : {
+        x: centre.x - w / 2,
+        y: centre.y - length / 2,
+        width: w,
+        height: length,
+      };
+}
+
 /**
- * A ribbon tied round the whole assembly, as it lies on the paper: the light
- * along it, its edges, where it turns round the edge of the stack, its shadow,
- * and its bow.
+ * A ribbon tied round the whole assembly, as it lies on the paper: its
+ * colour across its width, its edges, where it turns round the edge of the
+ * stack, its shadow, and its bow. The light gliding along satin is drawn
+ * apart, by RibbonSheen.
  */
 export function LifelikeRibbon({
   ribbon,
@@ -50,21 +88,7 @@ export function LifelikeRibbon({
   const id = (name: string) => `${prefix}-ribbon-${ribbon.id}-${name}`;
   const look = looks[ribbon.material];
   const color = ribbon.color as Hex;
-  const horizontal = ribbon.orientation === "horizontal";
-  // Drawn along x in its own frame, from one edge of the stack to the other,
-  // then turned into place.
-  const overhang = 0.8;
-  const length = (horizontal ? bounds.width : bounds.height) + 2 * overhang;
-  const w =
-    ribbon.material === "twine" ? Math.min(ribbon.width, 3.2) : ribbon.width;
-  const centre = {
-    x: horizontal ? bounds.x + bounds.width / 2 : bounds.x + ribbon.offset,
-    y: horizontal ? bounds.y + ribbon.offset : bounds.y + bounds.height / 2,
-  };
-  const frame = horizontal
-    ? `translate(${bounds.x - overhang} ${centre.y})`
-    : `translate(${centre.x} ${bounds.y - overhang}) rotate(90)`;
-  const band = { x: 0, y: -w / 2, width: length, height: w };
+  const { length, w, centre, frame, band } = ribbonLayout(ribbon, bounds);
   const lace = ribbon.material === "lace";
   const twine = ribbon.material === "twine";
   return (
@@ -91,27 +115,6 @@ export function LifelikeRibbon({
         <stop offset="0.5" stopColor={tone(color, look.middle)} />
         <stop offset="0.84" stopColor={color} />
         <stop offset="1" stopColor={tone(color, look.edge * 1.2)} />
-      </linearGradient>
-      {/* Bands of light along the ribbon, drifting as the light moves. */}
-      <linearGradient
-        id={id("along")}
-        gradientUnits="userSpaceOnUse"
-        x1={0}
-        y1={0}
-        x2={72}
-        y2={0}
-        spreadMethod="repeat"
-      >
-        <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
-        <stop offset="0.3" stopColor="#ffffff" stopOpacity={look.sheen * 0.6} />
-        <stop offset="0.42" stopColor="#ffffff" stopOpacity={look.sheen} />
-        <stop offset="0.6" stopColor="#ffffff" stopOpacity="0" />
-        <stop
-          offset="0.8"
-          stopColor="#000000"
-          stopOpacity={look.sheen * 0.18}
-        />
-        <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
       </linearGradient>
       {/* Where the ribbon turns round the edge of the stack, it falls away. */}
       <linearGradient
@@ -151,13 +154,9 @@ export function LifelikeRibbon({
           )}
         </g>
       </g>
-      <clipPath id={id("band")}>
-        <rect {...band} y={band.y - 1.5} height={band.height + 3} />
-      </clipPath>
       <g
         transform={frame}
         opacity={look.opacity}
-        clipPath={`url(#${id("band")})`}
         mask={lace ? `url(#${id("lace")})` : undefined}
       >
         {twine ? (
@@ -165,22 +164,9 @@ export function LifelikeRibbon({
         ) : (
           <>
             <rect {...band} fill={`url(#${id("across")})`} />
-            {look.sheen > 0 ? (
-              <rect
-                x={-80}
-                y={band.y}
-                width={length + 160}
-                height={w}
-                fill={`url(#${id("along")})`}
-                style={{
-                  transform: `translateX(calc(var(${lightX}, 0) * 16px))`,
-                  transition: "transform 0.5s ease-out",
-                }}
-              />
-            ) : null}
+            <rect {...band} fill={`url(#${id("ends")})`} />
           </>
         )}
-        {twine ? null : <rect {...band} fill={`url(#${id("ends")})`} />}
         {ribbon.material === "satin" || ribbon.material === "velvet" ? (
           <g
             stroke={tone(color, ribbon.material === "velvet" ? 0.25 : -0.3)}
@@ -201,6 +187,109 @@ export function LifelikeRibbon({
           color={color}
           material={ribbon.material}
         />
+      ) : null}
+    </g>
+  );
+}
+
+/** Whether light glides along a ribbon: not on velvet's pile or on twine. */
+export function ribbonShines(ribbon: RibbonSpec): boolean {
+  return looks[ribbon.material].sheen >= 0.1 && ribbon.material !== "twine";
+}
+
+/**
+ * Bands of light gliding along a ribbon as the light moves: long and soft on
+ * satin, faint on chiffon and lace, none on velvet's pile or on twine.
+ */
+export function RibbonSheen({
+  ribbon,
+  bounds,
+  prefix,
+}: {
+  ribbon: RibbonSpec;
+  bounds: Box;
+  prefix: string;
+}) {
+  const look = looks[ribbon.material];
+  if (!ribbonShines(ribbon)) return null;
+  const id = (name: string) => `${prefix}-ribbon-${ribbon.id}-${name}`;
+  const { length, w, frame, band } = ribbonLayout(ribbon, bounds);
+  return (
+    <g transform={frame} opacity={look.opacity}>
+      <linearGradient
+        id={id("along")}
+        gradientUnits="userSpaceOnUse"
+        x1={0}
+        y1={0}
+        x2={72}
+        y2={0}
+        spreadMethod="repeat"
+      >
+        <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
+        <stop offset="0.3" stopColor="#ffffff" stopOpacity={look.sheen * 0.6} />
+        <stop offset="0.42" stopColor="#ffffff" stopOpacity={look.sheen} />
+        <stop offset="0.6" stopColor="#ffffff" stopOpacity="0" />
+        <stop
+          offset="0.8"
+          stopColor="#000000"
+          stopOpacity={look.sheen * 0.18}
+        />
+        <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+      </linearGradient>
+      <clipPath id={id("band")}>
+        <rect {...band} />
+      </clipPath>
+      <g clipPath={`url(#${id("band")})`}>
+        <rect
+          x={-80}
+          y={band.y}
+          width={length + 160}
+          height={w}
+          fill={`url(#${id("along")})`}
+          style={{
+            transform: `translateX(calc(var(${lightX}, 0) * 16px))`,
+            transition: "transform 0.5s ease-out",
+          }}
+        />
+      </g>
+    </g>
+  );
+}
+
+/**
+ * What a ribbon covers, in black, for masking out the light on what lies
+ * under it: its band and its bow.
+ */
+export function RibbonCover({
+  ribbon,
+  bounds,
+  band: withBand = true,
+}: {
+  ribbon: RibbonSpec;
+  bounds: Box;
+  /** Leave the band out, to cover only the bow. */
+  band?: boolean;
+}) {
+  const { w, centre, frame, band } = ribbonLayout(ribbon, bounds);
+  const twine = ribbon.material === "twine";
+  return (
+    <g fill="#000000">
+      {withBand ? (
+        <rect {...band} y={band.y - 0.2} height={w + 0.4} transform={frame} />
+      ) : null}
+      {ribbon.bow ? (
+        <g transform={`translate(${centre.x} ${centre.y})`}>
+          {twine ? (
+            <circle r={1.6} />
+          ) : (
+            <>
+              {bowShapes(w).map((d) => (
+                <path key={d} d={d} />
+              ))}
+              <ellipse rx={w * 0.48} ry={w * 0.56} />
+            </>
+          )}
+        </g>
       ) : null}
     </g>
   );
@@ -351,6 +440,21 @@ function TwineStrands({ length, paint }: { length: number; paint: string }) {
   );
 }
 
+/**
+ * A fabric bow's outline, round the knot at 0 0, for a ribbon `w` wide: its
+ * two tails, cut in a V, then its two loops.
+ */
+function bowShapes(w: number): string[] {
+  const loop = (side: number) =>
+    `M0 ${-w * 0.25}C${-side * w * 0.9} ${-w * 1.55} ${-side * w * 2.75} ${-w * 1.35} ${-side * w * 2.7} ${-w * 0.25}C${-side * w * 2.65} ${w * 0.65} ${-side * w * 1.05} ${w * 0.62} 0 ${w * 0.28}Z`;
+  return [
+    `M${-w * 0.25} ${w * 0.15}C${-w * 0.7} ${w * 1.1} ${-w * 1.1} ${w * 2} ${-w * 1.5} ${w * 2.9}L${-w * 1.02} ${w * 2.62}L${-w * 0.72} ${w * 3.08}C${-w * 0.42} ${w * 2.2} ${-w * 0.08} ${w * 1.1} ${w * 0.18} ${w * 0.3}Z`,
+    `M${w * 0.22} ${w * 0.15}C${w * 0.6} ${w * 1.05} ${w * 0.95} ${w * 1.9} ${w * 1.3} ${w * 2.95}L${w * 0.84} ${w * 2.66}L${w * 0.52} ${w * 3.1}C${w * 0.3} ${w * 2.1} ${w * 0.02} ${w * 1.1} ${-w * 0.2} ${w * 0.32}Z`,
+    loop(1),
+    loop(-1),
+  ];
+}
+
 /** A bow tied where the ribbon crosses the middle. */
 function Bow({
   id,
@@ -411,6 +515,8 @@ function Bow({
   const light = tone(color, Math.max(0.12, look.middle + 0.1));
   const dark = tone(color, -0.32);
   const inside = tone(color, -0.45);
+  const [tailLeft = "", tailRight = "", loop = ""] = bowShapes(w);
+  const tails = [tailLeft, tailRight];
   // Sheer ribbon is sheer in each layer, so it shows denser where loops and
   // tails cross.
   const sheer = look.opacity;
@@ -446,21 +552,13 @@ function Bow({
       </radialGradient>
       <g filter={`url(#${id}-shadow)`}>
         {/* Tails, cut in a V, falling to either side. */}
-        <path
-          d={`M${-w * 0.25} ${w * 0.15}C${-w * 0.7} ${w * 1.1} ${-w * 1.1} ${w * 2} ${-w * 1.5} ${w * 2.9}L${-w * 1.02} ${w * 2.62}L${-w * 0.72} ${w * 3.08}C${-w * 0.42} ${w * 2.2} ${-w * 0.08} ${w * 1.1} ${w * 0.18} ${w * 0.3}Z`}
-          fill={`url(#${id}-tail)`}
-        />
-        <path
-          d={`M${w * 0.22} ${w * 0.15}C${w * 0.6} ${w * 1.05} ${w * 0.95} ${w * 1.9} ${w * 1.3} ${w * 2.95}L${w * 0.84} ${w * 2.66}L${w * 0.52} ${w * 3.1}C${w * 0.3} ${w * 2.1} ${w * 0.02} ${w * 1.1} ${-w * 0.2} ${w * 0.32}Z`}
-          fill={`url(#${id}-tail)`}
-        />
+        {tails.map((d) => (
+          <path key={d} d={d} fill={`url(#${id}-tail)`} />
+        ))}
         {/* Loops, the inside of each in shade. */}
         {[-1, 1].map((side) => (
           <g key={side} transform={`scale(${side} 1)`}>
-            <path
-              d={`M0 ${-w * 0.25}C${-w * 0.9} ${-w * 1.55} ${-w * 2.75} ${-w * 1.35} ${-w * 2.7} ${-w * 0.25}C${-w * 2.65} ${w * 0.65} ${-w * 1.05} ${w * 0.62} 0 ${w * 0.28}Z`}
-              fill={`url(#${id}-loop)`}
-            />
+            <path d={loop} fill={`url(#${id}-loop)`} />
             <path
               d={`M${-w * 0.55} ${-w * 0.22}C${-w * 1.15} ${-w * 0.95} ${-w * 2.15} ${-w * 0.88} ${-w * 2.18} ${-w * 0.28}C${-w * 2.1} ${w * 0.18} ${-w * 1.2} ${w * 0.22} ${-w * 0.55} ${w * 0.04}Z`}
               fill={inside}

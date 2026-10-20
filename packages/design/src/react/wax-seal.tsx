@@ -68,7 +68,8 @@ export function sealOutline(id: string, radius: number): string {
 /**
  * A wax seal as it looks pressed on paper: a domed pool of wax, its rim
  * catching the light, the stamp's well sunk into it with the initials or
- * motif standing up in relief, and its shadow on the paper.
+ * motif standing up in relief, and its shadow on the paper. Its moving glint
+ * is drawn apart, by SealGlint.
  */
 export function LifelikeWaxSeal({
   seal,
@@ -93,10 +94,6 @@ export function LifelikeWaxSeal({
   const id = (name: string) => `${prefix}-seal-${seal.id}-${name}`;
   const outline = sealOutline(seal.id, r);
   const size = r * (initials.length > 3 ? 0.42 : 0.6);
-  const follow = (amount: number) => ({
-    transform: `translate(calc(var(${lightX}, 0) * ${amount}px), calc(var(${lightY}, 0) * ${amount}px))`,
-    transition: "transform 0.4s ease-out",
-  });
   return (
     <g transform={`translate(${seal.x} ${seal.y})`}>
       <filter
@@ -146,10 +143,6 @@ export function LifelikeWaxSeal({
         <stop offset="0.6" stopColor={shadow} stopOpacity="0" />
         <stop offset="1" stopColor={shadow} stopOpacity="0.3" />
       </linearGradient>
-      <radialGradient id={id("glint")}>
-        <stop offset="0" stopColor="#ffffff" stopOpacity="0.8" />
-        <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
-      </radialGradient>
 
       <path d={outline} filter={`url(#${id("shadow")})`} />
       <path d={outline} fill={`url(#${id("dome")})`} />
@@ -210,24 +203,57 @@ export function LifelikeWaxSeal({
           <text fill={mix(wax, "#ffffff", 0.06)}>{initials}</text>
         </g>
       ) : null}
-      <ellipse
-        cx={-r * 0.5}
-        cy={-r * 0.52}
-        rx={r * 0.3}
-        ry={r * 0.11}
-        transform={`rotate(-42 ${-r * 0.5} ${-r * 0.52})`}
-        fill={`url(#${id("glint")})`}
-        opacity={pale ? 0.45 : 0.6}
-        style={follow(r * 0.08)}
-      />
-      <circle
-        cx={r * 0.3}
-        cy={r * 0.62}
-        r={r * 0.05}
-        fill={`url(#${id("glint")})`}
-        opacity={0.35}
-        style={follow(r * 0.05)}
-      />
+    </g>
+  );
+}
+
+/**
+ * Where a seal's glossy wax catches the light: a long glint on its dome and
+ * a small one low on its rim, shifting as the light moves.
+ */
+export function SealGlint({
+  seal,
+  prefix,
+}: {
+  seal: WaxSealSpec;
+  prefix: string;
+}) {
+  const r = seal.diameter / 2;
+  const pale = luminance(waxColors[seal.color].color as Hex) > 0.45;
+  const id = `${prefix}-seal-${seal.id}-glint`;
+  const follow = (amount: number) => ({
+    transform: `translate(calc(var(${lightX}, 0) * ${amount}px), calc(var(${lightY}, 0) * ${amount}px))`,
+    transition: "transform 0.4s ease-out",
+  });
+  return (
+    <g transform={`translate(${seal.x} ${seal.y})`}>
+      <radialGradient id={id}>
+        <stop offset="0" stopColor="#ffffff" stopOpacity="0.8" />
+        <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+      </radialGradient>
+      <clipPath id={`${id}-wax`}>
+        <path d={sealOutline(seal.id, r)} />
+      </clipPath>
+      <g clipPath={`url(#${id}-wax)`}>
+        <ellipse
+          cx={-r * 0.5}
+          cy={-r * 0.52}
+          rx={r * 0.3}
+          ry={r * 0.11}
+          transform={`rotate(-42 ${-r * 0.5} ${-r * 0.52})`}
+          fill={`url(#${id})`}
+          opacity={pale ? 0.45 : 0.6}
+          style={follow(r * 0.08)}
+        />
+        <circle
+          cx={r * 0.3}
+          cy={r * 0.62}
+          r={r * 0.05}
+          fill={`url(#${id})`}
+          opacity={0.35}
+          style={follow(r * 0.05)}
+        />
+      </g>
     </g>
   );
 }
