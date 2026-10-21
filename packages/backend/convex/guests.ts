@@ -18,6 +18,7 @@ import {
   repliesClosed,
 } from "./invites/rules";
 import { hostNames } from "./invites/text";
+import { shopUrl } from "./orders/links";
 import {
   questionsValidator,
   replyInputValidator,
@@ -129,6 +130,12 @@ export const open = query({
         }),
         v.null(),
       ),
+      /**
+       * The shop's address, where the page links to the privacy policy:
+       * guests' own domain sends other paths to invitations. Null until
+       * SHOP_URL or SITE_URL is set.
+       */
+      shop: v.union(v.string(), v.null()),
     }),
   ),
   handler: async (ctx, args) => {
@@ -167,6 +174,7 @@ export const open = query({
             reply: household.reply ?? null,
           }
         : null,
+      shop: shopUrl(),
     };
   },
 });

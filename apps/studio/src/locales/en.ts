@@ -631,6 +631,10 @@ export default {
     emailPlaceholder: "name@example.com",
     sendCode: "Email me a code",
     sending: "Sending…",
+    legal:
+      "By continuing, you accept the {terms} and confirm you've read the {privacy}.",
+    terms: "terms and conditions",
+    privacy: "privacy policy",
     codeSent: "We've sent a code to {email}. It works for 15 minutes.",
     code: "Code from the email",
     signIn: "Sign in",
@@ -865,6 +869,10 @@ export default {
     remove: "Not coming",
     addPerson: "Add someone",
     allergies: "Allergies, or food you can't eat",
+    allergiesHint:
+      "Optional. What you write here goes only to {hosts}, so they can tell the venue, and you can remove it at any time.",
+    allergiesHintUnnamed:
+      "Optional. What you write here goes only to those who invited you, so they can tell the venue, and you can remove it at any time.",
     message: "A message for {hosts}",
     messageUnnamed: "A message",
     yourName: "Your name, or your family's",
@@ -889,6 +897,7 @@ export default {
     tooMany: "That's a lot of tries. Wait a few minutes, then try again.",
     invalid: "Check the names and the menus.",
     madeWith: "A digital invitation made with Jolene",
+    privacy: "Privacy",
     language: "Language",
     share: {
       wedding:
