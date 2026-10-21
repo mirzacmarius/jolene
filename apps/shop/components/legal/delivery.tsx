@@ -22,7 +22,10 @@ export function DeliveryEn() {
         <li>
           We email you the confirmation, with a link to your order’s page, and then the invoice.
         </li>
-        <li>When we hand your parcel to the courier, we email you its tracking link.</li>
+        <li>
+          When we hand your parcel to the courier, we email you the courier’s name and the tracking
+          link.
+        </li>
       </ol>
       <p>
         For a design made just for you, or an order you cannot find in the shop, email us at{" "}
@@ -46,8 +49,8 @@ export function DeliveryEn() {
       <h2>Invoices</h2>
       <ul>
         <li>
-          We issue an invoice for every paid order and email it to you as a PDF. We also send it to
-          the RO e-Factura system, as Romanian law requires.
+          We issue an invoice through SmartBill for every order once it is paid, and email it to you
+          as a PDF. We also send it to the RO e-Factura system, as Romanian law requires.
         </li>
         <li>
           For an invoice in a company’s name, tick that you are buying as a business on the payment
@@ -77,10 +80,11 @@ export function DeliveryEn() {
       <p>We deliver within Romania only. You choose delivery on the payment page:</p>
       <ul>
         <li>
-          <strong>Cargus courier, to your address:</strong> 25 lei, free for orders from 800 lei
-          (products and fees, before delivery and any discount code). The courier usually delivers
-          within 1–2 working days of collecting the parcel, and may call you on the number you gave
-          at checkout.
+          <strong>Courier, to your address:</strong> 25 lei, free for orders from 800 lei (products
+          and fees, before delivery and any discount code). We book the courier through Colete
+          Online, which picks the best one for each parcel, such as Cargus, Sameday, FAN Courier,
+          DPD or GLS. The courier usually delivers within 1–2 working days of collecting the parcel,
+          and may call you on the number you gave at checkout.
         </li>
         <li>
           <strong>Collection from our workshop:</strong> free, from {COMPANY.workshop}. We email you
@@ -112,7 +116,10 @@ export function DeliveryRo() {
         <li>Alegeți hârtia, opțiunile și cantitatea, apoi adăugați produsul în coș.</li>
         <li>Plătiți pe pagina Stripe, unde scrieți adresa și alegeți livrarea.</li>
         <li>Vă trimitem pe email confirmarea, cu linkul către pagina comenzii, apoi factura.</li>
-        <li>Când predăm coletul curierului, vă trimitem pe email linkul de urmărire.</li>
+        <li>
+          Când predăm coletul curierului, vă trimitem pe email numele curierului și linkul de
+          urmărire.
+        </li>
       </ol>
       <p>
         Pentru un design făcut doar pentru dumneavoastră sau pentru o comandă pe care nu o găsiți în
@@ -135,8 +142,8 @@ export function DeliveryRo() {
       <h2>Factura</h2>
       <ul>
         <li>
-          Emitem factura pentru fiecare comandă plătită și v-o trimitem pe email, în format PDF. O
-          transmitem și în sistemul RO e-Factura, cum cere legea.
+          Emitem factura prin SmartBill pentru fiecare comandă, după plată, și v-o trimitem pe
+          email, în format PDF. O transmitem și în sistemul RO e-Factura, cum cere legea.
         </li>
         <li>
           Pentru factură pe firmă, bifați pe pagina de plată că plătiți în numele unei firme și
@@ -163,10 +170,11 @@ export function DeliveryRo() {
       <p>Livrăm doar în România. Alegeți livrarea pe pagina de plată:</p>
       <ul>
         <li>
-          <strong>Curier Cargus, la adresa dumneavoastră:</strong> 25 de lei, gratuit pentru
-          comenzile de la 800 de lei (produsele și taxele, fără livrare și înainte de codurile de
-          reducere). Curierul livrează de obicei în 1–2 zile lucrătoare de la preluarea coletului și
-          vă poate suna la numărul dat la plată.
+          <strong>Curier, la adresa dumneavoastră:</strong> 25 de lei, gratuit pentru comenzile de
+          la 800 de lei (produsele și taxele, fără livrare și înainte de codurile de reducere).
+          Curierul îl comandăm prin Colete Online, care alege pentru fiecare colet unul dintre
+          curieri, precum Cargus, Sameday, FAN Courier, DPD sau GLS. Curierul livrează de obicei în
+          1–2 zile lucrătoare de la preluarea coletului și vă poate suna la numărul dat la plată.
         </li>
         <li>
           <strong>Ridicare din atelier:</strong> gratuit, din {COMPANY.workshop}. Vă scriem când
