@@ -1,7 +1,7 @@
 /**
  * A stand-in for Stripe's API in tests: it answers the Stripe SDK's calls
- * for Checkout Sessions and Stripe Tax's settings from memory, so a test can
- * pay for a session, or not.
+ * for Checkout Sessions, refunds and Stripe Tax's settings from memory, so a
+ * test can pay for a session, or not, and give money back.
  */
 
 type Session = Record<string, unknown> & {
@@ -25,6 +25,31 @@ interface Rate {
   display_name: string;
   fixed_amount: { amount: number; currency: string };
   metadata: Record<string, string>;
+}
+
+/** Money given back from a payment, as Stripe keeps it. */
+export interface Refund {
+  id: string;
+  object: "refund";
+  amount: number;
+  charge: string;
+  created: number;
+  currency: string;
+  metadata: Record<string, string>;
+  payment_intent: string;
+  reason: string | null;
+  status: "pending" | "requires_action" | "succeeded" | "failed" | "canceled";
+}
+
+/** The fields of an object the SDK sent as `name[field]=…`. */
+function hashOf(fields: URLSearchParams, name: string) {
+  return Object.fromEntries(
+    [...fields].flatMap(([key, value]) =>
+      key.startsWith(`${name}[`) && key.endsWith("]")
+        ? [[key.slice(name.length + 1, -1), value]]
+        : [],
+    ),
+  );
 }
 
 /** The shipping rates of a session's shipping options, as Stripe makes them. */
@@ -97,6 +122,26 @@ const notFound = (id: string) =>
     404,
   );
 
+/** Stripe's answer to a request it won't do, as a 400. */
+const refused = (
+  code: string,
+  message: string,
+  type = "invalid_request_error",
+) => json({ error: { type, code, message } }, 400);
+
+/** Stripe's answer to a restricted key without the permission asked for. */
+const forbidden = () =>
+  json(
+    {
+      error: {
+        type: "invalid_request_error",
+        message:
+          "The provided key does not have the required permissions for this endpoint.",
+      },
+    },
+    403,
+  );
+
 /** Replaces fetch with a Stripe that keeps Checkout Sessions in memory. */
 export function fakeStripe() {
   const sessions = new Map<string, Session>();
@@ -105,6 +150,86 @@ export function fakeStripe() {
   const requests: StripeRequest[] = [];
   /** Stripe Tax's settings: null when the key may not read them. */
   let taxSettings: Record<string, unknown> | null = taxNotSetUp;
+  /** What each payment took, by its payment intent. */
+  const payments = new Map<string, number>();
+  const refunds = new Map<string, Refund>();
+  /** The refund each idempotency key made, and what it was asked with. */
+  const keys = new Map<string, { asked: string; refund: Refund }>();
+  let refundsForbidden = false;
+
+  /** What a payment has given back, or is giving back. */
+  const refundedOf = (paymentIntent: string) =>
+    [...refunds.values()]
+      .filter(
+        (refund) =>
+          refund.payment_intent === paymentIntent &&
+          refund.status !== "failed" &&
+          refund.status !== "canceled",
+      )
+      .reduce((sum, refund) => sum + refund.amount, 0);
+
+  const makeRefund = (
+    paymentIntent: string,
+    amount: number,
+    metadata: Record<string, string>,
+    reason: string | null,
+  ) => {
+    const refund: Refund = {
+      id: `re_${crypto.randomUUID().replace(/-/g, "").slice(0, 24)}`,
+      object: "refund",
+      amount,
+      charge: `ch_${paymentIntent.slice(3)}`,
+      created: Math.floor(Date.now() / 1000),
+      currency: "ron",
+      metadata,
+      payment_intent: paymentIntent,
+      reason,
+      status: "succeeded",
+    };
+    refunds.set(refund.id, refund);
+    return refund;
+  };
+
+  /** Gives money back as Stripe does, once for each idempotency key. */
+  const refund = (fields: URLSearchParams, key: string | null) => {
+    const asked = [...fields].sort().join("&");
+    const earlier = key ? keys.get(key) : undefined;
+    if (earlier)
+      return earlier.asked === asked
+        ? json(earlier.refund)
+        : refused(
+            "idempotency_key_in_use",
+            `Keys for idempotent requests can only be used with the same parameters they were first used with. Try using a key other than '${key}' if you meant to execute a different request.`,
+            "idempotency_error",
+          );
+    const paymentIntent = fields.get("payment_intent") ?? "";
+    const paid = payments.get(paymentIntent);
+    if (paid === undefined)
+      return refused(
+        "resource_missing",
+        `No such payment_intent: '${paymentIntent}'`,
+      );
+    const left = paid - refundedOf(paymentIntent);
+    if (left === 0)
+      return refused(
+        "charge_already_refunded",
+        `Charge ch_${paymentIntent.slice(3)} has already been refunded.`,
+      );
+    const amount = Number(fields.get("amount") ?? left);
+    if (amount > left)
+      return refused(
+        "amount_too_large",
+        `Refund amount (${amount}) is greater than unrefunded amount on charge (${left})`,
+      );
+    const made = makeRefund(
+      paymentIntent,
+      amount,
+      hashOf(fields, "metadata"),
+      fields.get("reason"),
+    );
+    if (key) keys.set(key, { asked, refund: made });
+    return json(made);
+  };
 
   /** A session as the API returns it, its delivery's rate expanded if asked. */
   const view = (session: Session, expand: string[]) => {
@@ -134,12 +259,7 @@ export function fakeStripe() {
       status: "open",
       payment_status: "unpaid",
       client_reference_id: fields.get("client_reference_id"),
-      metadata: Object.fromEntries(
-        [...fields].flatMap(([key, value]) => {
-          const name = /^metadata\[(.+)\]$/.exec(key)?.[1];
-          return name ? [[name, value]] : [];
-        }),
-      ),
+      metadata: hashOf(fields, "metadata"),
       locale: fields.get("locale"),
       livemode: false,
       created: Math.floor(Date.now() / 1000),
@@ -198,18 +318,28 @@ export function fakeStripe() {
       .filter(([key]) => /^expand\[\d*\]$/.test(key))
       .map(([, value]) => value);
     if (url.pathname === "/v1/tax/settings" && method === "GET")
-      return taxSettings
-        ? json(taxSettings)
-        : json(
-            {
-              error: {
-                type: "invalid_request_error",
-                message:
-                  "The provided key does not have the required permissions for this endpoint.",
-              },
-            },
-            403,
-          );
+      return taxSettings ? json(taxSettings) : forbidden();
+    if (url.pathname === "/v1/refunds") {
+      if (refundsForbidden) return forbidden();
+      if (method === "POST")
+        return refund(
+          fields,
+          new Headers(init?.headers).get("idempotency-key"),
+        );
+      const paymentIntent = fields.get("payment_intent");
+      const data = [...refunds.values()]
+        .filter(
+          (made) => !paymentIntent || made.payment_intent === paymentIntent,
+        )
+        .reverse()
+        .slice(0, Number(fields.get("limit") ?? 10));
+      return json({
+        object: "list",
+        url: "/v1/refunds",
+        has_more: false,
+        data,
+      });
+    }
     const one = /^\/v1\/checkout\/sessions\/([^/]+)$/.exec(url.pathname);
     if (url.pathname === "/v1/checkout/sessions" && method === "POST")
       return json(create(fields));
@@ -240,6 +370,7 @@ export function fakeStripe() {
 
   return {
     sessions,
+    refunds,
     requests,
     /**
      * Sets Stripe Tax up, or up but without the preset tax code the shop's
@@ -352,7 +483,34 @@ export function fakeStripe() {
         amount_total: total,
         payment_intent: `pi_${id.slice(8, 20)}`,
       });
+      payments.set(`pi_${id.slice(8, 20)}`, total);
       return session;
+    },
+    /** A payment Stripe took, for an order a test recorded itself. */
+    charge(paymentIntent: string, amount: number) {
+      payments.set(paymentIntent, amount);
+    },
+    /** Gives back part of a payment as Stripe's dashboard does: no metadata. */
+    refundFromDashboard(paymentIntent: string, amount: number) {
+      return makeRefund(paymentIntent, amount, {}, "requested_by_customer");
+    },
+    /** Where a refund is now, as the card's bank answered. */
+    settle(id: string, status: Refund["status"]) {
+      const made = refunds.get(id);
+      if (!made) throw new Error(`No refund ${id}`);
+      made.status = status;
+      return made;
+    },
+    /** Takes Refunds' permission from the key, as a restricted key may lack it. */
+    forbidRefunds() {
+      refundsForbidden = true;
+    },
+    /** The refunds the shop asked Stripe to make. */
+    refundsAsked() {
+      return requests.filter(
+        (request) =>
+          request.method === "POST" && request.path === "/v1/refunds",
+      );
     },
     restore() {
       globalThis.fetch = realFetch;

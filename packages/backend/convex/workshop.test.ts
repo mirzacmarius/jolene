@@ -1,6 +1,7 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { suites } from "@jolene/suites";
 import { testConvex } from "../test/convex";
+import { fakeStripe } from "../test/stripe";
 import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { orderName, orderNumber } from "./orders/format";
@@ -186,6 +187,9 @@ describe("the workshop", () => {
       await expect(
         visitor.mutation(api.workshop.addNote, { number: 1001, note: "Hi" }),
       ).rejects.toThrow("workshop-only");
+      await expect(
+        visitor.action(api.workshop.refund, { number: 1001, amount: 100 }),
+      ).rejects.toThrow("workshop-only");
     }
   });
 
@@ -229,6 +233,7 @@ describe("the workshop", () => {
       ],
       total: 100_000,
       status: "paid",
+      refunded: 0,
     });
     // Picked up from the workshop, wherever the couple lives.
     expect(first.page[1]).toMatchObject({ city: "Cluj-Napoca", pickup: true });
@@ -262,6 +267,8 @@ describe("the workshop", () => {
       status: "paid",
       statuses: ["paid", "making", "sent", "done", "cancelled"],
       history: [],
+      refunded: 0,
+      refunds: [],
     });
     const [invitation, menu] = shown?.lines ?? [];
     expect(invitation).toMatchObject({
@@ -483,5 +490,135 @@ describe("an order's status", () => {
       await expect(
         workshop.mutation(api.workshop.addNote, { number: 1001, note }),
       ).rejects.toThrow("invalid-input");
+  });
+});
+
+describe("a refund", () => {
+  let stripe: ReturnType<typeof fakeStripe> | undefined;
+
+  beforeEach(() => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_jolene";
+  });
+
+  afterEach(() => {
+    stripe?.restore();
+    stripe = undefined;
+    Reflect.deleteProperty(process.env, "STRIPE_SECRET_KEY");
+  });
+
+  /** An order of 1.000 lei the couple paid through Stripe. */
+  async function paidOrder() {
+    const setup = await setUp();
+    await order(setup.t, 1001, lines(setup.proofId));
+    stripe = fakeStripe();
+    stripe.charge("pi_1001", 100_000);
+    return { ...setup, stripe };
+  }
+
+  test("gives back part of a payment, then the rest, and no more", async () => {
+    const { workshop, stripe } = await paidOrder();
+    await workshop.action(api.workshop.refund, {
+      number: 1001,
+      amount: 30_000,
+    });
+    const [asked] = stripe.refundsAsked();
+    expect(Object.fromEntries(asked?.fields ?? [])).toEqual({
+      payment_intent: "pi_1001",
+      amount: "30000",
+      reason: "requested_by_customer",
+      "metadata[order]": "J1001",
+      "metadata[by]": "atelier@jolene.ro",
+    });
+    expect(asked?.headers.get("idempotency-key")).toStartWith("refund-");
+    expect(
+      await workshop.query(api.workshop.order, { number: 1001 }),
+    ).toMatchObject({
+      refunded: 30_000,
+      refunds: [
+        {
+          id: expect.any(String),
+          at: expect.any(Number),
+          amount: 30_000,
+          status: "succeeded",
+          by: "atelier@jolene.ro",
+        },
+      ],
+    });
+    // More than is left, nothing, or a fraction of a ban.
+    for (const amount of [70_001, 0, -100, 10.5])
+      await expect(
+        workshop.action(api.workshop.refund, { number: 1001, amount }),
+      ).rejects.toThrow("invalid-input");
+    await workshop.action(api.workshop.refund, {
+      number: 1001,
+      amount: 70_000,
+    });
+    const shown = await workshop.query(api.workshop.order, { number: 1001 });
+    expect(shown?.refunded).toBe(100_000);
+    expect(shown?.refunds.map((refund) => refund.amount)).toEqual([
+      70_000, 30_000,
+    ]);
+    const listed = await workshop.query(api.workshop.orders, {
+      paginationOpts: { numItems: 1, cursor: null },
+    });
+    expect(listed.page[0]?.refunded).toBe(100_000);
+    await expect(
+      workshop.action(api.workshop.refund, { number: 1001, amount: 1 }),
+    ).rejects.toThrow("invalid-input");
+    await expect(
+      workshop.action(api.workshop.refund, { number: 1002, amount: 1 }),
+    ).rejects.toThrow("not-found");
+    expect(stripe.refundsAsked()).toHaveLength(2);
+  });
+
+  test("gives back once when the button is pressed twice", async () => {
+    const { workshop, stripe } = await paidOrder();
+    const press = () =>
+      workshop.action(api.workshop.refund, { number: 1001, amount: 30_000 });
+    await Promise.all([press(), press()]);
+    expect(stripe.refundsAsked()).toHaveLength(2);
+    expect(stripe.refunds.size).toBe(1);
+    const shown = await workshop.query(api.workshop.order, { number: 1001 });
+    expect(shown?.refunded).toBe(30_000);
+    expect(shown?.refunds).toHaveLength(1);
+  });
+
+  test("tells a colleague who gives the same back at once that it's done", async () => {
+    const { workshop, signIn, stripe } = await paidOrder();
+    const marius = await signIn({
+      email: "marius@example.com",
+      emailVerificationTime: 1,
+    });
+    const [first, second] = await Promise.allSettled(
+      [workshop, marius].map((account) =>
+        account.action(api.workshop.refund, { number: 1001, amount: 30_000 }),
+      ),
+    );
+    expect(first?.status).toBe("fulfilled");
+    expect(second).toMatchObject({
+      status: "rejected",
+      reason: { data: "same-refund" },
+    });
+    expect(stripe.refunds.size).toBe(1);
+  });
+
+  test("says when Stripe's key may not refund, or Stripe won't", async () => {
+    const { t, workshop, proofId, stripe } = await paidOrder();
+    // Stripe doesn't know this payment, as for a test order on a live key.
+    await order(t, 1002, lines(proofId));
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    await expect(
+      workshop.action(api.workshop.refund, { number: 1002, amount: 100 }),
+    ).rejects.toThrow("refund-refused");
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("J1002"));
+    warn.mockRestore();
+    stripe.forbidRefunds();
+    await expect(
+      workshop.action(api.workshop.refund, { number: 1001, amount: 100 }),
+    ).rejects.toThrow("refund-not-allowed");
+    for (const number of [1001, 1002])
+      expect(
+        await workshop.query(api.workshop.order, { number }),
+      ).toMatchObject({ refunded: 0, refunds: [] });
   });
 });
