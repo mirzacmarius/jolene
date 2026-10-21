@@ -24,7 +24,7 @@ bun run typecheck
 
 ## Deploying
 
-The `jolene` Vercel project builds this folder with `packages/backend/scripts/vercel-build-shop.sh`, which deploys the Convex functions and seeds the catalog before building. It needs `CONVEX_DEPLOY_KEY`: the production key for Production, the preview key for Preview, as the studio's project has.
+The `jolene` Vercel project builds this folder with `packages/backend/scripts/vercel-build-shop.sh`, which deploys the Convex functions and seeds the catalog before building. It needs `CONVEX_DEPLOY_KEY`: the production key for Production, the preview key for Preview, as the studio's project has. With any other kind of key, such as a development deployment's, the build stops rather than build the shop against another deployment than the studio's.
 
 ## License
 

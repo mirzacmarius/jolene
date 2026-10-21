@@ -5,6 +5,17 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# `convex deploy` and `convex run` go wherever CONVEX_DEPLOY_KEY points, even
+# past --preview-name, so a development key would quietly build the shop
+# against another deployment than the studio's.
+case "${VERCEL_ENV:-}:${CONVEX_DEPLOY_KEY:-}" in
+  production:prod:* | preview:preview:*) ;;
+  *)
+    echo "CONVEX_DEPLOY_KEY must be a Convex ${VERCEL_ENV:-production or preview} deploy key, as jolene-studio's is." >&2
+    exit 1
+    ;;
+esac
+
 # Both projects build every push and deploy the same functions to the same
 # deployment; a deploy that fails, such as one meeting the studio's, is tried
 # again.
