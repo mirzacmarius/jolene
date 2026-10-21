@@ -33,6 +33,7 @@ import { moved } from "@/lib/lists";
 import { refreshShop } from "@/lib/shop";
 import { NotAPhoto, webPhoto } from "@/lib/web-photo";
 import { useCurrentLocale, useI18n } from "@/locales/client";
+import { useAsks } from "./asks";
 import { useFormats } from "./formats";
 import { IconButton } from "./icon-button";
 
@@ -972,25 +973,11 @@ function LineOptionsField({
   onChange: (change: (chosen: LineOption[]) => LineOption[]) => void;
 }) {
   const t = useI18n();
-  const format = useFormats();
+  const asks = useAsks();
   const id = useId();
   const [adding, setAdding] = useState("");
   const asked = new Set(chosen.map((option) => option.key));
   const full = chosen.length >= MOST_LINE_OPTIONS;
-
-  /** What an option asks: its choices and what each adds, or what's written. */
-  const asks = (option: LineOption) =>
-    option.kind === "select"
-      ? option.choices
-          .map((choice) =>
-            choice.price
-              ? `${choice.label} (+${format.lei(choice.price)})`
-              : choice.label,
-          )
-          .join(", ")
-      : [t(`workshop.catalog.kinds.${option.kind}`), option.hint]
-          .filter(Boolean)
-          .join(" · ");
 
   const add = () => {
     const option = all?.find((other) => other.handle === adding);
@@ -1017,7 +1004,20 @@ function LineOptionsField({
             <li key={option.handle} className="flex items-start gap-3 p-3">
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <p className="text-sm font-medium">
-                  {option.label}
+                  {/* Its choices and prices are the shop's, changed on its own page. */}
+                  <a
+                    href={`/studio/atelier/optiuni/${encodeURIComponent(option.handle)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={t("workshop.catalog.lineOptionPage")}
+                    className="inline-flex items-center gap-1 underline-offset-4 hover:underline"
+                  >
+                    {option.label}
+                    <ExternalLink
+                      className="size-3 text-muted-foreground"
+                      aria-hidden
+                    />
+                  </a>
                   {option.required ? (
                     <Badge variant="outline" className="ml-2 align-middle">
                       {t("workshop.catalog.required")}

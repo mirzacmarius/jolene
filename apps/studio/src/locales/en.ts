@@ -515,6 +515,7 @@ export default {
       orders: "Orders",
       products: "Products",
       categories: "Categories",
+      lineOptions: "Order options",
       settings: "Settings",
     },
     catalog: {
@@ -566,6 +567,7 @@ export default {
       noLineOptions: "None: the couple only chooses the paper and quantity.",
       required: "required",
       kinds: {
+        select: "A choice from a list",
         text: "A line the couple writes",
         textarea: "A text of several lines the couple writes",
         email: "An email address",
@@ -573,6 +575,7 @@ export default {
       lineOptionUp: "Move “{label}” up",
       lineOptionDown: "Move “{label}” down",
       lineOptionRemove: "Remove “{label}”",
+      lineOptionPage: "Its choices and prices, in a new tab",
       addLineOption: "Add an order option",
       chooseLineOption: "Choose an option…",
       add: "Add",
@@ -643,6 +646,65 @@ export default {
       editedBy: "Last changed by {email} on {time}.",
       asSeeded:
         "As they were on jolene.ro: no one on the team has changed them.",
+    },
+    lineOptions: {
+      title: "Order options",
+      lead: "What couples choose or write when they order, besides the paper. An option is the same on every product that asks it, so its name, choices and prices change here, for all of them at once.",
+      edited: "Changed by the team",
+      askedBy: "Products asking it: {count}",
+      askedByHint: "A change here shows on all of them.",
+      noProducts: "No product asks it now.",
+      otherProducts: "The others: {count}",
+      offSale: "(off sale)",
+      allOptions: "All order options",
+      notFound: "There's no such order option.",
+      name: "Name",
+      hint: "Line under the name",
+      hintHint:
+        "The shop shows it under the option, such as “Textul ce va apărea pe plic.” Empty when not needed.",
+      required: "Required",
+      requiredSelect:
+        "The couple must choose one before adding the product to the cart.",
+      optionalSelect:
+        "The shop starts on the first choice that adds nothing; when there's none, the couple can pick “Nu doresc” (no, thanks).",
+      requiredWritten:
+        "The couple must fill it in before adding the product to the cart.",
+      optionalWritten: "The couple can leave it empty.",
+      choices: "Choices",
+      choicesHint:
+        "In the order the shop shows them, each with what it adds to the price of one piece. A new price applies to carts already filled, too.",
+      choiceName: "Name of choice {number}",
+      choicePrice: "What choice {number} adds, in lei each",
+      up: "Move choice {number} up",
+      down: "Move choice {number} down",
+      remove: "Remove choice {number}",
+      add: "Add a choice",
+      addPlaceholder: "Its name",
+      addHint: "It starts at 0 lei; then write what it adds.",
+      tooMany: "An option has {count} choices at most.",
+      lostChoices:
+        "You renamed or removed choices. A cart where one of them is chosen will ask the couple to remove the product and add it again.",
+      nowRequired:
+        "A cart where the option has no answer will ask the couple to remove the product and add it again.",
+      paidOrders: "Paid orders stay as they are.",
+      sharing: "Same answer",
+      sharingHint:
+        "These options ask the same, with other choices or prices. A product asks only one of them.",
+      changed:
+        "Someone else on the team changed the option meanwhile. The page now shows their version.",
+      changedMeanwhile:
+        "Someone else on the team changed the option while you were editing it. See their version, then make again the changes still needed.",
+      showTheirs: "See their version",
+      editedBy: "Last changed by {email} on {time}.",
+      asSeeded: "As it was on jolene.ro: no one on the team has changed it.",
+      problems: {
+        name: "Write the option's name, 100 characters at most.",
+        hint: "300 characters at most.",
+        empty: "Write the choice's name.",
+        long: "100 characters at most.",
+        twice: "Two choices can't have the same name.",
+        price: "Write the amount in lei, such as 1.50, or 0.",
+      },
     },
     print: {
       make: "Print file",

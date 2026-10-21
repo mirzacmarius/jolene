@@ -27,6 +27,8 @@ export const errors = {
   productChanged: "product-changed",
   /** Someone else changed the categories first: the page shows their list. */
   categoriesChanged: "categories-changed",
+  /** Someone else changed the order option first: the page shows theirs. */
+  lineOptionChanged: "line-option-changed",
   /**
    * A cart line asking what its product doesn't: an option it doesn't have,
    * a value or choice it doesn't offer, a quantity out of range, a fee it

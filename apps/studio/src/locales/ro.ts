@@ -516,6 +516,7 @@ export default {
       orders: "Comenzi",
       products: "Produse",
       categories: "Categorii",
+      lineOptions: "Opțiuni",
       settings: "Setări",
     },
     catalog: {
@@ -567,6 +568,7 @@ export default {
       noLineOptions: "Niciuna: cuplul alege doar hârtia și cantitatea.",
       required: "obligatorie",
       kinds: {
+        select: "O alegere dintr-o listă",
         text: "Un rând scris de cuplu",
         textarea: "Un text de mai multe rânduri, scris de cuplu",
         email: "O adresă de email",
@@ -574,6 +576,7 @@ export default {
       lineOptionUp: "Mutați „{label}” mai sus",
       lineOptionDown: "Mutați „{label}” mai jos",
       lineOptionRemove: "Scoateți „{label}”",
+      lineOptionPage: "Alegerile și prețurile ei, într-o filă nouă",
       addLineOption: "Adăugați o opțiune",
       chooseLineOption: "Alegeți o opțiune…",
       add: "Adăugați",
@@ -645,6 +648,65 @@ export default {
       editedBy: "Schimbate ultima dată de {email} pe {time}.",
       asSeeded:
         "Așa cum erau pe jolene.ro: nimeni din echipă nu le-a schimbat.",
+    },
+    lineOptions: {
+      title: "Opțiuni de comandă",
+      lead: "Ce aleg sau scriu cuplurile când comandă, pe lângă hârtie. O opțiune e aceeași la toate produsele care o cer, așa că numele, alegerile și prețurile ei se schimbă aici, pentru toate odată.",
+      edited: "Schimbată de echipă",
+      askedBy: "Produse care o cer: {count}",
+      askedByHint: "O schimbare aici se vede la toate.",
+      noProducts: "Niciun produs n-o cere acum.",
+      otherProducts: "Celelalte: {count}",
+      offSale: "(scos de la vânzare)",
+      allOptions: "Toate opțiunile",
+      notFound: "Nu există opțiunea aceasta.",
+      name: "Numele",
+      hint: "Rândul de sub nume",
+      hintHint:
+        "Magazinul îl arată sub opțiune, de exemplu „Textul ce va apărea pe plic.” Gol dacă nu e nevoie.",
+      required: "Obligatorie",
+      requiredSelect:
+        "Cuplul trebuie să aleagă una înainte să adauge produsul în coș.",
+      optionalSelect:
+        "Magazinul pornește de la prima alegere care nu costă nimic; dacă nu e niciuna, cuplul poate alege „Nu doresc”.",
+      requiredWritten:
+        "Cuplul trebuie să o completeze înainte să adauge produsul în coș.",
+      optionalWritten: "Cuplul o poate lăsa necompletată.",
+      choices: "Alegeri",
+      choicesHint:
+        "În ordinea în care le arată magazinul, fiecare cu cât adaugă la prețul unei bucăți. Un preț nou se aplică și coșurilor de acum.",
+      choiceName: "Numele alegerii {number}",
+      choicePrice: "Cât adaugă alegerea {number}, în lei / buc.",
+      up: "Mutați alegerea {number} mai sus",
+      down: "Mutați alegerea {number} mai jos",
+      remove: "Scoateți alegerea {number}",
+      add: "Adăugați o alegere",
+      addPlaceholder: "Numele ei",
+      addHint: "Pornește de la 0 lei; scrieți apoi cât adaugă.",
+      tooMany: "O opțiune are cel mult {count} de alegeri.",
+      lostChoices:
+        "Ați redenumit sau scos alegeri. Un coș în care e aleasă una dintre ele îi va cere cuplului să scoată produsul și să-l adauge din nou.",
+      nowRequired:
+        "Un coș în care opțiunea n-are răspuns îi va cere cuplului să scoată produsul și să-l adauge din nou.",
+      paidOrders: "Comenzile plătite rămân cum sunt.",
+      sharing: "Același răspuns",
+      sharingHint:
+        "Opțiunile acestea întreabă același lucru, cu alte alegeri sau prețuri. Un produs o cere doar pe una dintre ele.",
+      changed:
+        "Altcineva din echipă a schimbat opțiunea între timp. Pagina arată acum varianta lor.",
+      changedMeanwhile:
+        "Altcineva din echipă a schimbat opțiunea cât o editați. Vedeți varianta lor, apoi refaceți schimbările de care mai e nevoie.",
+      showTheirs: "Vedeți varianta lor",
+      editedBy: "Schimbată ultima dată de {email} pe {time}.",
+      asSeeded: "Așa cum era pe jolene.ro: nimeni din echipă n-a schimbat-o.",
+      problems: {
+        name: "Scrieți numele opțiunii, cel mult 100 de caractere.",
+        hint: "Cel mult 300 de caractere.",
+        empty: "Scrieți numele alegerii.",
+        long: "Cel mult 100 de caractere.",
+        twice: "Două alegeri nu pot avea același nume.",
+        price: "Scrieți suma în lei, de exemplu 1,50, sau 0.",
+      },
     },
     print: {
       make: "Fișier de tipar",
