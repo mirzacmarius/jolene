@@ -1,3 +1,5 @@
+import { fees } from "@jolene/products/catalog";
+import { catalog } from "@jolene/products/data";
 import { suites } from "@jolene/suites";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
@@ -16,11 +18,19 @@ function contentTypeOf(path: string) {
   return type;
 }
 
+/** A price in lei, as the catalog lists it, in whole bani, as Convex keeps it. */
+const bani = (lei: number) => Math.round(lei * 100);
+
+/** How many products one mutation brings up to date. */
+const PRODUCTS_PER_MUTATION = 100;
+
 /**
  * Gives a deployment Jolene's collections (@jolene/suites) in the order the
- * gallery shows them, with the artwork they draw (`bun run seed`). The
- * artwork ships with the studio, so nothing is uploaded. Running it again
- * brings every collection up to date with the code.
+ * gallery shows them, with the artwork they draw, and the shop's catalog
+ * (@jolene/products) as jolene.ro had it (`bun run seed`). The artwork ships
+ * with the studio and the photos stay on jolene.ro for now, so nothing is
+ * uploaded. Running it again brings every collection up to date with the
+ * code, and every product nobody has changed in Convex.
  */
 export const seed = internalAction({
   args: {},
@@ -45,6 +55,51 @@ export const seed = internalAction({
       });
     }
     console.info(`Seeded ${suites.map((suite) => suite.slug).join(", ")}`);
+
+    await ctx.runMutation(internal.shop.load.shelves, {
+      categories: catalog.categories,
+      lineOptions: catalog.lineOptions.map(({ choices, ...option }) => ({
+        ...option,
+        choices: choices.map((choice) => ({
+          ...choice,
+          price: bani(choice.price),
+        })),
+      })),
+      fees: Object.entries(fees).map(([key, fee]) => ({
+        key,
+        label: fee.label,
+        price: bani(fee.price),
+      })),
+    });
+    const products = catalog.products.map(
+      (
+        { woo: _, price, compareAtPrice, options, images, ...product },
+        position,
+      ) => ({
+        ...product,
+        price: bani(price),
+        ...(compareAtPrice === undefined
+          ? {}
+          : { compareAtPrice: bani(compareAtPrice) }),
+        options: options.map(({ name, values }) => ({
+          name,
+          values: values.map((value) => ({
+            name: value.name,
+            surcharge: bani(value.surcharge),
+          })),
+        })),
+        images: images.map(({ url, alt }) => ({ source: url, alt })),
+        position,
+      }),
+    );
+    for (let start = 0; start < products.length; start += PRODUCTS_PER_MUTATION)
+      await ctx.runMutation(internal.shop.load.products, {
+        products: products.slice(start, start + PRODUCTS_PER_MUTATION),
+      });
+    await ctx.runMutation(internal.shop.load.retire, {
+      handles: products.map((product) => product.handle),
+    });
+    console.info(`Seeded the shop's ${products.length} products`);
     return null;
   },
 });

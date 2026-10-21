@@ -12,7 +12,7 @@ _Avoid_: Set, line, theme (in code, "theme" is a design's palette and type)
 
 **Template** (ro: șablon):
 One of Jolene's designs for one item of a collection, which a couple starts their own design from. Visitors never see the word; they see the item.
-_Avoid_: Model, product (the product is what Shopify sells)
+_Avoid_: Model, product (the product is what the shop sells)
 
 **Item** (code: product kind):
 What a design makes: an invitation (ro: invitație), save the date, RSVP card (card de confirmare), menu (meniu), place card, table number (număr de masă), welcome sign (tablou de întâmpinare), seating chart (tablou de așezare), money envelope (plic de bani), favour tag (etichetă pentru mărturii), thank-you card (card de mulțumire) or bridesmaid and groomsman card.
@@ -143,7 +143,7 @@ Small keepsakes given to guests, sold in the shop alongside the stationery.
 _Avoid_: Gifts, souvenirs
 
 **Category** (ro: categorie):
-A shelf of the shop, such as Invitații nuntă or Mărturii, as jolene.ro had them. Shopify calls it a collection.
+A shelf of the shop, such as Invitații nuntă or Mărturii, as jolene.ro had them. Its address in the shop still says `/collections/`, as the template had it.
 _Avoid_: Collection (a family of designs)
 
 **Order option** (ro: opțiune; code: line option):

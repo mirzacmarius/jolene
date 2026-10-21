@@ -2,6 +2,8 @@
 
 jolene.ro's catalog, moving from WooCommerce to the Shopify store: 456 products with their photos, prices, categories, order options, minimum orders and fees. `catalog/` holds it as lifted from jolene.ro, and the sync puts it in the store. From then on Shopify's admin is where it changes; the sync only adds what the store lacks, unless it's told to overwrite.
 
+Shopify is leaving ([ADR 0015](../../docs/adr/0015-jolene-sells-through-its-own-checkout.md)): the studio's seed (`bun run seed` in `packages/backend`) also loads the catalog into Convex, with its prices in bani, where the shop will read it once its pages move off Shopify. The seed brings in the catalog's changes on every build, except to products Jolene's team has changed in Convex.
+
 ## Lifting
 
 ```sh

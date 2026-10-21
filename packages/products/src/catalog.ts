@@ -1,7 +1,8 @@
 /**
  * jolene.ro's catalog as the shop sells it, lifted from the WooCommerce
  * shop by scripts/lift.ts and written to catalog/. Shopify gets it through
- * scripts/sync.ts; after that, Shopify's admin is where it changes.
+ * scripts/sync.ts; after that, Shopify's admin is where it changes. The
+ * studio's seed loads it into Convex too (ADR 0015), which replaces Shopify.
  */
 
 /** A product the shop sells, under the name it had on jolene.ro. */
@@ -83,15 +84,27 @@ export type Catalog = {
 
 /**
  * The one-off charges jolene.ro's descriptions mention, each a variant of a
- * product of its own that the shop adds at quantity one.
+ * product of its own that the shop adds at quantity one, and what an order
+ * calls it.
  */
 export const fees = {
-  "diacritice-50": { product: "diacritice", variant: "50 lei", price: 50 },
-  "diacritice-10": { product: "diacritice", variant: "10 lei", price: 10 },
+  "diacritice-50": {
+    product: "diacritice",
+    variant: "50 lei",
+    price: 50,
+    label: "Diacritice",
+  },
+  "diacritice-10": {
+    product: "diacritice",
+    variant: "10 lei",
+    price: 10,
+    label: "Diacritice",
+  },
   "comanda-urgenta": {
     product: "comanda-urgenta",
     variant: "200 lei",
     price: 200,
+    label: "Comandă urgentă",
   },
 } as const;
 

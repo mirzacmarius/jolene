@@ -8,6 +8,12 @@ import {
   aiStatusValidator,
   aiUsageValidator,
 } from "./ai/validators";
+import {
+  choiceValidator,
+  lineOptionKindValidator,
+  productImageValidator,
+  productOptionValidator,
+} from "./shop/validators";
 import { toneValidator } from "./simple/tones";
 import {
   authorValidator,
@@ -286,4 +292,105 @@ export default defineSchema({
     image: v.optional(v.id("_storage")),
     approvedAt: v.number(),
   }).index("by_designId", ["designId"]),
+
+  /**
+   * A product the shop sells, under the name it had on jolene.ro (ADR 0015).
+   * Its prices, like every price the shop keeps, are in bani.
+   */
+  products: defineTable({
+    handle: v.string(),
+    title: v.string(),
+    descriptionHtml: v.string(),
+    /** Each one, before its paper's surcharge and its paid choices. */
+    price: v.number(),
+    /** The price before a sale, while the product is on sale. */
+    compareAtPrice: v.optional(v.number()),
+    /** What it's made of, such as its paper. */
+    options: v.array(productOptionValidator),
+    /** The handles of the order options its line asks, in order. */
+    lineOptions: v.array(v.string()),
+    /** The handles of its categories, their parents included. */
+    categories: v.array(v.string()),
+    tags: v.array(v.string()),
+    images: v.array(productImageValidator),
+    /** The smallest quantity Jolene takes an order for. */
+    minQuantity: v.optional(v.number()),
+    /** The keys of the fees an order of it can carry, such as diacritics. */
+    fees: v.array(v.string()),
+    /** Its place in the shop's lists, where jolene.ro had it. */
+    position: v.number(),
+    /** On sale: the shop shows it and sells it. */
+    published: v.boolean(),
+    /**
+     * When Jolene's team last changed it: from then on the seed leaves it
+     * as they made it.
+     */
+    editedAt: v.optional(v.number()),
+  })
+    .index("by_handle", ["handle"])
+    .index("by_published_and_position", ["published", "position"])
+    .index("by_published_and_price", ["published", "price"])
+    .searchIndex("search_title", {
+      searchField: "title",
+      filterFields: ["published"],
+    }),
+
+  /**
+   * A product's place on one of its categories' shelves, so a category lists
+   * its products in order without reading the others.
+   */
+  productCategories: defineTable({
+    category: v.string(),
+    productId: v.id("products"),
+    /** The product's own, kept in step with it by `shelve`. */
+    published: v.boolean(),
+    position: v.number(),
+    price: v.number(),
+  })
+    .index("by_category_and_published_and_position", [
+      "category",
+      "published",
+      "position",
+    ])
+    .index("by_category_and_published_and_price", [
+      "category",
+      "published",
+      "price",
+    ])
+    .index("by_productId", ["productId"]),
+
+  /** A shelf of the shop, one of jolene.ro's categories. */
+  categories: defineTable({
+    handle: v.string(),
+    title: v.string(),
+    position: v.number(),
+    editedAt: v.optional(v.number()),
+  })
+    .index("by_handle", ["handle"])
+    .index("by_position", ["position"]),
+
+  /**
+   * What a couple chooses or writes with a line, apart from its paper (ADR
+   * 0008), shared by the products that ask the same.
+   */
+  lineOptions: defineTable({
+    handle: v.string(),
+    /** What it asks, the same wherever it's asked: the shop fills it in from a design by it. */
+    key: v.string(),
+    label: v.string(),
+    hint: v.optional(v.string()),
+    kind: lineOptionKindValidator,
+    required: v.boolean(),
+    /** A select's choices, in order. */
+    choices: v.array(choiceValidator),
+    editedAt: v.optional(v.number()),
+  }).index("by_handle", ["handle"]),
+
+  /** A one-off charge on an order, such as for diacritics or an urgent order. */
+  fees: defineTable({
+    key: v.string(),
+    label: v.string(),
+    price: v.number(),
+    editedAt: v.optional(v.number()),
+  }).index("by_key", ["key"]),
 });

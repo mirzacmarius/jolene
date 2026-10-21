@@ -5,7 +5,9 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./catalog": "./src/catalog.ts",
+    "./data": "./src/data.ts"
   },
   "scripts": {
     "lift": "bun scripts/lift.ts",
