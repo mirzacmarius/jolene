@@ -74,4 +74,8 @@ export const errors = {
   workshopOnly: "workshop-only",
   /** Someone else changed the order's status first: the page shows theirs. */
   orderMoved: "order-moved",
+  /** Booking couriers isn't set up on this deployment yet (no Colete Online keys). */
+  courierUnavailable: "courier-unavailable",
+  /** The order's courier is booked already, or being booked. */
+  shipmentBooked: "shipment-booked",
 } as const;

@@ -25,6 +25,7 @@ import {
   invoiceValidator,
   orderFeeValidator,
   orderLineValidator,
+  shipmentValidator,
 } from "./orders/validators";
 import {
   answerValidator,
@@ -530,6 +531,8 @@ export default defineSchema({
     invoice: v.optional(invoiceValidator),
     /** The invoice reversing it, once the order is refunded. */
     creditNote: v.optional(invoiceValidator),
+    /** The courier taking it to the couple, once the workshop booked one. */
+    shipment: v.optional(shipmentValidator),
   })
     .index("by_number", ["number"])
     .index("by_token", ["token"])
