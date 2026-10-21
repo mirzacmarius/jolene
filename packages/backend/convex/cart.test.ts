@@ -1,19 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { digitalInvitation } from "@jolene/products/digital-invitation";
-import { Glob } from "bun";
-import { convexTest } from "convex-test";
+import { testConvex } from "../test/convex";
 import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import schema from "./schema";
 import { errors } from "./utils/errors";
-
-// convex-test loads the functions from this map, as Vite's import.meta.glob
-// would build it.
-const modules = Object.fromEntries(
-  [...new Glob("**/*.ts").scanSync(import.meta.dir)]
-    .filter((path) => !path.endsWith(".test.ts"))
-    .map((path) => [`./${path}`, () => import(`./${path}`)]),
-);
 
 const token = "a".repeat(40);
 const otherToken = "b".repeat(40);
@@ -33,7 +23,7 @@ const roses = {
 };
 
 async function seeded() {
-  const t = convexTest(schema, modules);
+  const t = testConvex();
   await t.action(internal.init.seed, {});
   return t;
 }
@@ -364,5 +354,117 @@ describe("the digital invitation", () => {
     const [line] = (await t.query(api.cart.get, { token }))?.lines ?? [];
     expect(line?.event?.unlocked).toBe(true);
     expect(line?.problems).toEqual([{ kind: "unlocked" }]);
+  });
+
+  test("comes free with the event's printed invitations in the same cart", async () => {
+    const t = await seeded();
+    const template = await t.run((ctx) =>
+      ctx.db
+        .query("templates")
+        .filter((q) => q.eq(q.field("shopifyProductHandle"), roses.handle))
+        .first(),
+    );
+    if (template?.kind !== "invitation")
+      throw new Error("Classic Roses' invitation is an invitation's template");
+    const ownerId = await t.run((ctx) =>
+      ctx.db.insert("users", { isAnonymous: true }),
+    );
+    const designId = await t
+      .withIdentity({ subject: `${ownerId}|session` })
+      .mutation(api.designs.start, { template: template.slug });
+    const design = await t.run(
+      async (ctx) => (await ctx.db.get("designs", designId)) as Doc<"designs">,
+    );
+    const proofId = await t.run((ctx) =>
+      ctx.db.insert("proofs", {
+        designId,
+        ownerId,
+        templateId: template._id,
+        kind: template.kind,
+        revision: design.revision,
+        document: design.document,
+        fields: {},
+        approvedAt: Date.now(),
+      }),
+    );
+    const price = digitalInvitation.price * 100;
+    const invitationLine = async () =>
+      (await t.query(api.cart.get, { token }))?.lines.find(
+        (line) => line.handle === digitalInvitation.handle,
+      );
+
+    await t.mutation(api.cart.add, forEvent(design.eventId));
+    expect(await invitationLine()).toMatchObject({ price, total: price });
+    expect(await invitationLine()).not.toHaveProperty("freeWithPrinted");
+
+    // The invitations they print open it to every guest once paid for.
+    await t.mutation(api.cart.add, { ...roses, proofId });
+    expect(await invitationLine()).toMatchObject({
+      freeWithPrinted: true,
+      price: 0,
+      compareAtPrice: price,
+      total: 0,
+      problems: [],
+    });
+    const cart = await t.query(api.cart.get, { token });
+    const prints = cart?.lines.find((line) => line.handle === roses.handle);
+    expect(cart?.total).toBe((prints?.total ?? 0) + 5_000);
+    const checkout = await t.mutation(internal.checkout.prepare, {
+      token,
+      language: "ro",
+    });
+    expect(
+      checkout.lines.find((line) => line.product === digitalInvitation.handle),
+    ).toMatchObject({ price: 0, total: 0 });
+
+    // Fewer than ten are a sample, which opens nothing.
+    const printsId = prints?.id as Id<"cartLines">;
+    await t.mutation(api.cart.setQuantity, {
+      token,
+      lineId: printsId,
+      quantity: 9,
+    });
+    expect(await invitationLine()).toMatchObject({ price, total: price });
+    await t.mutation(api.cart.remove, { token, lineId: printsId });
+    expect(await invitationLine()).toMatchObject({ price, total: price });
+  });
+
+  test("costs as much beside another event's printed invitations", async () => {
+    const t = await seeded();
+    const template = await t.run((ctx) =>
+      ctx.db
+        .query("templates")
+        .filter((q) => q.eq(q.field("shopifyProductHandle"), roses.handle))
+        .first(),
+    );
+    if (!template) throw new Error("Classic Roses' invitation is a template");
+    const ownerId = await t.run((ctx) =>
+      ctx.db.insert("users", { isAnonymous: true }),
+    );
+    const designId = await t
+      .withIdentity({ subject: `${ownerId}|session` })
+      .mutation(api.designs.start, { template: template.slug });
+    const proofId = await t.run(async (ctx) => {
+      const design = (await ctx.db.get("designs", designId)) as Doc<"designs">;
+      return await ctx.db.insert("proofs", {
+        designId,
+        ownerId,
+        templateId: template._id,
+        kind: template.kind,
+        revision: design.revision,
+        document: design.document,
+        fields: {},
+        approvedAt: Date.now(),
+      });
+    });
+    await t.mutation(api.cart.add, { ...roses, proofId });
+    await t.mutation(api.cart.add, forEvent(await wedding(t)));
+    const line = (await t.query(api.cart.get, { token }))?.lines.find(
+      (found) => found.handle === digitalInvitation.handle,
+    );
+    expect(line).toMatchObject({
+      price: digitalInvitation.price * 100,
+      total: digitalInvitation.price * 100,
+    });
   });
 });

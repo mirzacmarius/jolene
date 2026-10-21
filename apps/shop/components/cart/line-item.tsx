@@ -84,6 +84,11 @@ function CartLineItem({ line }: { line: CartLine }) {
           {line.event?.hosts.ro ? (
             <p className="text-xs text-muted-foreground">Pentru {line.event.hosts.ro}</p>
           ) : null}
+          {line.freeWithPrinted ? (
+            <p className="text-xs text-muted-foreground">
+              Gratuită cu invitațiile tipărite din coș
+            </p>
+          ) : null}
           {line.event ? null : (
             <p className="text-xs text-muted-foreground tabular-nums">
               {formatPrice(line.price)} / buc.
