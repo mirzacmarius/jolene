@@ -47,6 +47,7 @@ import type * as invites_access from "../invites/access.js";
 import type * as invites_codes from "../invites/codes.js";
 import type * as invites_image from "../invites/image.js";
 import type * as invites_rules from "../invites/rules.js";
+import type * as invites_shop from "../invites/shop.js";
 import type * as invites_text from "../invites/text.js";
 import type * as invites_unlock from "../invites/unlock.js";
 import type * as invites_validators from "../invites/validators.js";
@@ -118,6 +119,7 @@ declare const fullApi: ApiFromModules<{
   "invites/codes": typeof invites_codes;
   "invites/image": typeof invites_image;
   "invites/rules": typeof invites_rules;
+  "invites/shop": typeof invites_shop;
   "invites/text": typeof invites_text;
   "invites/unlock": typeof invites_unlock;
   "invites/validators": typeof invites_validators;

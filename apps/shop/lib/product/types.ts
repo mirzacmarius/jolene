@@ -18,6 +18,8 @@ export interface ProductDetails extends ProductCard {
   description: string;
   descriptionHtml: string;
   fees: Fee[];
+  /** Bought for one of a couple's events, as the digital invitation is: its page needs the studio's ?event=. */
+  forEvent: boolean;
   lineOptions: LineOption[];
   options: ProductOption[];
   tags: string[];

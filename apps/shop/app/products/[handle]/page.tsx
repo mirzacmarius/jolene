@@ -14,6 +14,7 @@ import { Container } from "@/components/ui/container";
 import { Page } from "@/components/ui/page";
 import { Sections } from "@/components/ui/sections";
 import { summarizeText } from "@/lib/content";
+import { getInviteEvent } from "@/lib/invite/server";
 import { getProduct } from "@/lib/product/server";
 import { getProductProof } from "@/lib/proof/server";
 import { buildAlternates, buildOpenGraph } from "@/lib/seo";
@@ -77,18 +78,23 @@ async function ProductPageContent({
   const proof = searchParams.then(({ proof: id }) =>
     getProductProof(typeof id === "string" ? id : undefined, handle),
   );
+  const event = product.forEvent
+    ? searchParams.then(({ event: id }) => getInviteEvent(typeof id === "string" ? id : undefined))
+    : Promise.resolve(null);
   const [category] = product.categories;
   return (
     <>
-      <RecentlyViewedRecorder
-        product={{
-          handle: product.handle,
-          image: product.images[0] ?? null,
-          price: product.price,
-          title: product.title,
-        }}
-      />
-      <ProductDetailSection product={product} proof={proof} />
+      {product.forEvent ? null : (
+        <RecentlyViewedRecorder
+          product={{
+            handle: product.handle,
+            image: product.images[0] ?? null,
+            price: product.price,
+            title: product.title,
+          }}
+        />
+      )}
+      <ProductDetailSection event={event} product={product} proof={proof} />
       {category ? (
         <RelatedProductsSection category={category.handle} handle={handle} limit={4} />
       ) : null}

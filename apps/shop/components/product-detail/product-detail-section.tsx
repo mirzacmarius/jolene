@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 
+import { InviteImage } from "@/components/invite/invite-card";
 import { BreadcrumbSchema } from "@/components/schema/breadcrumb-schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { shopConfig } from "@/lib/config";
+import type { InviteEvent } from "@/lib/invite/types";
 import type { ProductDetails } from "@/lib/product/types";
 import type { ProductProof } from "@/lib/proof/types";
 
@@ -13,12 +15,14 @@ import { PurchaseForm } from "./purchase-form";
 import { ProductSchema } from "./schema";
 
 interface ProductDetailSectionProps {
+  /** Read from the page's ?event= for a product bought for an event, as the proof is. */
+  event: Promise<InviteEvent | null>;
   product: ProductDetails;
   /** Read from the page's ?proof=, so it waits on the request while the rest is static. */
   proof: Promise<ProductProof | null>;
 }
 
-export function ProductDetailSection({ product, proof }: ProductDetailSectionProps) {
+export function ProductDetailSection({ event, product, proof }: ProductDetailSectionProps) {
   const [category] = product.categories;
   return (
     <>
@@ -32,11 +36,17 @@ export function ProductDetailSection({ product, proof }: ProductDetailSectionPro
         ]}
       />
       <div className="grid gap-10 lg:grid-cols-10 lg:items-start lg:gap-5">
-        <ProductMedia className="lg:col-span-6" images={product.images} title={product.title} />
+        {product.forEvent ? (
+          <Suspense fallback={<div className={`${INVITE_MEDIA_CLASS} bg-accent`} />}>
+            <ResolvedInviteImage event={event} />
+          </Suspense>
+        ) : (
+          <ProductMedia className="lg:col-span-6" images={product.images} title={product.title} />
+        )}
         <div className="grid gap-10 lg:sticky lg:top-20 lg:col-span-4">
           <h1 className="text-foreground text-3xl">{product.title}</h1>
           <Suspense fallback={<PurchaseForm disabled product={product} />}>
-            <ResolvedPurchaseForm product={product} proof={proof} />
+            <ResolvedPurchaseForm event={event} product={product} proof={proof} />
           </Suspense>
           <ProductInfoDescription descriptionHtml={product.descriptionHtml} />
         </div>
@@ -45,8 +55,16 @@ export function ProductDetailSection({ product, proof }: ProductDetailSectionPro
   );
 }
 
-async function ResolvedPurchaseForm({ product, proof }: ProductDetailSectionProps) {
-  return <PurchaseForm product={product} proof={await proof} />;
+const INVITE_MEDIA_CLASS =
+  "-mx-5 aspect-square w-[calc(100%+2.5rem)] lg:col-span-6 lg:mx-0 lg:w-full";
+
+async function ResolvedInviteImage({ event }: Pick<ProductDetailSectionProps, "event">) {
+  return <InviteImage className={INVITE_MEDIA_CLASS} event={await event} />;
+}
+
+async function ResolvedPurchaseForm({ event, product, proof }: ProductDetailSectionProps) {
+  const [resolvedEvent, resolvedProof] = await Promise.all([event, proof]);
+  return <PurchaseForm event={resolvedEvent} product={product} proof={resolvedProof} />;
 }
 
 export function ProductDetailSkeleton() {

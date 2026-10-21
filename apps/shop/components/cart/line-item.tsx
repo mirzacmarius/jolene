@@ -5,6 +5,7 @@ import { Trash2Icon } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
+import { InviteImage } from "@/components/invite/invite-card";
 import { Price } from "@/components/product/price";
 import { ProofImage } from "@/components/proof/proof-card";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
@@ -29,7 +30,9 @@ function CartLineItem({ line }: { line: CartLine }) {
   const { remove, setQuantity } = useCartActions();
   const [isPending, setPending] = useState(false);
   const [error, setError] = useState<string>();
-  const href = `/products/${line.handle}`;
+  const href = line.event
+    ? `/products/${line.handle}?event=${line.event.id}`
+    : `/products/${line.handle}`;
 
   async function change(action: () => Promise<string | undefined>) {
     setPending(true);
@@ -43,7 +46,9 @@ function CartLineItem({ line }: { line: CartLine }) {
         className="relative size-18 shrink-0 cursor-pointer self-start overflow-hidden bg-accent transition-opacity hover:opacity-80"
         href={href}
       >
-        {line.proof ? (
+        {line.event ? (
+          <InviteImage className="size-full" event={line.event} />
+        ) : line.proof ? (
           <ProofImage className="size-full" fit="cover" proof={line.proof} />
         ) : line.image ? (
           <Image
@@ -76,19 +81,26 @@ function CartLineItem({ line }: { line: CartLine }) {
             </p>
           ))}
           {line.proof ? <p className="text-xs text-muted-foreground">Cu designul vostru</p> : null}
-          <p className="text-xs text-muted-foreground tabular-nums">
-            {formatPrice(line.price)} / buc.
-          </p>
+          {line.event?.hosts.ro ? (
+            <p className="text-xs text-muted-foreground">Pentru {line.event.hosts.ro}</p>
+          ) : null}
+          {line.event ? null : (
+            <p className="text-xs text-muted-foreground tabular-nums">
+              {formatPrice(line.price)} / buc.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-1.5 self-end">
-          <QuantityInput
-            disabled={isPending}
-            max={MAX_QUANTITY}
-            min={Math.min(line.quantity, line.minQuantity ?? 1)}
-            onChange={(quantity) => change(() => setQuantity(line.id, quantity))}
-            size="sm"
-            value={line.quantity}
-          />
+          {line.event ? null : (
+            <QuantityInput
+              disabled={isPending}
+              max={MAX_QUANTITY}
+              min={Math.min(line.quantity, line.minQuantity ?? 1)}
+              onChange={(quantity) => change(() => setQuantity(line.id, quantity))}
+              size="sm"
+              value={line.quantity}
+            />
+          )}
           <button
             aria-label="Scoate din coș"
             className="flex cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"

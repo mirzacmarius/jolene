@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import { digitalInvitation } from "@jolene/products/digital-invitation";
 import { Glob } from "bun";
 import { convexTest } from "convex-test";
 import { api, internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import schema from "./schema";
 import { errors } from "./utils/errors";
 
@@ -232,5 +233,136 @@ describe("cart.setQuantity and cart.remove", () => {
     expect(
       (await t.query(api.cart.get, { token: otherToken }))?.lines,
     ).toHaveLength(1);
+  });
+});
+
+describe("the digital invitation", () => {
+  /** A couple's wedding, as the studio keeps it. */
+  const wedding = (t: Awaited<ReturnType<typeof seeded>>) =>
+    t.run(async (ctx) =>
+      ctx.db.insert("events", {
+        ownerId: await ctx.db.insert("users", { isAnonymous: true }),
+        occasion: "wedding",
+        fields: { partner1: "Ana", partner2: "Mihai", date: "2027-06-12" },
+        updatedAt: Date.now(),
+      }),
+    );
+
+  const unlockByHand = (t: Awaited<ReturnType<typeof seeded>>, event: string) =>
+    t.mutation(internal.invites.unlock.byHand, { event, note: "Transfer" });
+
+  const forEvent = (eventId?: string) => ({
+    token,
+    handle: digitalInvitation.handle,
+    quantity: 1,
+    options: [],
+    answers: [],
+    fees: [],
+    eventId,
+  });
+
+  test("takes one for each event, with whose invitation it is", async () => {
+    const t = await seeded();
+    const eventId = await wedding(t);
+    await t.mutation(api.cart.add, forEvent(eventId));
+    await t.mutation(api.cart.add, forEvent(eventId));
+    const cart = await t.query(api.cart.get, { token });
+    expect(cart?.lines).toMatchObject([
+      {
+        handle: digitalInvitation.handle,
+        title: digitalInvitation.title,
+        quantity: 1,
+        price: digitalInvitation.price * 100,
+        total: digitalInvitation.price * 100,
+        event: {
+          id: eventId,
+          occasion: "wedding",
+          hosts: { ro: "Ana și Mihai", en: "Ana and Mihai" },
+          date: "2027-06-12",
+          image: null,
+          unlocked: false,
+        },
+        problems: [],
+      },
+    ]);
+
+    const lineId = cart?.lines[0]?.id as Id<"cartLines">;
+    await expectError(
+      t.mutation(api.cart.setQuantity, { token, lineId, quantity: 2 }),
+      errors.invalidLine,
+    );
+    await t.mutation(api.cart.add, forEvent(await wedding(t)));
+    expect(
+      (await t.query(api.cart.get, { token }))?.lines.map(
+        (line) => line.quantity,
+      ),
+    ).toEqual([1, 1]);
+  });
+
+  test("refuses it without its event, or with one already unlocked", async () => {
+    const t = await seeded();
+    const eventId = await wedding(t);
+    for (const line of [
+      forEvent(),
+      forEvent("nothing"),
+      { ...forEvent(eventId), quantity: 2 },
+      { ...roses, eventId },
+    ])
+      await expectError(t.mutation(api.cart.add, line), errors.invalidLine);
+    expect(await unlockByHand(t, eventId)).toBe(true);
+    await expectError(
+      t.mutation(api.cart.add, forEvent(eventId)),
+      errors.inviteUnlocked,
+    );
+    expect(await t.query(api.cart.get, { token })).toBeNull();
+  });
+
+  test("shows the invitation its guests see, once the couple published it", async () => {
+    const t = await seeded();
+    const template = await t.run((ctx) => ctx.db.query("templates").first());
+    if (!template) throw new Error("The studio has templates");
+    const ownerId = await t.run((ctx) =>
+      ctx.db.insert("users", { isAnonymous: true }),
+    );
+    const designId = await t
+      .withIdentity({ subject: `${ownerId}|session` })
+      .mutation(api.designs.start, { template: template.slug });
+    const design = await t.run(
+      async (ctx) => (await ctx.db.get("designs", designId)) as Doc<"designs">,
+    );
+    const picture = await t.run(async (ctx) => {
+      const image = await ctx.storage.store(new Blob(["card"]));
+      await ctx.db.insert("invites", {
+        eventId: design.eventId,
+        slug: "ana-si-mihai",
+        language: "ro",
+        published: {
+          designId,
+          revision: design.revision,
+          document: design.document,
+          image,
+          at: Date.now(),
+        },
+        open: true,
+        questions: { meals: [], allergies: false },
+        updatedAt: Date.now(),
+      });
+      return await ctx.storage.getUrl(image);
+    });
+    await t.mutation(api.cart.add, forEvent(design.eventId));
+    const [line] = (await t.query(api.cart.get, { token }))?.lines ?? [];
+    expect(picture).toBeString();
+    expect(line?.event?.image).toBe(picture);
+    expect(line?.image?.url).toBe(picture as string);
+  });
+
+  test("says when the invitation was unlocked after it went in the cart", async () => {
+    const t = await seeded();
+    const eventId = await wedding(t);
+    await t.mutation(api.cart.add, forEvent(eventId));
+    await unlockByHand(t, eventId);
+    const [line] = (await t.query(api.cart.get, { token }))?.lines ?? [];
+    expect(line?.event?.unlocked).toBe(true);
+    expect(line?.problems).toEqual([{ kind: "unlocked" }]);
   });
 });

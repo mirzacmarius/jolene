@@ -19,6 +19,8 @@ function describeError(error: unknown): string {
   if (code === errors.invalidLine)
     return "Alegerile nu se mai potrivesc produsului. Reîncarcă pagina și încearcă din nou.";
   if (code === errors.notFound) return "Produsul nu mai e în coș. Reîncarcă pagina.";
+  if (code === errors.inviteUnlocked)
+    return "Invitația e deschisă deja tuturor invitaților: nu mai e nimic de plătit.";
   return "Nu am putut actualiza coșul. Încearcă din nou.";
 }
 
@@ -52,6 +54,7 @@ export async function addToCartAction(line: CartLineInput): Promise<CartActionRe
   return changeCart(cartToken, () =>
     fetchMutation(api.cart.add, {
       answers: line.answers,
+      eventId: line.eventId,
       fees: line.fees,
       handle: line.handle,
       options: line.options,

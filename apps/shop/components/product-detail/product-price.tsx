@@ -9,9 +9,17 @@ interface ProductPriceProps extends ComponentProps<"div"> {
   compareAtPrice?: number;
   /** One piece, in bani. */
   price: number;
+  /** What the price buys, after it. */
+  unit?: string;
 }
 
-export function ProductPrice({ className, compareAtPrice, price, ...props }: ProductPriceProps) {
+export function ProductPrice({
+  className,
+  compareAtPrice,
+  price,
+  unit = "/ buc.",
+  ...props
+}: ProductPriceProps) {
   const discountPercent = getDiscountPercent(price, compareAtPrice);
   return (
     <div className={cn("flex flex-wrap items-center gap-2.5", className)} {...props}>
@@ -22,7 +30,7 @@ export function ProductPrice({ className, compareAtPrice, price, ...props }: Pro
           <DiscountBadge percent={discountPercent} />
         </>
       ) : null}
-      <span className="text-sm text-muted-foreground">/ buc.</span>
+      <span className="text-sm text-muted-foreground">{unit}</span>
     </div>
   );
 }

@@ -21,6 +21,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // The studio's pages, but not its files, which have an extension (the icon),
-  // nor what it answers the shop with, under /studio/api.
+  // nor its routes under /studio/api.
   matcher: ["/studio", "/studio/((?!api/|.*\\.).*)"],
 };

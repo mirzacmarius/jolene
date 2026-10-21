@@ -1,7 +1,9 @@
 import Image from "next/image";
 
+import { InviteImage } from "@/components/invite/invite-card";
 import { Price } from "@/components/product/price";
 import { ProofImage } from "@/components/proof/proof-card";
+import { StudioLink } from "@/components/studio/studio-link";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import { Link } from "@/components/ui/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -75,7 +77,9 @@ function OrderLineItem({ line }: { line: OrderLine }) {
   return (
     <li aria-label={line.title} className="flex gap-2.5">
       <div className="relative size-18 shrink-0 self-start overflow-hidden bg-accent">
-        {line.proof ? (
+        {line.event ? (
+          <InviteImage className="size-full" event={{ image: line.image?.url ?? null }} />
+        ) : line.proof ? (
           <ProofImage className="size-full" fit="cover" proof={line.proof} />
         ) : line.image ? (
           <Image
@@ -92,7 +96,11 @@ function OrderLineItem({ line }: { line: OrderLine }) {
       <div className="grid min-w-0 flex-1 content-start gap-1 pt-0.5">
         <Link
           className="cursor-pointer transition-opacity hover:opacity-70"
-          href={`/products/${line.product}`}
+          href={
+            line.event
+              ? `/products/${line.product}?event=${line.event.id}`
+              : `/products/${line.product}`
+          }
         >
           <h2 className="text-sm font-medium text-foreground">{line.title}</h2>
         </Link>
@@ -107,9 +115,20 @@ function OrderLineItem({ line }: { line: OrderLine }) {
           </p>
         ))}
         {line.proof ? <p className="text-xs text-muted-foreground">Cu designul vostru</p> : null}
+        {line.event?.hosts ? (
+          <p className="text-xs text-muted-foreground">Pentru {line.event.hosts}</p>
+        ) : null}
         <p className="text-xs text-muted-foreground tabular-nums">
           {line.quantity} buc. × {formatPrice(line.price)}
         </p>
+        {line.event ? (
+          <StudioLink
+            className="cursor-pointer justify-self-start text-xs text-foreground underline underline-offset-4 transition-opacity hover:opacity-70"
+            path={`/invitatie-digitala/${line.event.id}`}
+          >
+            Trimiteți invitația din studio
+          </StudioLink>
+        ) : null}
       </div>
       <Price amount={line.total} className="self-start py-0.5 text-sm font-medium" />
     </li>

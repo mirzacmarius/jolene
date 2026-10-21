@@ -15,6 +15,8 @@ export type CartLine = Cart["lines"][number];
 /** A product as the couple chose it on its page, to put in the cart. */
 export interface CartLineInput {
   answers: Array<{ key: string; value: string }>;
+  /** The event a product bought for an event is for, as the digital invitation is. */
+  eventId?: string;
   fees: string[];
   handle: string;
   options: Array<{ name: string; value: string }>;

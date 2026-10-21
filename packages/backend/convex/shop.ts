@@ -61,6 +61,8 @@ const productValidator = v.object({
   ),
   categories: v.array(categoryValidator),
   tags: v.array(v.string()),
+  /** Bought for one of a couple's events, which its page shows. */
+  forEvent: v.boolean(),
 });
 
 /** The orders a list can come in: Jolene's, or by price. */
@@ -151,13 +153,14 @@ export const product = query({
         category ? [categoryView(category)] : [],
       ),
       tags: product.tags,
+      forEvent: product.forEvent === true,
     };
   },
 });
 
 /**
  * The products on sale, a page at a time: a category's, or all of them, in
- * Jolene's order or by price.
+ * Jolene's order or by price. Those bought for an event aren't on any list.
  */
 export const products = query({
   args: {
@@ -172,12 +175,14 @@ export const products = query({
       const result = await (sort === "position"
         ? ctx.db
             .query("products")
-            .withIndex("by_published_and_position", (q) =>
-              q.eq("published", true),
+            .withIndex("by_published_and_forEvent_and_position", (q) =>
+              q.eq("published", true).eq("forEvent", undefined),
             )
         : ctx.db
             .query("products")
-            .withIndex("by_published_and_price", (q) => q.eq("published", true))
+            .withIndex("by_published_and_forEvent_and_price", (q) =>
+              q.eq("published", true).eq("forEvent", undefined),
+            )
       )
         .order(order)
         .paginate(paginationOpts);
@@ -212,7 +217,10 @@ export const products = query({
   },
 });
 
-/** The products on sale whose names match what a visitor typed, best first. */
+/**
+ * The products on sale whose names match what a visitor typed, best first,
+ * leaving out those bought for an event.
+ */
 export const search = query({
   args: { query: v.string(), limit: v.optional(v.number()) },
   returns: v.array(cardValidator),
@@ -221,7 +229,10 @@ export const search = query({
     const found = await ctx.db
       .query("products")
       .withSearchIndex("search_title", (q) =>
-        q.search("title", args.query).eq("published", true),
+        q
+          .search("title", args.query)
+          .eq("published", true)
+          .eq("forEvent", undefined),
       )
       .take(limit);
     return Promise.all(found.map((p) => cardView(ctx, p)));

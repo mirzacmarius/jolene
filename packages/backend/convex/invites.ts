@@ -33,7 +33,8 @@ import {
   TRIAL_HOUSEHOLDS,
   trialHouseholds,
 } from "./invites/rules";
-import { hostNames, invitationEmail } from "./invites/text";
+import { eventForShop, eventForShopValidator } from "./invites/shop";
+import { hosts, invitationEmail } from "./invites/text";
 import {
   questionsValidator,
   replyValidator,
@@ -179,12 +180,6 @@ async function managers(ctx: QueryCtx, event: Doc<"events">) {
 }
 
 const roleValidator = v.union(v.literal("owner"), v.literal("partner"));
-
-/** Who an event's invitation is from, in each language. */
-const hosts = (event: Doc<"events">) => ({
-  ro: hostNames(event.occasion, event.fields, "ro"),
-  en: hostNames(event.occasion, event.fields, "en"),
-});
 
 /**
  * Everything the couple's page shows of an event's digital invitation: its
@@ -401,37 +396,17 @@ export const mine = query({
 });
 
 /**
- * What the shop shows of the digital invitation a cart line opens (the
- * line's event), read through the studio's address on the shop's domain:
- * whose it is and when, the card guests see, and whether it's open to all
- * of them already. It's what the couple's guests see, for whoever has the
- * event's id, as the couple's own cart does.
+ * What the digital invitation's page in the shop shows of the event the
+ * studio sent the couple with: whose it is and when, the card guests see,
+ * and whether it's open to all of them already. It's what the couple's
+ * guests see, for whoever has the event's id, as the couple's own cart does.
  */
 export const forShop = query({
   args: { eventId: v.string() },
-  returns: v.union(
-    v.object({
-      occasion: occasionValidator,
-      hosts: labelsValidator,
-      date: v.union(v.string(), v.null()),
-      image: v.union(v.string(), v.null()),
-      unlocked: v.boolean(),
-    }),
-    v.null(),
-  ),
+  returns: v.union(eventForShopValidator, v.null()),
   handler: async (ctx, args) => {
     const eventId = ctx.db.normalizeId("events", args.eventId);
-    const event = eventId && (await ctx.db.get("events", eventId));
-    if (!event) return null;
-    const invite = await inviteOf(ctx, event._id);
-    const image = invite?.published?.image;
-    return {
-      occasion: event.occasion,
-      hosts: hosts(event),
-      date: event.fields.date?.trim() || null,
-      image: image ? await ctx.storage.getUrl(image) : null,
-      unlocked: Boolean(invite?.unlocked),
-    };
+    return eventId ? await eventForShop(ctx, eventId) : null;
   },
 });
 

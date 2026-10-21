@@ -12,5 +12,7 @@ export function describeLineProblem(problem: LineProblem): string {
       return `Lipsește „${problem.label}”. Scoate produsul din coș și adaugă-l din nou.`;
     case "unavailable":
       return "Produsul nu mai e de vânzare. Scoate-l din coș.";
+    case "unlocked":
+      return "Invitația e deschisă deja tuturor invitaților. Scoate-o din coș.";
   }
 }

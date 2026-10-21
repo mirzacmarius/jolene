@@ -36,7 +36,9 @@ export function CartSummary({ cart }: { cart: Cart }) {
             <Price amount={cart.total} className="font-medium text-xl" />
           )}
         </div>
-        <p className="text-muted-foreground text-xs">Livrarea se calculează la plată.</p>
+        {cart.lines.some((line) => !line.event) ? (
+          <p className="text-muted-foreground text-xs">Livrarea se calculează la plată.</p>
+        ) : null}
       </div>
       <form action={checkout} className="grid gap-2.5">
         <Button

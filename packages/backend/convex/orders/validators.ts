@@ -15,6 +15,11 @@ export const orderLineValidator = v.object({
   ),
   /** The design the couple approved for it in the studio. */
   proof: v.optional(v.id("proofs")),
+  /**
+   * The event it was bought for, as the digital invitation is, with whose
+   * it is in the order's language.
+   */
+  event: v.optional(v.object({ id: v.id("events"), hosts: v.string() })),
   /** One of it, in bani, with its paper's surcharge and paid choices. */
   price: v.number(),
   /** `price` times `quantity`. */

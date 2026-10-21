@@ -1,5 +1,6 @@
 import { fees } from "@jolene/products/catalog";
 import { catalog } from "@jolene/products/data";
+import { digitalInvitation } from "@jolene/products/digital-invitation";
 import { suites } from "@jolene/suites";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
@@ -72,7 +73,7 @@ export const seed = internalAction({
         price: bani(fee.price),
       })),
     });
-    const products = catalog.products.map(
+    const listed = catalog.products.map(
       (
         { woo: _, price, compareAtPrice, options, images, ...product },
         position,
@@ -93,6 +94,24 @@ export const seed = internalAction({
         position,
       }),
     );
+    const products = [
+      ...listed,
+      // Bought for one event at a time, from the studio (ADR 0014).
+      {
+        handle: digitalInvitation.handle,
+        title: digitalInvitation.title,
+        descriptionHtml: digitalInvitation.descriptionHtml,
+        price: bani(digitalInvitation.price),
+        options: [],
+        lineOptions: [],
+        categories: [],
+        tags: [],
+        images: [],
+        fees: [],
+        position: listed.length,
+        forEvent: true as const,
+      },
+    ];
     for (let start = 0; start < products.length; start += PRODUCTS_PER_MUTATION)
       await ctx.runMutation(internal.shop.load.products, {
         products: products.slice(start, start + PRODUCTS_PER_MUTATION),

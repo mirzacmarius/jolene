@@ -8,14 +8,16 @@ export const MAX_QUANTITY = 999;
 
 /**
  * Why a line can't be ordered as it is: its product is off sale, it's under
- * the product's minimum order, an option has no answer, or an answer is no
- * longer one of its choices, as when Jolene renames one.
+ * the product's minimum order, an option has no answer, an answer is no
+ * longer one of its choices, as when Jolene renames one, or the digital
+ * invitation it buys is already unlocked.
  */
 export const lineProblemValidator = v.union(
   v.object({ kind: v.literal("unavailable") }),
   v.object({ kind: v.literal("minimum"), minQuantity: v.number() }),
   v.object({ kind: v.literal("missing"), label: v.string() }),
   v.object({ kind: v.literal("changed"), label: v.string() }),
+  v.object({ kind: v.literal("unlocked") }),
 );
 
 export type Picked = Infer<typeof pickedValidator>;
@@ -99,12 +101,21 @@ export function unitPrice(
   };
 }
 
-/** Why a line can't be ordered as it is, if anything stops it. */
+/**
+ * Why a line can't be ordered as it is, if anything stops it. A product
+ * bought for an event, as the digital invitation is, also needs its event,
+ * with the invitation not yet open to every guest.
+ */
 export function problems(
   { product, lineOptions }: PricedProduct,
   line: LineChoices,
+  event?: { unlocked: boolean } | null,
 ): LineProblem[] {
   if (!product.published) return [{ kind: "unavailable" }];
+  if (product.forEvent) {
+    if (!event) return [{ kind: "unavailable" }];
+    if (event.unlocked) return [{ kind: "unlocked" }];
+  }
   const found: LineProblem[] = [];
   for (const option of product.options) {
     const picked = line.options.find((o) => o.name === option.name);

@@ -16,6 +16,7 @@ import {
   sender,
 } from "./emails";
 import { randomCode } from "./invites/codes";
+import { eventForShop } from "./invites/shop";
 import { unlockPaid } from "./invites/unlock";
 import { confirmationEmail, noticeEmail } from "./orders/emails";
 import { FIRST_ORDER, orderName } from "./orders/format";
@@ -132,21 +133,26 @@ export const unlock = internalMutation({
     await unlockPaid(
       ctx,
       orderName(order.number),
-      order.lines.map(({ product, quantity, proof }) => ({
+      order.lines.map(({ product, quantity, proof, event }) => ({
         product,
         quantity,
         ...(proof && { proof }),
+        ...(event && { event: event.id }),
       })),
     );
     return null;
   },
 });
 
-/** The pictures of an order's lines: the couple's design, or the product's. */
+/**
+ * The pictures of an order's lines: the couple's design, the invitation
+ * guests see for a line bought for an event, or the product's photo.
+ */
 async function linePictures(ctx: QueryCtx, order: Doc<"orders">) {
   return await Promise.all(
     order.lines.map(async (line) => {
       const proof = line.proof && (await summarize(ctx, line.proof));
+      const event = line.event && (await eventForShop(ctx, line.event.id));
       const product = await ctx.db
         .query("products")
         .withIndex("by_handle", (q) => q.eq("handle", line.product))
@@ -154,7 +160,12 @@ async function linePictures(ctx: QueryCtx, order: Doc<"orders">) {
       const photo = product?.images[0];
       return {
         proof: line.proof && proof ? { id: line.proof, ...proof } : undefined,
-        image: photo ? await photoView(ctx, photo) : null,
+        image:
+          line.event && event?.image
+            ? { url: event.image, alt: line.event.hosts }
+            : photo
+              ? await photoView(ctx, photo)
+              : null,
       };
     }),
   );

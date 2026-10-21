@@ -71,20 +71,29 @@ export const checkoutForStripeValidator = v.object({
 
 export type CheckoutForStripe = Infer<typeof checkoutForStripeValidator>;
 
-/** What Stripe's page says under a line's name: its paper, and whose design it is. */
+/**
+ * What Stripe's page says under a line's name: its paper, whose design it
+ * is, and whose event it's for.
+ */
 function describe(line: OrderLine, language: Language): string | undefined {
   const parts = line.options.map(({ name, value }) => `${name}: ${value}`);
   if (line.proof)
     parts.push(language === "ro" ? "Cu designul vostru" : "With your design");
+  if (line.event)
+    parts.push(
+      language === "ro"
+        ? `Pentru ${line.event.hosts}`
+        : `For ${line.event.hosts}`,
+    );
   return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
 /**
  * The Checkout Session for a checkout: its lines and fees in lei, a courier
- * to an address in Romania, the couple's phone for the courier, and the
- * shop's pages Stripe sends them back to. Prices include VAT, so Stripe Tax,
- * when `vat` turns it on, shows the VAT inside them and never adds to what
- * the couple pays.
+ * to an address in Romania with the couple's phone for it, unless nothing in
+ * the order travels, and the shop's pages Stripe sends them back to. Prices
+ * include VAT, so Stripe Tax, when `vat` turns it on, shows the VAT inside
+ * them and never adds to what the couple pays.
  */
 export function sessionParams(
   checkout: CheckoutForStripe,
@@ -110,6 +119,8 @@ export function sessionParams(
       },
     },
   });
+  // A line bought for an event, as the digital invitation is, goes by link.
+  const travels = checkout.lines.some((line) => !line.event);
   return {
     mode: "payment",
     integration_identifier: INTEGRATION,
@@ -128,17 +139,21 @@ export function sessionParams(
       ),
       ...checkout.fees.map((fee) => item(fee.label, fee.price, 1)),
     ],
-    shipping_address_collection: { allowed_countries: [...deliveryCountries] },
-    shipping_options: deliveryOptions.map((option) => ({
-      shipping_rate_data: {
-        type: "fixed_amount",
-        display_name: option.label,
-        fixed_amount: { amount: option.price, currency: "ron" },
-        tax_behavior: "inclusive",
+    ...(travels && {
+      shipping_address_collection: {
+        allowed_countries: [...deliveryCountries],
       },
-    })),
+      shipping_options: deliveryOptions.map((option) => ({
+        shipping_rate_data: {
+          type: "fixed_amount" as const,
+          display_name: option.label,
+          fixed_amount: { amount: option.price, currency: "ron" },
+          tax_behavior: "inclusive" as const,
+        },
+      })),
+    }),
     automatic_tax: { enabled: vat },
-    phone_number_collection: { enabled: true },
+    phone_number_collection: { enabled: travels },
     allow_promotion_codes: true,
     success_url: `${shop}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${shop}/cart`,
