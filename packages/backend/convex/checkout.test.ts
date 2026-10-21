@@ -121,10 +121,10 @@ describe("checkout.start", () => {
       "line_items[1][price_data][tax_behavior]": "inclusive",
       "shipping_address_collection[allowed_countries][0]": "RO",
       "shipping_options[0][shipping_rate_data][display_name]":
-        "Curier Cargus, la adresă",
+        "Curier la adresă",
       "shipping_options[0][shipping_rate_data][fixed_amount][amount]": "2500",
       "shipping_options[0][shipping_rate_data][tax_behavior]": "inclusive",
-      "shipping_options[0][shipping_rate_data][metadata][delivery]": "cargus",
+      "shipping_options[0][shipping_rate_data][metadata][delivery]": "courier",
       "shipping_options[1][shipping_rate_data][display_name]":
         "Ridicare de la atelier, Str. Ion Creangă 41, Iași",
       "shipping_options[1][shipping_rate_data][fixed_amount][amount]": "0",
@@ -165,7 +165,7 @@ describe("checkout.start", () => {
     expect(stripe.rates(session.id)).toHaveLength(2);
   });
 
-  test("brings an order of 800 lei or more by Cargus for nothing", async () => {
+  test("brings an order of 800 lei or more by courier for nothing", async () => {
     const { t, stripe } = await withCart();
     const lineId = (await t.query(api.cart.get, { token }))?.lines[0]?.id;
     if (!lineId) throw new Error("No line in the cart");
@@ -185,11 +185,11 @@ describe("checkout.start", () => {
         ),
     ).toEqual([
       [
-        "Cargus courier, to your door: 2500",
+        "Courier to your door: 2500",
         "Pick up from the workshop, Str. Ion Creangă 41, Iași: 0",
       ],
       [
-        "Cargus courier, to your door: 0",
+        "Courier to your door: 0",
         "Pick up from the workshop, Str. Ion Creangă 41, Iași: 0",
       ],
     ]);
@@ -369,8 +369,8 @@ describe("checkout.confirm", () => {
       fees: [{ key: "diacritice-50", label: "Diacritice", price: 5000 }],
       subtotal,
       delivery: {
-        key: "cargus",
-        label: "Curier Cargus, la adresă",
+        key: "courier",
+        label: "Curier la adresă",
         price: 2500,
       },
       discount: 0,
@@ -612,8 +612,8 @@ describe("Stripe's webhook", () => {
         number: 1001,
         session: session.id,
         delivery: {
-          key: "cargus",
-          label: "Curier Cargus, la adresă",
+          key: "courier",
+          label: "Curier la adresă",
           price: 2500,
         },
       },
@@ -677,8 +677,8 @@ describe("checkout.reconcile", () => {
       {
         session: session.id,
         delivery: {
-          key: "cargus",
-          label: "Curier Cargus, la adresă",
+          key: "courier",
+          label: "Curier la adresă",
           price: 2500,
         },
       },
@@ -821,7 +821,7 @@ describe("the digital invitation", () => {
         "For Ana and Mihai",
       "shipping_address_collection[allowed_countries][0]": "RO",
       "shipping_options[0][shipping_rate_data][display_name]":
-        "Cargus courier, to your door",
+        "Courier to your door",
       "shipping_options[0][shipping_rate_data][fixed_amount][amount]": "2500",
       "phone_number_collection[enabled]": "true",
     });
@@ -906,9 +906,7 @@ describe("a paid order", () => {
     expect(email.text).toContain(
       "Am primit comanda J1001 și plata de 390,00 lei.",
     );
-    expect(email.text).toContain(
-      "Livrare (Curier Cargus, la adresă): 25,00 lei",
-    );
+    expect(email.text).toContain("Livrare (Curier la adresă): 25,00 lei");
     expect(email.text).toContain("Livrăm la:\nAna Popescu\n");
     expect(email.text).toContain("Cluj-Napoca, Cluj, 400000");
     expect(email.html).toContain(`href="${link}"`);
@@ -962,20 +960,20 @@ describe("a paid order", () => {
       "Pick up your order from the workshop:\nStr. Ion Creangă 41, Iași\nWe'll let you know when it's ready.",
     );
 
-    // Free by Cargus, from 800 lei: still to their address.
+    // Free by courier, from 800 lei: still to their address.
     const free = confirmationEmail(
       {
         ...order,
         delivery: {
-          key: "cargus",
-          label: "Curier Cargus, la adresă",
+          key: "courier",
+          label: "Curier la adresă",
           price: 0,
         },
       },
       null,
       [null],
     );
-    expect(free.text).toContain("Livrare (Curier Cargus, la adresă): gratuit");
+    expect(free.text).toContain("Livrare (Curier la adresă): gratuit");
     expect(free.text).toContain("Livrăm la:");
 
     const notice = noticeEmail(pickup, null).text;
@@ -1087,21 +1085,21 @@ describe("paidSession", () => {
           shipping_rate: {
             id: "shr_1",
             object: "shipping_rate",
-            display_name: "Curier Cargus, la adresă",
+            display_name: "Curier la adresă",
             metadata,
           },
         },
       } as unknown as Stripe.Checkout.Session)?.delivery;
-    expect(delivery({ delivery: "cargus" })).toEqual({
-      key: "cargus",
-      label: "Curier Cargus, la adresă",
+    expect(delivery({ delivery: "courier" })).toEqual({
+      key: "courier",
+      label: "Curier la adresă",
       price: 2500,
     });
     // A rate Convex didn't make, as one from Stripe's Dashboard.
     const others: Record<string, string>[] = [{}, { delivery: "drone" }];
     for (const metadata of others)
       expect(delivery(metadata)).toEqual({
-        label: "Curier Cargus, la adresă",
+        label: "Curier la adresă",
         price: 2500,
       });
   });

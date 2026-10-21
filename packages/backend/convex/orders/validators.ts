@@ -67,11 +67,11 @@ export const customerValidator = v.object({
 });
 
 /**
- * Which way an order travels (checkout/delivery.ts): Cargus to the door, or
+ * Which way an order travels (checkout/delivery.ts): a courier to the door, or
  * picked up from the workshop in Iași.
  */
 export const deliveryKeyValidator = v.union(
-  v.literal("cargus"),
+  v.literal("courier"),
   v.literal("pickup"),
 );
 

@@ -174,8 +174,8 @@ _Avoid_: Payment page
 How a printed order reaches the couple, and what that costs, chosen on Stripe's page: by courier or by pickup.
 _Avoid_: Shipping (in copy)
 
-**Courier** (ro: curier; code: cargus):
-Delivery to the couple's door by Cargus: 25 lei, and nothing from 800 lei.
+**Courier** (ro: curier; code: courier):
+Delivery to the couple's door by the courier Colete Online books cheapest for the parcel, such as Cargus or Sameday: 25 lei, and nothing from 800 lei.
 _Avoid_: Carrier, shipping
 
 **Pickup** (ro: ridicare de la atelier; code: pickup):
