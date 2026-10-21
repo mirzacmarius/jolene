@@ -1,3 +1,4 @@
+import { digitalInvitation } from "@jolene/products/digital-invitation";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
@@ -16,10 +17,11 @@ import {
   sendEmail,
   sender,
 } from "./emails";
+import { inviteOf } from "./invites/access";
 import { randomCode } from "./invites/codes";
 import { eventForShop } from "./invites/shop";
 import { unlockPaid } from "./invites/unlock";
-import { confirmationEmail, noticeEmail } from "./orders/emails";
+import { confirmationEmail, noticeEmail, type Unopened } from "./orders/emails";
 import { FIRST_ORDER, orderName } from "./orders/format";
 import { orderUrl, shopUrl } from "./orders/links";
 import {
@@ -146,6 +148,26 @@ export const unlock = internalMutation({
 });
 
 /**
+ * The digital invitations an order paid for and didn't unlock: already
+ * unlocked another way, as when both of a couple paid for it before either
+ * order went through, or not at all, if unlocking failed. Jolene's team
+ * refunds them or unlocks them by hand.
+ */
+export async function unopenedInvitations(
+  ctx: QueryCtx,
+  order: Doc<"orders">,
+): Promise<Unopened[]> {
+  const name = orderName(order.number);
+  const unopened: Unopened[] = [];
+  for (const { product, event } of order.lines) {
+    if (product !== digitalInvitation.handle || !event) continue;
+    const unlocked = (await inviteOf(ctx, event.id))?.unlocked ?? null;
+    if (unlocked?.order !== name) unopened.push({ event: event.id, unlocked });
+  }
+  return unopened;
+}
+
+/**
  * The pictures of an order's lines: the couple's design, the invitation
  * guests see for a line bought for an event, or the product's photo.
  */
@@ -210,7 +232,11 @@ export const sendEmails = internalMutation({
         idempotencyKey: `order-${order._id}`,
       });
     }
-    const notice = noticeEmail(order, link);
+    const notice = noticeEmail(
+      order,
+      link,
+      await unopenedInvitations(ctx, order),
+    );
     await sendEmail(ctx, {
       to: team,
       from,
