@@ -13,24 +13,43 @@ import type { Order, OrderLine } from "@/lib/order/types";
 
 const PAID_FORMAT = new Intl.DateTimeFormat(shopConfig.localization.locale, { dateStyle: "long" });
 
+const SUPPORT_EMAIL = "invitatii.jolene@gmail.com";
+
 export function OrderDetails({ order }: { order: Order }) {
+  const cancelled = order.status === "cancelled";
   return (
     <>
       <div className="grid gap-2.5">
         <p className="text-sm text-muted-foreground">
           Comanda {order.name} · {PAID_FORMAT.format(order.paidAt)}
         </p>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl">Mulțumim, comanda e plătită</h1>
-        <p className="max-w-2xl text-muted-foreground">
-          Confirmarea vine pe email, la {order.customer.email}. Păstrați linkul acestei pagini: aici
-          vedeți comanda oricând.
-        </p>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl">
+          {cancelled ? "Comanda a fost anulată" : "Mulțumim, comanda e plătită"}
+        </h1>
+        {cancelled ? (
+          <p className="max-w-2xl text-muted-foreground">
+            Nu o mai pregătim. Pentru întrebări, scrieți-ne la{" "}
+            <a
+              className="text-foreground underline underline-offset-4"
+              href={`mailto:${SUPPORT_EMAIL}`}
+            >
+              {SUPPORT_EMAIL}
+            </a>
+            , cu numărul ei.
+          </p>
+        ) : (
+          <p className="max-w-2xl text-muted-foreground">
+            Confirmarea vine pe email, la {order.customer.email}. Păstrați linkul acestei pagini:
+            aici vedeți comanda oricând.
+          </p>
+        )}
         {order.test ? (
           <p className="text-sm text-amber-800 dark:text-amber-200/90" role="note">
             Comandă de test: plătită în modul de test al Stripe, fără bani reali.
           </p>
         ) : null}
       </div>
+      {order.delivery && !cancelled ? <OrderProgress order={order} /> : null}
       <div className="grid gap-10 lg:grid-cols-12">
         <ul
           aria-label="Produse comandate"
@@ -48,7 +67,9 @@ export function OrderDetails({ order }: { order: Order }) {
               <address className="grid text-muted-foreground not-italic">
                 <span>{order.pickupAt}</span>
               </address>
-              <p className="text-muted-foreground">Vă anunțăm când e gata de ridicat.</p>
+              {order.status === "paid" || order.status === "making" ? (
+                <p className="text-muted-foreground">Vă anunțăm când e gata de ridicat.</p>
+              ) : null}
             </div>
           ) : order.address ? (
             <div className="grid gap-1 text-sm">
@@ -69,15 +90,61 @@ export function OrderDetails({ order }: { order: Order }) {
             Întrebări despre comandă? Scrieți-ne la{" "}
             <a
               className="text-foreground underline underline-offset-4"
-              href="mailto:invitatii.jolene@gmail.com"
+              href={`mailto:${SUPPORT_EMAIL}`}
             >
-              invitatii.jolene@gmail.com
+              {SUPPORT_EMAIL}
             </a>
             , cu numărul ei.
           </p>
         </aside>
       </div>
     </>
+  );
+}
+
+const PROGRESS_NOTES = {
+  done: "Curierul a livrat-o.",
+  making: "O facem acum în atelier.",
+  paid: "Am primit comanda și urmează s-o facem.",
+  ready: "E gata: o puteți ridica de la atelier.",
+  sent: "Am predat-o curierului și e pe drum.",
+} as const;
+
+interface OrderProgressProps {
+  order: Order;
+}
+
+function OrderProgress({ order }: OrderProgressProps) {
+  const pickup = order.delivery?.key === "pickup";
+  const steps = [
+    { label: "Plătită", status: "paid" },
+    { label: "În lucru", status: "making" },
+    pickup ? { label: "Gata de ridicat", status: "ready" } : { label: "Expediată", status: "sent" },
+    { label: pickup ? "Ridicată" : "Livrată", status: "done" },
+  ] as const;
+  const current = steps.findIndex((step) => step.status === order.status);
+  if (order.status === "cancelled" || current === -1) return null;
+  return (
+    <section aria-label="Stadiul comenzii" className="grid max-w-2xl gap-2.5">
+      <ol className="grid grid-cols-4 gap-2.5">
+        {steps.map((step, index) => (
+          <li
+            aria-current={index === current ? "step" : undefined}
+            className="group grid gap-2.5 text-xs text-muted-foreground data-[reached=true]:text-foreground sm:text-sm"
+            data-reached={index <= current}
+            key={step.status}
+          >
+            <span className="h-1 bg-border group-data-[reached=true]:bg-foreground" />
+            <span className="group-aria-[current=step]:font-medium">{step.label}</span>
+          </li>
+        ))}
+      </ol>
+      <p className="text-sm text-muted-foreground">
+        {order.status === "done" && pickup
+          ? "Ați ridicat-o de la atelier."
+          : PROGRESS_NOTES[order.status]}
+      </p>
+    </section>
   );
 }
 

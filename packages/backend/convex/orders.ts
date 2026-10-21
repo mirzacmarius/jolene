@@ -24,6 +24,7 @@ import { unlockPaid } from "./invites/unlock";
 import { confirmationEmail, noticeEmail, type Unopened } from "./orders/emails";
 import { FIRST_ORDER, orderName } from "./orders/format";
 import { orderUrl, shopUrl } from "./orders/links";
+import { firstStatus, orderStatusValidator, statusOf } from "./orders/status";
 import {
   addressValidator,
   deliveryValidator,
@@ -99,6 +100,7 @@ export const record = internalMutation({
       }),
       ...(session.billing && { billing: session.billing }),
       paidAt: Date.now(),
+      status: firstStatus(session.delivery !== undefined),
     });
     for (const lineId of checkout.cartLines)
       if (await ctx.db.get("cartLines", lineId))
@@ -280,6 +282,8 @@ const orderViewValidator = v.object({
   address: v.optional(addressValidator),
   /** Where the couple picks it up, when they chose to: the workshop. */
   pickupAt: v.optional(v.string()),
+  /** Where it is, as the workshop last marked it. */
+  status: orderStatusValidator,
 });
 
 /**
@@ -316,6 +320,7 @@ export const byToken = query({
       customer: { name: order.customer.name, email: order.customer.email },
       ...(order.address && { address: order.address }),
       ...(order.delivery?.key === "pickup" && { pickupAt: WORKSHOP_ADDRESS }),
+      status: statusOf(order),
     };
   },
 });

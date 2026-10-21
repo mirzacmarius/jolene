@@ -385,6 +385,8 @@ describe("checkout.confirm", () => {
         postalCode: "400000",
         country: "RO",
       },
+      // The workshop makes it next.
+      status: "paid",
     });
     expect(
       await t.query(api.orders.byToken, { token: orderToken as string }),
@@ -773,6 +775,8 @@ describe("the digital invitation", () => {
       ],
       subtotal: 24_900,
       total: 24_900,
+      // Nothing to make or send.
+      status: "done",
     });
     expect(order).not.toHaveProperty("delivery");
     expect(order).not.toHaveProperty("address");

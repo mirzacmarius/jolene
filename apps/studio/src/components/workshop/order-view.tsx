@@ -2,24 +2,43 @@
 
 import { api } from "@jolene/backend/convex/_generated/api";
 import { orderNumber } from "@jolene/backend/convex/orders/format";
+import type { OrderStatus } from "@jolene/backend/convex/orders/status";
 import { productKindLabels } from "@jolene/design";
 import { Badge } from "@jolene/ui/badge";
+import { Button } from "@jolene/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@jolene/ui/dropdown-menu";
+import { Label } from "@jolene/ui/label";
 import { Skeleton } from "@jolene/ui/skeleton";
-import { useQuery } from "convex/react";
+import { Textarea } from "@jolene/ui/textarea";
+import { toast } from "@jolene/ui/toaster";
+import { useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { ExternalLink } from "lucide-react";
-import type { ReactNode } from "react";
+import { Check, ChevronDown, ExternalLink, X } from "lucide-react";
+import { type FormEvent, type ReactNode, useId, useState } from "react";
+import { errorCode } from "@/lib/convex-error";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { useFormats } from "./formats";
 import { PrintFile } from "./print-file";
+import { StatusBadge } from "./status-badge";
 
 type Order = NonNullable<FunctionReturnType<typeof api.workshop.order>>;
 type Line = Order["lines"][number];
 
+/** The longest note the workshop can write (workshop.addNote). */
+const NOTE_LENGTH = 2000;
+
 /**
- * One order, for the workshop to make and send: each line with its proof
- * and print file, what the customer chose and wrote, who paid and where it
- * goes, and what it cost.
+ * One order, for the workshop to make and send: where it is and the step
+ * that moves it on, each line with its proof and print file, what the
+ * customer chose and wrote, who paid and where it goes, what it cost, and
+ * its history with the team's notes.
  */
 export function OrderView({ name }: { name: string }) {
   const t = useI18n();
@@ -60,25 +79,217 @@ export function OrderView({ name }: { name: string }) {
           ) : null}
         </div>
       </div>
+      <StatusPanel order={order} number={number} />
       <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <ul className="flex flex-col divide-y rounded-3xl border bg-card">
-          {order.lines.map((line, index) => (
-            <OrderLine
-              // An order's lines never change, so their places name them.
-              // biome-ignore lint/suspicious/noArrayIndexKey: see above
-              key={index}
-              line={line}
-              index={index}
-              order={order.name}
-            />
-          ))}
-        </ul>
+        <div className="flex min-w-0 flex-col gap-10">
+          <ul className="flex flex-col divide-y rounded-3xl border bg-card">
+            {order.lines.map((line, index) => (
+              <OrderLine
+                // An order's lines never change, so their places name them.
+                // biome-ignore lint/suspicious/noArrayIndexKey: see above
+                key={index}
+                line={line}
+                index={index}
+                order={order.name}
+              />
+            ))}
+          </ul>
+          <History order={order} number={number} />
+        </div>
         <aside className="flex flex-col gap-8">
           <Customer order={order} />
           <Totals order={order} />
         </aside>
       </div>
     </div>
+  );
+}
+
+/**
+ * The status an order moves on to from its own, if the workshop has one to
+ * give it: none once it's done or cancelled.
+ */
+function nextStatus(order: Order) {
+  const next = order.statuses[order.statuses.indexOf(order.status) + 1];
+  return next === undefined || next === "paid" || next === "cancelled"
+    ? undefined
+    : next;
+}
+
+/**
+ * Where the order is, with the step that moves it on, and a menu that puts
+ * it anywhere else it can be: back a step when someone pressed too soon, or
+ * cancelled.
+ */
+function StatusPanel({ order, number }: { order: Order; number: number }) {
+  const t = useI18n();
+  const setStatus = useMutation(api.workshop.setStatus);
+  const [moving, setMoving] = useState(false);
+  const next = nextStatus(order);
+  const move = async (status: OrderStatus) => {
+    setMoving(true);
+    try {
+      await setStatus({ number, from: order.status, status });
+    } catch (error) {
+      toast.error(
+        errorCode(error) === "order-moved"
+          ? t("workshop.moved")
+          : t("common.error"),
+      );
+    } finally {
+      setMoving(false);
+    }
+  };
+  return (
+    <section
+      aria-label={t("workshop.stage")}
+      className="flex flex-wrap items-center gap-3 rounded-3xl border bg-card px-5 py-4"
+    >
+      <span className="text-sm text-muted-foreground">
+        {t("workshop.stage")}
+      </span>
+      <StatusBadge status={order.status} />
+      <div className="flex flex-wrap gap-2 sm:ml-auto">
+        {next ? (
+          <Button size="sm" disabled={moving} onClick={() => void move(next)}>
+            {t(`workshop.next.${next}`)}
+          </Button>
+        ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline" disabled={moving}>
+              {t("workshop.changeStatus")}
+              <ChevronDown aria-hidden />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-60">
+            <DropdownMenuLabel>{t("workshop.moveTo")}</DropdownMenuLabel>
+            {order.statuses
+              .filter((status) => status !== "cancelled")
+              .map((status) => (
+                <DropdownMenuItem
+                  key={status}
+                  disabled={status === order.status}
+                  onSelect={() => void move(status)}
+                >
+                  <Check
+                    aria-hidden
+                    className={
+                      status === order.status ? undefined : "invisible"
+                    }
+                  />
+                  {t(`workshop.statuses.${status}`)}
+                </DropdownMenuItem>
+              ))}
+            {order.status === "cancelled" ? null : (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive data-[highlighted]:text-destructive"
+                  onSelect={() => void move("cancelled")}
+                >
+                  <X aria-hidden />
+                  {t("workshop.cancel")}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * What happened to the order, newest first: each change of status and each
+ * note, with who did it and when, down to the payment; and a note to add.
+ */
+function History({ order, number }: { order: Order; number: number }) {
+  const t = useI18n();
+  const format = useFormats();
+  return (
+    <section className="flex flex-col gap-5">
+      <h2 className="text-lg font-medium">{t("workshop.history.title")}</h2>
+      <NoteForm number={number} />
+      <ol className="flex flex-col gap-4 text-sm">
+        {order.history.map((entry) => (
+          <li key={entry.id} className="flex flex-col gap-0.5">
+            <p
+              className={
+                entry.kind === "note"
+                  ? "whitespace-pre-line break-words"
+                  : undefined
+              }
+            >
+              {entry.kind === "note"
+                ? entry.note
+                : t("workshop.history.status", {
+                    from: t(`workshop.statuses.${entry.from}`),
+                    status: t(`workshop.statuses.${entry.status}`),
+                  })}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t("workshop.history.by", {
+                by: entry.by,
+                time: format.time(entry.at),
+              })}
+            </p>
+          </li>
+        ))}
+        <li className="flex flex-col gap-0.5">
+          <p>{t("workshop.history.paid", { name: order.customer.name })}</p>
+          <p className="text-xs text-muted-foreground">
+            {format.time(order.paidAt)}
+          </p>
+        </li>
+      </ol>
+    </section>
+  );
+}
+
+/** A note on the order for the rest of the team, which the couple never sees. */
+function NoteForm({ number }: { number: number }) {
+  const t = useI18n();
+  const id = useId();
+  const addNote = useMutation(api.workshop.addNote);
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await addNote({ number, note });
+      setNote("");
+    } catch {
+      toast.error(t("common.error"));
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-2">
+      <Label htmlFor={id}>{t("workshop.history.note")}</Label>
+      <Textarea
+        id={id}
+        value={note}
+        onChange={(event) => setNote(event.target.value)}
+        maxLength={NOTE_LENGTH}
+        placeholder={t("workshop.history.placeholder")}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          {t("workshop.history.private")}
+        </p>
+        <Button
+          type="submit"
+          size="sm"
+          variant="outline"
+          disabled={saving || note.trim() === ""}
+        >
+          {t("workshop.history.add")}
+        </Button>
+      </div>
+    </form>
   );
 }
 
