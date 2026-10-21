@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as accounts from "../accounts.js";
+import type * as accounts_move from "../accounts/move.js";
 import type * as ai from "../ai.js";
 import type * as ai_changes from "../ai/changes.js";
 import type * as ai_config from "../ai/config.js";
@@ -28,9 +30,22 @@ import type * as catalog_save from "../catalog/save.js";
 import type * as designs from "../designs.js";
 import type * as designs_apply from "../designs/apply.js";
 import type * as designs_versions from "../designs/versions.js";
+import type * as emails from "../emails.js";
 import type * as events from "../events.js";
+import type * as guests from "../guests.js";
+import type * as households from "../households.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
+import type * as invites from "../invites.js";
+import type * as invites_access from "../invites/access.js";
+import type * as invites_codes from "../invites/codes.js";
+import type * as invites_image from "../invites/image.js";
+import type * as invites_rules from "../invites/rules.js";
+import type * as invites_text from "../invites/text.js";
+import type * as invites_validators from "../invites/validators.js";
+import type * as orders from "../orders.js";
+import type * as orders_shopify from "../orders/shopify.js";
+import type * as partners from "../partners.js";
 import type * as proofs from "../proofs.js";
 import type * as proofs_image from "../proofs/image.js";
 import type * as simple from "../simple.js";
@@ -39,6 +54,7 @@ import type * as simple_tones from "../simple/tones.js";
 import type * as utils_assets from "../utils/assets.js";
 import type * as utils_auth from "../utils/auth.js";
 import type * as utils_errors from "../utils/errors.js";
+import type * as utils_limits from "../utils/limits.js";
 import type * as utils_validators from "../utils/validators.js";
 
 import type {
@@ -48,6 +64,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  accounts: typeof accounts;
+  "accounts/move": typeof accounts_move;
   ai: typeof ai;
   "ai/changes": typeof ai_changes;
   "ai/config": typeof ai_config;
@@ -68,9 +86,22 @@ declare const fullApi: ApiFromModules<{
   designs: typeof designs;
   "designs/apply": typeof designs_apply;
   "designs/versions": typeof designs_versions;
+  emails: typeof emails;
   events: typeof events;
+  guests: typeof guests;
+  households: typeof households;
   http: typeof http;
   init: typeof init;
+  invites: typeof invites;
+  "invites/access": typeof invites_access;
+  "invites/codes": typeof invites_codes;
+  "invites/image": typeof invites_image;
+  "invites/rules": typeof invites_rules;
+  "invites/text": typeof invites_text;
+  "invites/validators": typeof invites_validators;
+  orders: typeof orders;
+  "orders/shopify": typeof orders_shopify;
+  partners: typeof partners;
   proofs: typeof proofs;
   "proofs/image": typeof proofs_image;
   simple: typeof simple;
@@ -79,6 +110,7 @@ declare const fullApi: ApiFromModules<{
   "utils/assets": typeof utils_assets;
   "utils/auth": typeof utils_auth;
   "utils/errors": typeof utils_errors;
+  "utils/limits": typeof utils_limits;
   "utils/validators": typeof utils_validators;
 }>;
 
@@ -108,4 +140,7 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+  resend: import("@convex-dev/resend/_generated/component.js").ComponentApi<"resend">;
+};

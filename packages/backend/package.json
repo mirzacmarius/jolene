@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "convex dev --tail-logs",
-    "setup": "convex dev --once && bun scripts/link-app-env.ts && bun scripts/set-auth-keys.ts http://localhost:3024/studio && convex run init:seed",
+    "setup": "convex dev --once && bun scripts/link-app-env.ts && bun scripts/set-auth-keys.ts http://localhost:3024/studio && convex env set AUTH_LOG_CODES 1 && convex run init:seed",
     "seed": "convex run init:seed",
     "typecheck": "tsc --noEmit -p convex",
     "lint": "biome lint"
@@ -14,8 +14,11 @@
     "@anthropic-ai/sdk": "^0.135.0",
     "@auth/core": "0.41.3",
     "@convex-dev/auth": "^0.0.96",
+    "@convex-dev/rate-limiter": "0.4.0",
+    "@convex-dev/resend": "0.2.8",
     "@jolene/design": "workspace:*",
     "@jolene/i18n": "workspace:*",
+    "@jolene/products": "workspace:*",
     "@jolene/suites": "workspace:*",
     "convex": "^1.47.0",
     "zod": "^4.6.7"

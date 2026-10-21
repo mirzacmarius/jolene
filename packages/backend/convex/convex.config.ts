@@ -1,3 +1,5 @@
+import rateLimiter from "@convex-dev/rate-limiter/convex.config.js";
+import resend from "@convex-dev/resend/convex.config.js";
 import { defineApp } from "convex/server";
 import { v } from "convex/values";
 
@@ -31,7 +33,44 @@ const app = defineApp({
      * on a real deployment.
      */
     AI_STAND_IN: v.optional(v.string()),
+    /**
+     * Resend's API key, for the emails Jolene sends: sign-in codes and the
+     * couples' invitations. Without it the studio says signing in by email
+     * isn't set up yet, and invitations go by link only.
+     */
+    RESEND_API_KEY: v.optional(v.string()),
+    /**
+     * The signing secret of Resend's webhook (http.ts), which tells the
+     * couple when an invitation's email bounced. Emails go without it.
+     */
+    RESEND_WEBHOOK_SECRET: v.optional(v.string()),
+    /**
+     * Who Jolene's emails come from: an address on a domain Resend verified.
+     * "Jolene <salut@jolene.ro>" when unset.
+     */
+    EMAIL_FROM: v.optional(v.string()),
+    /**
+     * Development and previews only: "1" writes sign-in codes to the logs
+     * instead of sending them, to sign in without Resend, while there's no
+     * RESEND_API_KEY. Never set on production.
+     */
+    AUTH_LOG_CODES: v.optional(v.string()),
+    /**
+     * Where guests open digital invitations, such as
+     * https://invitatie.jolene.ro: a family's link is this, the invitation's
+     * address and their code. The studio's own /invitatie when unset.
+     */
+    INVITE_URL: v.optional(v.string()),
+    /**
+     * The signing secret of the store's webhooks (Shopify admin > Settings >
+     * Notifications > Webhooks), which proves an order came from Shopify: a
+     * paid order unlocks the digital invitation it was for (http.ts).
+     */
+    SHOPIFY_WEBHOOK_SECRET: v.optional(v.string()),
   },
 });
+
+app.use(rateLimiter);
+app.use(resend);
 
 export default app;
