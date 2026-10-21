@@ -404,6 +404,14 @@ export default defineSchema({
     ])
     .index("by_productId", ["productId"]),
 
+  /**
+   * A photo the workshop uploaded for a product and hasn't saved on it yet.
+   * Saving the product takes it; one left a day is deleted.
+   */
+  photoUploads: defineTable({
+    storageId: v.id("_storage"),
+  }).index("by_storageId", ["storageId"]),
+
   /** A shelf of the shop, one of jolene.ro's categories. */
   categories: defineTable({
     handle: v.string(),

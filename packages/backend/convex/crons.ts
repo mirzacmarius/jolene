@@ -30,4 +30,12 @@ crons.interval(
 /** Resend's copies of the emails it sent, after 30 days. */
 crons.interval("forget sent emails", { hours: 24 }, internal.emails.forget, {});
 
+/** Photos the workshop uploaded for a product and never saved on it. */
+crons.interval(
+  "forget unsaved product photos",
+  { hours: 24 },
+  internal.workshop.products.forgetUploads,
+  {},
+);
+
 export default crons;

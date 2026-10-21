@@ -14,6 +14,17 @@ export const choiceValidator = v.object({
   price: v.number(),
 });
 
+/** An order option as the shop and the workshop show it. */
+export const lineOptionValidator = v.object({
+  handle: v.string(),
+  key: v.string(),
+  label: v.string(),
+  hint: v.optional(v.string()),
+  kind: lineOptionKindValidator,
+  required: v.boolean(),
+  choices: v.array(choiceValidator),
+});
+
 /**
  * What a product is made of, such as its paper: the couple picks one of its
  * values, and each value adds its surcharge to each one ordered, in bani.

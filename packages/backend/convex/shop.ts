@@ -7,11 +7,7 @@ import type { Doc } from "./_generated/dataModel";
 import { type QueryCtx, query } from "./_generated/server";
 import { photoValidator, photoView } from "./shop/photos";
 import { loadProduct } from "./shop/pricing";
-import {
-  choiceValidator,
-  lineOptionKindValidator,
-  productOptionValidator,
-} from "./shop/validators";
+import { lineOptionValidator, productOptionValidator } from "./shop/validators";
 
 const categoryValidator = v.object({ handle: v.string(), title: v.string() });
 
@@ -40,17 +36,7 @@ const productValidator = v.object({
   minQuantity: v.optional(v.number()),
   images: v.array(photoValidator),
   options: v.array(productOptionValidator),
-  lineOptions: v.array(
-    v.object({
-      handle: v.string(),
-      key: v.string(),
-      label: v.string(),
-      hint: v.optional(v.string()),
-      kind: lineOptionKindValidator,
-      required: v.boolean(),
-      choices: v.array(choiceValidator),
-    }),
-  ),
+  lineOptions: v.array(lineOptionValidator),
   fees: v.array(
     v.object({
       key: v.string(),
@@ -88,7 +74,7 @@ const categoryView = ({ handle, title }: Doc<"categories">) => ({
   title,
 });
 
-const lineOptionView = ({
+export const lineOptionView = ({
   handle,
   key,
   label,
