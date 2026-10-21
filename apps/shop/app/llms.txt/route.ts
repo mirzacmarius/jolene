@@ -2,6 +2,7 @@ import { describeCategory } from "@/lib/categories";
 import { getCategories } from "@/lib/categories/server";
 import { shopConfig } from "@/lib/config";
 import { summarizeText } from "@/lib/content";
+import { LEGAL_PAGE_ORDER, LEGAL_PAGES } from "@/lib/legal";
 import { escapeMarkdown } from "@/lib/markdown";
 
 export async function GET(): Promise<Response> {
@@ -11,6 +12,10 @@ export async function GET(): Promise<Response> {
     (category) =>
       `- [${escapeMarkdown(category.title)}](${url}${category.path}): ${escapeMarkdown(describeCategory(category))}`,
   );
+  const policyLinks = LEGAL_PAGE_ORDER.map((page) => {
+    const { en, ro } = LEGAL_PAGES[page];
+    return `- [${escapeMarkdown(en.title)}](${url}${en.path}): ${escapeMarkdown(en.description)} In Romanian: ${url}${ro.path}`;
+  });
 
   return new Response(
     `# ${escapeMarkdown(name)}
@@ -27,6 +32,10 @@ Products are ordered on their pages: pick the paper, answer the order options, c
 
 - [All products](${url}/collections/all): The full product catalog.
 ${categoryLinks.length > 0 ? `\n## Categories\n\n${categoryLinks.join("\n")}\n` : ""}
+## Policies
+
+${policyLinks.join("\n")}
+
 ## Discovery
 
 - [Sitemap](${url}/sitemap.xml): Every product and category address.
