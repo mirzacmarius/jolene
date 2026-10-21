@@ -296,6 +296,17 @@ const orderViewValidator = v.object({
   invoice: v.optional(v.object({ name: v.string(), url: v.string() })),
   /** The credit note's, once a refund reversed the invoice. */
   creditNote: v.optional(v.object({ name: v.string(), url: v.string() })),
+  /**
+   * The courier taking it, once the workshop booked one: its name, the
+   * parcel's AWB, and where it is, as the courier last said.
+   */
+  shipment: v.optional(
+    v.object({
+      courier: v.string(),
+      awb: v.string(),
+      tracking: v.optional(v.object({ text: v.string(), at: v.number() })),
+    }),
+  ),
 });
 
 /** An issued invoice's name and the address its PDF downloads from. */
@@ -330,6 +341,7 @@ export const byToken = query({
     const pictures = await linePictures(ctx, order);
     const invoice = await invoiceLink(ctx, order.invoice);
     const creditNote = await invoiceLink(ctx, order.creditNote);
+    const { shipment } = order;
     return {
       name: orderName(order.number),
       test: order.test,
@@ -352,6 +364,19 @@ export const byToken = query({
       status: statusOf(order),
       ...(invoice && { invoice }),
       ...(creditNote && { creditNote }),
+      ...(shipment?.status === "booked" &&
+        shipment.awb && {
+          shipment: {
+            courier: shipment.courier ?? "",
+            awb: shipment.awb,
+            ...(shipment.tracking && {
+              tracking: {
+                text: shipment.tracking.text,
+                at: shipment.tracking.at,
+              },
+            }),
+          },
+        }),
     };
   },
 });

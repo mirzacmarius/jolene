@@ -119,6 +119,18 @@ const app = defineApp({
      * Jolene Design SRL's, RO49475720, when unset.
      */
     SMARTBILL_CIF: v.optional(v.string()),
+    /**
+     * Colete Online's API keys, from its account's API settings. The
+     * workshop books couriers through it once both are set; until then it
+     * books them in Colete Online itself.
+     */
+    COLETE_ONLINE_CLIENT_ID: v.optional(v.string()),
+    COLETE_ONLINE_CLIENT_SECRET: v.optional(v.string()),
+    /**
+     * Which address saved in Colete Online couriers collect parcels from, by
+     * its id; the first one saved when unset.
+     */
+    COLETE_ONLINE_ADDRESS_ID: v.optional(v.string()),
   },
 });
 

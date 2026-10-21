@@ -84,6 +84,18 @@ export function OrderDetails({ order }: { order: Order }) {
                     .join(", ")}
                 </span>
               </address>
+              {order.shipment ? (
+                <p className="text-muted-foreground">
+                  Cu {order.shipment.courier || "curierul"}, AWB{" "}
+                  <span className="text-foreground tabular-nums">{order.shipment.awb}</span>
+                  {order.shipment.tracking ? (
+                    <>
+                      <br />
+                      Ultima veste de la curier: {order.shipment.tracking.text}
+                    </>
+                  ) : null}
+                </p>
+              ) : null}
             </div>
           ) : null}
           {order.invoice ? (
