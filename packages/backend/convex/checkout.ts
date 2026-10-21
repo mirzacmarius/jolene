@@ -50,18 +50,20 @@ const KEEP_UNPAID = 30 * 24 * 60 * 60 * 1000;
 /**
  * Prices a cart for Stripe and keeps it as a checkout: what the couple pays
  * for, and what their order holds once they have. Refuses a cart with
- * nothing in it, or with a line that can't be ordered as it is, and one
- * past its limit, its visitor's when the shop's server names them, or
- * everyone's.
+ * nothing in it, with a line that can't be ordered as it is, or with a
+ * digital invitation to pay for that the couple hasn't agreed to unlock
+ * right away, and one past its limit, its visitor's when the shop's server
+ * names them, or everyone's.
  */
 export const prepare = internalMutation({
   args: {
     token: v.string(),
     language: languageValidator,
+    unlockNow: v.optional(v.boolean()),
     visitor: v.optional(v.string()),
   },
   returns: checkoutForStripeValidator,
-  handler: async (ctx, { token, language, visitor }) => {
+  handler: async (ctx, { token, language, unlockNow, visitor }) => {
     const cart = await findCart(ctx, token);
     if (!cart) throw new ConvexError(errors.cartEmpty);
     if (
@@ -77,6 +79,8 @@ export const prepare = internalMutation({
     if (priced.lines.length === 0) throw new ConvexError(errors.cartEmpty);
     if (priced.lines.some((line) => line.problems.length > 0))
       throw new ConvexError(errors.cartNotReady);
+    if (priced.unlockNow && !unlockNow)
+      throw new ConvexError(errors.unlockNowNeeded);
     const lines = priced.lines.map((line) => ({
       product: line.handle,
       title: line.title,
@@ -97,6 +101,7 @@ export const prepare = internalMutation({
       fees: priced.fees,
       subtotal: priced.total,
       language,
+      ...(priced.unlockNow && { unlockNowAt: Date.now() }),
     });
     return {
       id,
@@ -118,18 +123,24 @@ export const prepare = internalMutation({
 /**
  * Opens Stripe's checkout page for a cart, priced as it is now, and returns
  * its address: the shop's server sends the couple there. Stripe Tax works
- * out the VAT in it once it's set up in Jolene's Stripe account. Once
- * SHOP_SECRET is set, it opens only for the shop's server, which sends the
- * secret and the visitor's address as `server`.
+ * out the VAT in it once it's set up in Jolene's Stripe account. `unlockNow`
+ * is the couple's tick in the cart, agreeing to unlock right away the
+ * digital invitation they pay for. Once SHOP_SECRET is set, it opens only
+ * for the shop's server, which sends the secret and the visitor's address
+ * as `server`.
  */
 export const start = action({
   args: {
     token: v.string(),
     language: languageValidator,
+    unlockNow: v.optional(v.boolean()),
     server: v.optional(v.object({ secret: v.string(), visitor: v.string() })),
   },
   returns: v.string(),
-  handler: async (ctx, { token, language, server }): Promise<string> => {
+  handler: async (
+    ctx,
+    { token, language, unlockNow, server },
+  ): Promise<string> => {
     const shop = shopUrl();
     if (!checkoutOpen() || !shop)
       throw new ConvexError(errors.checkoutUnavailable);
@@ -140,7 +151,7 @@ export const start = action({
     const visitor = secret && server ? visitorKey(server.visitor) : undefined;
     const checkout: CheckoutForStripe = await ctx.runMutation(
       internal.checkout.prepare,
-      { token, language, ...(visitor !== undefined && { visitor }) },
+      { token, language, unlockNow, ...(visitor !== undefined && { visitor }) },
     );
     const client = stripe();
     const vat = await stripeTaxReady(client);

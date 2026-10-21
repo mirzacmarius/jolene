@@ -74,7 +74,11 @@ async function withCart() {
 
 /** The checkout the shop opened, and its Stripe session paid. */
 async function paid(setup: Awaited<ReturnType<typeof withCart>>) {
-  await setup.t.action(api.checkout.start, { token, language: "ro" });
+  await setup.t.action(api.checkout.start, {
+    token,
+    language: "ro",
+    unlockNow: true,
+  });
   return setup.stripe.pay(setup.stripe.latest().id);
 }
 
@@ -399,6 +403,8 @@ describe("checkout.confirm", () => {
       customer: { phone: "+40712345678" },
     });
     expect(order).not.toHaveProperty("vat");
+    // The shop sent the tick, but nothing in the cart asked for it.
+    expect(order).not.toHaveProperty("unlockNowAt");
   });
 
   test("keeps the VAT Stripe Tax found in the total", async () => {
@@ -698,7 +704,11 @@ describe("the digital invitation", () => {
 
   test("asks for no address when nothing travels, and unlocks the event once paid", async () => {
     const { t, stripe, eventId } = await withInvitation();
-    await t.action(api.checkout.start, { token, language: "ro" });
+    await t.action(api.checkout.start, {
+      token,
+      language: "ro",
+      unlockNow: true,
+    });
     const fields = Object.fromEntries(stripe.opened()[0]?.fields ?? []);
     expect(fields).toMatchObject({
       "line_items[0][quantity]": "1",
@@ -750,7 +760,11 @@ describe("the digital invitation", () => {
   test("goes with printed invitations by courier, the address asked once", async () => {
     const { t, stripe } = await withInvitation();
     await t.mutation(api.cart.add, roses);
-    await t.action(api.checkout.start, { token, language: "en" });
+    await t.action(api.checkout.start, {
+      token,
+      language: "en",
+      unlockNow: true,
+    });
     const fields = Object.fromEntries(stripe.opened()[0]?.fields ?? []);
     expect(fields).toMatchObject({
       "line_items[0][price_data][product_data][description]":
@@ -761,6 +775,34 @@ describe("the digital invitation", () => {
       "shipping_options[0][shipping_rate_data][fixed_amount][amount]": "2500",
       "phone_number_collection[enabled]": "true",
     });
+  });
+
+  test("is paid for once the couple agrees to unlock it right away, which the order keeps", async () => {
+    const { t, stripe } = await withInvitation();
+    expect((await t.query(api.cart.get, { token }))?.unlockNow).toBe(true);
+    for (const unlockNow of [undefined, false])
+      await expectError(
+        t.action(api.checkout.start, { token, language: "ro", unlockNow }),
+        errors.unlockNowNeeded,
+      );
+    expect(stripe.opened()).toEqual([]);
+
+    const agreed = new Date("2026-10-21T12:00:00Z");
+    setSystemTime(agreed);
+    await t.action(api.checkout.start, {
+      token,
+      language: "en",
+      unlockNow: true,
+    });
+    setSystemTime(new Date("2026-10-21T12:05:00Z"));
+    const session = stripe.pay(stripe.latest().id);
+    await t.action(api.checkout.confirm, { session: session.id });
+    const [order] = await orders(t);
+    if (!order) throw new Error("No order recorded");
+    expect(order.unlockNowAt).toBe(agreed.getTime());
+    expect(confirmationEmail(order, null, [null]).text).toContain(
+      "Before paying, you asked us to unlock the digital invitation right away, and acknowledged that once it's unlocked you can no longer withdraw from it within 14 days.",
+    );
   });
 
   test("isn't paid for once the event's invitation is unlocked another way", async () => {

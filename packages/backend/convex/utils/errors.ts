@@ -63,6 +63,11 @@ export const errors = {
   cartEmpty: "cart-empty",
   /** A cart line can't be ordered as it is: the cart says why. */
   cartNotReady: "cart-not-ready",
+  /**
+   * The cart charges for a digital invitation, and the couple hasn't agreed
+   * to its unlocking right away, which ends their 14 days to withdraw.
+   */
+  unlockNowNeeded: "unlock-now-needed",
   /** The event's digital invitation is open to every guest already. */
   inviteUnlocked: "invite-unlocked",
   /** The workshop's pages are for the accounts in WORKSHOP_EMAILS alone. */

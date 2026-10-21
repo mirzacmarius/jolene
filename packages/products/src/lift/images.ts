@@ -1,9 +1,10 @@
 import type { ImageLabel, WooImage } from "./woo";
 
 /**
- * Where Shopify fetches an image from: the original, unless it's bigger
- * than Shopify takes (20 MB, 5000 pixels a side, 25 megapixels), then
- * WordPress's copy at most 2560 pixels wide.
+ * Which of a photo's files the catalog lists: the original, unless it's
+ * bigger than Shopify took (20 MB, 5000 pixels a side, 25 megapixels), then
+ * WordPress's copy at most 2560 pixels wide, still more than the photo
+ * store keeps (ADR 0016).
  */
 export function imageUrl(image: WooImage, label?: ImageLabel): string {
   if (!label) return image.scaled_url;

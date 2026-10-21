@@ -2,7 +2,8 @@
 # Vercel build for the shop: deploys the Convex backend to the deployment the
 # studio's build uses (production, or the branch's preview), seeds it, tells
 # it the shop's address, then builds the shop against it, so the pages built
-# ahead show the catalog.
+# ahead show the catalog. A production build then copies the catalog's photos
+# to the photo store.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -58,3 +59,13 @@ if [ -n "${shop_url:-}" ]; then
 fi
 
 cd ../.. && bunx turbo run build --filter=@jolene/shop
+
+# A production build copies the catalog's photos the photo store lacks
+# (ADR 0016), once the store is connected to the shop's project. One that
+# fails, or that the quarter of an hour leaves, is copied by the next
+# production build, so the copy never stops a release.
+if [ "${VERCEL_ENV:-}" = "production" ] &&
+  [ -n "${BLOB_READ_WRITE_TOKEN:-}${BLOB_STORE_ID:-}" ]; then
+  bun packages/products/scripts/photos.ts --minutes 15 ||
+    echo "Some of the catalog's photos weren't copied; the next production build tries them again." >&2
+fi

@@ -22,6 +22,10 @@ _Avoid_: Product, piece (a piece is one sheet of an item)
 What the stationery is for: a wedding (nuntă) or a christening (botez).
 _Avoid_: Event type, category
 
+**Photo store** (code only):
+The public Vercel Blob store the shop shows product photos from, which production and every preview share. Photos from jolene.ro keep their path there.
+_Avoid_: Bucket, CDN, media library
+
 ### Designing
 
 **Design** (ro: design):
@@ -215,6 +219,10 @@ _Avoid_: Share, send
 **Unlock** (ro: deblocați; code: unlocked):
 To open a digital invitation to every family on the list, by buying it in the shop, with the event's printed invitations, or by Jolene's team by hand. Before that it is **on trial** (ro: de probă): only the first three families can open it.
 _Avoid_: Activate, upgrade
+
+**Unlock right away** (ro: deblocare imediată; code: unlockNow):
+The couple's agreement, ticked in the cart before they pay for a digital invitation, that their order unlocks it as soon as it's paid, which ends their 14 days to withdraw from it. One that comes free asks for none.
+_Avoid_: Waiver, consent
 
 **Account** (ro: cont):
 What a couple signs in to with a code sent to their email, to keep a guest list and share their event. Designing needs none.

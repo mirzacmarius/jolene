@@ -38,6 +38,8 @@ const words = {
     address: "Livrăm la",
     pickup: "Ridicați comanda de la atelier",
     pickupNote: "Vă anunțăm când e gata de ridicat.",
+    unlockNow:
+      "Înainte de plată ați cerut să deblocăm invitația digitală imediat și ați luat la cunoștință că, odată deblocată, nu mai puteți renunța la ea în 14 zile.",
     footer: "Jolene · jolene.ro",
   },
   en: {
@@ -59,6 +61,8 @@ const words = {
     address: "Delivering to",
     pickup: "Pick up your order from the workshop",
     pickupNote: "We'll let you know when it's ready.",
+    unlockNow:
+      "Before paying, you asked us to unlock the digital invitation right away, and acknowledged that once it's unlocked you can no longer withdraw from it within 14 days.",
     footer: "Jolene · jolene.ro",
   },
 } as const;
@@ -179,6 +183,11 @@ export function confirmationEmail(
     w.received(name, lei(order.total)),
     w.questions,
   ];
+  // The law wants the agreement confirmed on a durable medium: this email.
+  const notes = [
+    ...(order.test ? [w.test] : []),
+    ...(order.unlockNowAt !== undefined ? [w.unlockNow] : []),
+  ];
   const details = (line: Order["lines"][number]) => [
     ...choices(line),
     ...(line.proof ? [w.design] : []),
@@ -196,7 +205,7 @@ export function confirmationEmail(
       : null;
   const text = [
     ...intro,
-    ...(order.test ? ["", w.test] : []),
+    ...notes.flatMap((line) => ["", line]),
     "",
     ...order.lines.flatMap((line) => [
       `${line.quantity} × ${line.title}: ${lei(line.total)}`,
@@ -211,7 +220,7 @@ export function confirmationEmail(
   ].join("\n");
   const html = [
     ...intro.map(paragraph),
-    ...(order.test ? [note(w.test)] : []),
+    ...notes.map(note),
     ...order.lines.map((line, index) =>
       lineRow(line, pictures[index] ?? null, details(line)),
     ),
