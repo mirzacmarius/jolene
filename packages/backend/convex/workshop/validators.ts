@@ -40,7 +40,7 @@ export const orderSummaryValidator = v.object({
   customer: v.string(),
   /** The town it goes to; null when nothing in it travels. */
   city: v.union(v.string(), v.null()),
-  /** The couple picks it up from the workshop: Cargus brings it to no one. */
+  /** The couple picks it up from the workshop: no courier brings it. */
   pickup: v.boolean(),
   lines: v.array(v.object({ title: v.string(), quantity: v.number() })),
   /** What Stripe charged, in bani. */
