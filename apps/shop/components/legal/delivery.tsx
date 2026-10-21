@@ -39,7 +39,7 @@ export function DeliveryEn() {
           Prices are in Romanian lei (RON) and include VAT; the payment page shows how much of the
           total is VAT.
         </li>
-        <li>We do not take cash on delivery.</li>
+        <li>We do not take cash on delivery or bank transfers.</li>
         <li>Discount codes go on the payment page.</li>
       </ul>
 
@@ -128,7 +128,7 @@ export function DeliveryRo() {
         <li>
           Prețurile sunt în lei și includ TVA; pe pagina de plată vedeți cât TVA conține totalul.
         </li>
-        <li>Nu primim plata la livrare (ramburs).</li>
+        <li>Nu primim plata la livrare (ramburs) și nici prin transfer bancar.</li>
         <li>Codurile de reducere le introduceți pe pagina de plată.</li>
       </ul>
 

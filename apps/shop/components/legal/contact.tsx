@@ -8,6 +8,7 @@ const LABELS = {
     office: "Registered office",
     phone: "Phone",
     taxId: "Tax identification number (CUI)",
+    vatId: "VAT number",
     workshop: "Workshop",
   },
   ro: {
@@ -16,6 +17,7 @@ const LABELS = {
     office: "Sediul social",
     phone: "Telefon",
     taxId: "Cod unic de înregistrare (CUI)",
+    vatId: "Cod de înregistrare în scopuri de TVA",
     workshop: "Atelierul",
   },
 } as const;
@@ -30,6 +32,7 @@ export function CompanyDetails({ language }: CompanyDetailsProps) {
     <ul>
       <li>{`${labels.name}: ${COMPANY.name}`}</li>
       <li>{`${labels.taxId}: ${COMPANY.taxId}`}</li>
+      <li>{`${labels.vatId}: ${COMPANY.vatId}`}</li>
       <li>{`${labels.office}: ${COMPANY.registeredOffice}`}</li>
       <li>{`${labels.workshop}: ${COMPANY.workshop}`}</li>
       <li>

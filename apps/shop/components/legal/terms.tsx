@@ -98,8 +98,8 @@ export function TermsEn() {
       </p>
       <p>
         You pay in full, online, by card, Apple Pay or Google Pay, through Stripe. You enter your
-        card details on Stripe’s page: we never see or keep them. We do not take cash on delivery.
-        Discount codes go on the payment page.
+        card details on Stripe’s page: we never see or keep them. We do not take cash on delivery or
+        bank transfers. Discount codes go on the payment page.
       </p>
       <p>
         We issue an invoice for every paid order and email it to you. The details are in{" "}
@@ -280,7 +280,8 @@ export function TermsRo() {
       <p>
         Plătiți integral, online, cu cardul, Apple Pay sau Google Pay, prin Stripe. Datele cardului
         le scrieți pe pagina Stripe: noi nu le vedem și nu le păstrăm. Nu primim plata la livrare
-        (ramburs). Codurile de reducere le introduceți pe pagina de plată.
+        (ramburs) și nici prin transfer bancar. Codurile de reducere le introduceți pe pagina de
+        plată.
       </p>
       <p>
         Pentru fiecare comandă plătită emitem o factură, pe care v-o trimitem pe email. Detaliile
