@@ -85,6 +85,7 @@ describe("the workshop's products", () => {
       handle: LUNA,
       title: "Invitație botez Luna",
       price: 850,
+      compareAtPrice: undefined,
       minQuantity: 20,
       published: true,
       forEvent: false,
@@ -95,6 +96,7 @@ describe("the workshop's products", () => {
         alt: "Invitatie botez baiat",
       },
       categories: ["Invitații botez", "Invitații băieți"],
+      editedAt: undefined,
     });
     expect(
       christenings.page.every((product) =>
@@ -194,11 +196,11 @@ describe("the workshop's products", () => {
     expect(
       (await t.query(api.shop.product, { handle: withPaper.handle }))?.options,
     ).toEqual(
-      withPaper.options.map((option, index) => ({
+      withPaper.options.map((option) => ({
         name: option.name,
         values: option.values.map((value, place) => ({
           name: value.name,
-          surcharge: papers[index]?.[place],
+          surcharge: 100 * place,
         })),
       })),
     );
