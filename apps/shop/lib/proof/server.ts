@@ -1,5 +1,6 @@
 import { api } from "@jolene/backend/convex/_generated/api";
 import { fetchQuery } from "convex/nextjs";
+import { connection } from "next/server";
 
 import type { ProductProof } from "./types";
 
@@ -9,6 +10,7 @@ export async function getProductProof(
   handle: string,
 ): Promise<ProductProof | null> {
   if (!id) return null;
+  await connection();
   const proof = await fetchQuery(api.proofs.summary, { proofId: id });
   return proof?.product === handle ? { ...proof, id } : null;
 }
