@@ -4,11 +4,14 @@ import type { CartLine as HydrogenCartLine } from "@shopify/hydrogen";
 import { MinusIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import Image from "next/image";
 
+import { InvitationImage } from "@/components/digital-invitation/invitation-card";
 import { ProofImage } from "@/components/proof/proof-card";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import { Link } from "@/components/ui/link";
 import { useCart } from "@/lib/cart/client";
 import type { CartLine } from "@/lib/cart/types";
+import { getLineEventId } from "@/lib/digital-invitation";
+import { useInvitation } from "@/lib/digital-invitation/client";
 import {
   EXTRAS_FOR_ATTRIBUTE,
   getLineAttribute,
@@ -125,9 +128,15 @@ function CartLineItem({ extras, item }: CartLineItemProps) {
       : undefined;
   const attributes = item.attributes ?? [];
   const proof = useProof(getLineProofId(attributes));
+  const eventId = getLineEventId(attributes);
+  const invitation = useInvitation(eventId);
+  // One digital invitation unlocks its event for good.
+  const maxQuantity = eventId ? 1 : MAX_QUANTITY;
   const image = merchandise?.image;
   const imageContent = proof?.image ? (
     <ProofImage className="size-full" fit="cover" proof={proof} />
+  ) : invitation?.image ? (
+    <InvitationImage className="size-full" fit="cover" invitation={invitation} />
   ) : image?.url ? (
     <Image
       src={image.url}
@@ -205,6 +214,7 @@ function CartLineItem({ extras, item }: CartLineItemProps) {
           <CartLineForm
             className="flex items-center gap-1.5 self-end"
             lineId={item.id}
+            maxQuantity={maxQuantity}
             minQuantity={minQuantity}
             removable={canRemove}
           >
@@ -230,7 +240,7 @@ function CartLineItem({ extras, item }: CartLineItemProps) {
                     aria-label="Cantitate"
                     className="h-6 w-9 rounded-full bg-transparent text-center text-xs font-medium tabular-nums outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed"
                     disabled={isOptimistic || !canUpdateQuantity}
-                    max={MAX_QUANTITY}
+                    max={maxQuantity}
                     min={canRemove ? 0 : minQuantity}
                   />
                   <button
@@ -238,7 +248,7 @@ function CartLineItem({ extras, item }: CartLineItemProps) {
                     type="submit"
                     aria-label="Crește cantitatea"
                     className="flex h-6 cursor-pointer items-center justify-center p-0 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={isOptimistic || !canUpdateQuantity || quantity >= MAX_QUANTITY}
+                    disabled={isOptimistic || !canUpdateQuantity || quantity >= maxQuantity}
                   >
                     <PlusIcon className="size-3 shrink-0" />
                   </button>

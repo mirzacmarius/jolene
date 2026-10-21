@@ -1,7 +1,5 @@
-import { cn } from "cn";
-import Image from "next/image";
-
 import { StudioLink } from "@/components/studio/studio-link";
+import { StudioPicture } from "@/components/studio/studio-picture";
 import { Skeleton } from "@/components/ui/skeleton";
 import { describeProof, formatApproval } from "@/lib/proof";
 import type { ProofSummary } from "@/lib/proof/types";
@@ -54,19 +52,11 @@ interface ProofImageProps {
 
 export function ProofImage({ className, fit, proof }: ProofImageProps) {
   return (
-    <div className={cn("relative overflow-hidden bg-accent", className)}>
-      {proof.image ? (
-        <Image
-          alt={`${describeProof(proof)}, cu detaliile voastre`}
-          className="data-[fit=contain]:object-contain data-[fit=cover]:object-cover"
-          data-fit={fit}
-          fill
-          sizes="100vw"
-          src={proof.image}
-          // The studio sized the picture when the couple approved it, and Convex serves it as is.
-          unoptimized
-        />
-      ) : null}
-    </div>
+    <StudioPicture
+      alt={`${describeProof(proof)}, cu detaliile voastre`}
+      className={className}
+      fit={fit}
+      src={proof.image}
+    />
   );
 }
