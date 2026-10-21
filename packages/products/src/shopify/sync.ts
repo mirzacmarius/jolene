@@ -256,13 +256,16 @@ class Sync {
   /** Whether the app has the scopes the sync needs. */
   private async access(store: Store): Promise<boolean> {
     const { shop, currentAppInstallation } = await store.request<{
-      shop: { name: string; myshopifyDomain: string };
+      shop: { id: string; name: string; myshopifyDomain: string };
       currentAppInstallation: { accessScopes: { handle: string }[] };
     }>("access");
     const granted = new Set(
       currentAppInstallation.accessScopes.map((scope) => scope.handle),
     );
-    this.say(`Store: ${shop.name} (${shop.myshopifyDomain}).`);
+    // The shop ID is the number the shop's NEXT_PUBLIC_SHOPIFY_SHOP_ID holds.
+    this.say(
+      `Store: ${shop.name} (${shop.myshopifyDomain}, shop ID ${shop.id.split("/").pop()}).`,
+    );
     const missing = scopes.filter((scope) => !granted.has(scope));
     if (missing.length > 0)
       this.problem(

@@ -1,0 +1,54 @@
+name: Try an order
+# Tries an order on the live shop as a couple would, without paying: a
+# product with its first paper, a paid order option and its fee, at its
+# minimum order, through the cart to Shopify's checkout
+# (packages/products/scripts/try-order.ts). The run's summary says what each
+# step showed; the screenshots are in its artifact.
+on:
+  pull_request:
+    paths:
+      - 'packages/products/scripts/try-order.ts'
+      - '.github/workflows/try-order.yml'
+  workflow_dispatch:
+    inputs:
+      product:
+        description: "The product's handle"
+        default: invitatie-nunta-olive-goldy
+      shop:
+        description: "The shop's address"
+        default: https://www.orvibo.it
+
+permissions:
+  contents: read
+
+jobs:
+  try:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      # The runner's own Google Chrome drives the shop.
+      - name: Try an order
+        working-directory: packages/products
+        run: bun scripts/try-order.ts --shop "$SHOP" --product "$PRODUCT" --out "$RUNNER_TEMP/order"
+        env:
+          SHOP: ${{ inputs.shop || 'https://www.orvibo.it' }}
+          PRODUCT: ${{ inputs.product || 'invitatie-nunta-olive-goldy' }}
+          # A store behind a password, such as a Shopify dev store, asks for it
+          # before checkout.
+          SHOPIFY_STORE_PASSWORD: ${{ secrets.SHOPIFY_STORE_PASSWORD }}
+      - name: Report
+        if: always()
+        run: tee -a "$GITHUB_STEP_SUMMARY" < "$RUNNER_TEMP/order/report.md" || true
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: order
+          path: ${{ runner.temp }}/order

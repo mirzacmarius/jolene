@@ -22,7 +22,7 @@ reads jolene.ro's WooCommerce shop as pulled on 19 October 2026 (`products.json`
 
 ## Syncing
 
-The store is reached through a Dev Dashboard app installed on it, with the scopes `write_products`, `write_publications`, `write_metaobjects`, `write_metaobject_definitions` and `read_orders`. Its client ID and secret are the repository's Actions secrets `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET`, and the store's address the variable `SHOPIFY_STORE_DOMAIN`. The app gets a day's access token from them on each run.
+The store is reached through a Dev Dashboard app installed on it, with the scopes `write_products`, `write_publications`, `write_metaobjects`, `write_metaobject_definitions` and `read_orders`. Its client ID and secret are the repository's Actions secrets `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET`, and the store's address the variable `SHOPIFY_STORE_DOMAIN`, unless a run's `store` names another, such as a test store. The app gets a day's access token from them on each run.
 
 The **Products** workflow (`.github/workflows/products.yml`) runs `scripts/sync.ts`:
 
@@ -39,3 +39,11 @@ bun scripts/sync.ts plan --schema admin_2026-10.json.gz
 ```
 
 with the schema from `npm pack @shopify/dev-mcp@1.17.0` (`package/dist/data/`). Without the three variables, a plan only checks its calls.
+
+## Trying an order
+
+The **Try an order** workflow (`.github/workflows/try-order.yml`) runs `scripts/try-order.ts` against the live shop, as a couple would and without paying: a product with its first paper, a paid order option and the answers it asks for, its fee, and its minimum order, through the cart to Shopify's checkout. It checks that the cart adds the extras and fee lines by itself and that checkout shows them. The run's summary says what each step showed, and its `order` artifact holds a screenshot of each. A store behind a password, as Shopify's dev stores always are, asks for it before checkout: the repository's Actions secret `SHOPIFY_STORE_PASSWORD` gives it (`SHOPIFY_STORE_PASSWORD` in the environment, run locally). Start it from the Actions tab with another product or shop address, or locally with Chrome or a Chromium:
+
+```sh
+bun run try-order --product invitatie-nunta-olive-goldy --chrome /path/to/chromium
+```

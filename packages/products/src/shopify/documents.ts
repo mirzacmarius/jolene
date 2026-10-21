@@ -11,7 +11,7 @@ const page = "pageInfo { hasNextPage endCursor }";
 export const documents = {
   access: /* GraphQL */ `
     query Access {
-      shop { name myshopifyDomain }
+      shop { id name myshopifyDomain }
       currentAppInstallation { accessScopes { handle } }
     }
   `,
