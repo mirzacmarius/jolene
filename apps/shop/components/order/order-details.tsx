@@ -247,6 +247,17 @@ function OrderTotals({ order }: { order: Order }) {
           <Price amount={order.vat} className="text-xs text-muted-foreground" />
         </div>
       ) : null}
+      {order.refunded ? (
+        <div className="grid gap-1 border-t pt-2.5 text-sm">
+          <div className="flex items-baseline justify-between gap-2.5">
+            <span>Rambursat pe card</span>
+            <Price amount={-order.refunded} className="text-sm" />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Banii ajung pe card în 5–10 zile lucrătoare de la rambursare.
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }
