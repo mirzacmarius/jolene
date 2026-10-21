@@ -2,7 +2,11 @@ import type { DesignDocument, Language } from "@jolene/design";
 import { digitalInvitation } from "@jolene/products/digital-invitation";
 import { v } from "convex/values";
 import type { Doc, Id } from "../_generated/dataModel";
-import { internalMutation, type MutationCtx } from "../_generated/server";
+import {
+  internalMutation,
+  type MutationCtx,
+  type QueryCtx,
+} from "../_generated/server";
 import { ensureInvite } from "../invites";
 import type { Unlock } from "./validators";
 
@@ -25,6 +29,24 @@ export type PaidLine = {
   /** The proof printed invitations were ordered from (ADR 0007). */
   proof?: Id<"proofs">;
 };
+
+/**
+ * The event whose digital invitation a line of printed invitations unlocks,
+ * with its proof's language: at least ten from an invitation's proof. The
+ * cart reads it too, as the digital invitation comes free with them.
+ */
+export async function printedInvitations(
+  ctx: QueryCtx,
+  line: { proof?: Id<"proofs">; quantity: number },
+) {
+  if (!line.proof || line.quantity < MIN_PRINTED) return null;
+  const proof = await ctx.db.get("proofs", line.proof);
+  if (proof?.kind !== "invitation") return null;
+  const design = await ctx.db.get("designs", proof.designId);
+  if (!design) return null;
+  const { language } = proof.document as DesignDocument;
+  return { eventId: design.eventId, language };
+}
 
 /** The language an event's digital invitation starts in: its invitation's. */
 async function eventLanguage(
@@ -75,13 +97,13 @@ export async function unlockPaid(
       if (event && (await unlock(ctx, event, { by: "order", order })))
         unlocked++;
     }
-    if (line.proof && line.quantity >= MIN_PRINTED) {
-      const proof = await ctx.db.get("proofs", line.proof);
-      if (proof?.kind !== "invitation") continue;
-      const design = await ctx.db.get("designs", proof.designId);
-      const event = design && (await ctx.db.get("events", design.eventId));
-      const language = (proof.document as DesignDocument).language;
-      if (event && (await unlock(ctx, event, { by: "print", order }, language)))
+    const printed = await printedInvitations(ctx, line);
+    if (printed) {
+      const event = await ctx.db.get("events", printed.eventId);
+      if (
+        event &&
+        (await unlock(ctx, event, { by: "print", order }, printed.language))
+      )
         unlocked++;
     }
   }
