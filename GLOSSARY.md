@@ -190,6 +190,10 @@ _Avoid_: Receipt, order status
 An order paid in Stripe's test mode, with a test card: a trial, not a sale.
 _Avoid_: Sandbox order
 
+**Workshop** (ro: atelier):
+Jolene's team, who print, assemble and send what couples order, and their pages in the studio, where they see every paid order and make its print files.
+_Avoid_: Admin, back office, staff
+
 ### Digital invitations
 
 **Digital invitation** (ro: invitație digitală; code: invite):

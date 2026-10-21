@@ -47,6 +47,7 @@ type Env = {
   readonly STRIPE_API_URL: string | undefined;
   readonly STRIPE_SECRET_KEY: string | undefined;
   readonly STRIPE_WEBHOOK_SECRET: string | undefined;
+  readonly WORKSHOP_EMAILS: string | undefined;
 };
 
 /**

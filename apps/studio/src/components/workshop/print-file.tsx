@@ -42,16 +42,18 @@ function save(file: Blob, name: string) {
 }
 
 /**
- * The print file of a line's proof: the studio makes it when asked, the
- * browser saves it, and what its checks found shows under the button.
+ * The print file of an order's designed line: the studio makes it from the
+ * line's proof when asked, the browser saves it, and what its checks found
+ * shows under the button.
  */
 export function PrintFile({
-  proofId,
   order,
+  line,
 }: {
-  proofId: string;
-  /** The order's name, such as "#1001", which the file's pages carry. */
+  /** The order's name, such as J1001. */
   order: string;
+  /** The line's place in the order, from 0. */
+  line: number;
 }) {
   const t = useI18n();
   const locale = useCurrentLocale();
@@ -62,7 +64,7 @@ export function PrintFile({
     setState({ status: "making" });
     try {
       const response = await fetch(
-        `/studio/api/print-files/${encodeURIComponent(proofId)}?order=${encodeURIComponent(order)}`,
+        `/studio/api/print-files/${encodeURIComponent(order)}/${line}`,
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           cache: "no-store",
@@ -85,7 +87,7 @@ export function PrintFile({
       }
       save(
         await response.blob(),
-        fileNameOf(response) ?? `${order} ${proofId}.pdf`,
+        fileNameOf(response) ?? `${order}-${line + 1}.pdf`,
       );
       setState({
         status: "made",

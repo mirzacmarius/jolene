@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join, resolve, sep } from "node:path";
 import { api } from "@jolene/backend/convex/_generated/api";
+import { orderNumber } from "@jolene/backend/convex/orders/format";
 import {
   parseDocument,
   productKindLabels,
@@ -82,38 +83,38 @@ function failure(status: number, error: string, message?: string) {
 }
 
 /**
- * The print file of an order's proof, for the workshop (docs/adr/0010): the
- * PDF, with what its checks found in a header. The workshop's page sends its
- * Convex token, and Convex says whether it may have the file.
+ * The print file of an order's designed line, such as J1001/0 for its first,
+ * for the workshop (docs/adr/0010): the PDF of the line's proof, with what
+ * its checks found in a header. The workshop's page sends its Convex token,
+ * and Convex says whether it may have the file.
  */
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ proofId: string }> },
+  { params }: { params: Promise<{ order: string; line: string }> },
 ) {
   const token = /^Bearer (\S+)$/.exec(
     request.headers.get("authorization") ?? "",
   )?.[1];
   if (!token) return failure(401, "signed-out");
-  const { proofId } = await params;
-  // The order's name, such as "#1001", for the pages to say which order
-  // they're for.
-  const order = (new URL(request.url).searchParams.get("order") ?? "")
-    .replace(/[^#\w-]/g, "")
-    .slice(0, 20);
+  const { order, line } = await params;
+  const number = orderNumber(order);
+  if (number === null || !/^\d{1,3}$/.test(line))
+    return failure(404, "not-found");
 
   try {
     const job = await fetchQuery(
       api.workshop.printJob,
-      { proofId },
+      { number, line: Number(line) },
       { url: env.NEXT_PUBLIC_CONVEX_URL, token },
     );
     if (!job) return failure(404, "not-found");
     const document = parseDocument(job.document);
+    // Which order and job the pages are for, and how many to print.
     const title = [
-      order,
+      job.order,
       job.names,
       job.suite?.ro,
-      productKindLabels[job.kind].ro,
+      `${productKindLabels[job.kind].ro} × ${job.quantity}`,
     ]
       .filter(Boolean)
       .join(" · ");
@@ -162,7 +163,7 @@ export async function GET(
   } catch (error) {
     if (error instanceof ConvexError && error.data === "workshop-only")
       return failure(403, "workshop-only");
-    console.error(`Print file of proof ${proofId} failed`, error);
+    console.error(`Print file of ${order}'s line ${line} failed`, error);
     return failure(
       500,
       "failed",
