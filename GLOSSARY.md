@@ -219,7 +219,7 @@ An order paid in Stripe's test mode, with a test card: a trial, not a sale.
 _Avoid_: Sandbox order
 
 **Workshop** (ro: atelier):
-Jolene's team, who print, assemble and send what couples order, and their pages in the studio, where they see every paid order, make its print files and move it on.
+Jolene's team, who print, assemble and send what couples order, and their pages in the studio, where they see every paid order, make its print files, move it on and set how long guest lists are kept.
 _Avoid_: Admin, back office, staff
 
 ### Digital invitations
@@ -263,6 +263,10 @@ _Avoid_: Guest of a guest
 **Whose guests** (ro: invitații cui; code: side):
 Which of the couple invited a family, or both.
 _Avoid_: Side (in copy)
+
+**Guest list** (ro: lista de invitați):
+An invitation's families, with every reply they sent and the emails of their invitations. It is deleted as many months after the event as the workshop sets (code: guestListMonths), from 12 to 24.
+_Avoid_: RSVP list, guests (each guest is one person)
 
 **Personal link** (ro: link personal) / **Open link**:
 A family's own link, the invitation's address and their code, knows who they are. The address alone is the open link, which anyone can reply by, adding their family to the list; the couple can turn it off.
