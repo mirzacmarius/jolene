@@ -410,6 +410,30 @@ export default {
         "The product is gone from the store, so its options can't be checked.",
       proofMissing: "Proof {proof} isn't in the studio.",
     },
+    print: {
+      make: "Print file",
+      making: "Making the file…",
+      made: "The print file has downloaded. Pages: {count}.",
+      saved: "The print file has downloaded.",
+      failed: "The print file couldn't be made: {message}",
+      notFound: "The studio doesn't have this item's proof.",
+      toCheck: "To check in the file",
+      more: "{count} more in the file.",
+      place: "{piece} ({side})",
+      front: "front",
+      back: "back",
+      missingDetails: "Left empty: {fields}. Their lines aren't in the file.",
+      overflow: "“{text}” doesn't fit its space on {place}.",
+      outsideSafeArea: "“{text}” comes too close to the cut on {place}.",
+      missingPhoto: "The photo frame on {place} is empty.",
+      missingArtwork:
+        "The image “{asset}” on {place} is missing from the file.",
+      lowResolution: "The image on {place} is only {dpi} dpi.",
+      missingGlyphs:
+        "{characters} on {place} isn't in any font and prints as an empty box.",
+      unusualCharacters:
+        "{characters} on {place} showed the customer a different font from the file's.",
+    },
   },
   expert: {
     mode: {

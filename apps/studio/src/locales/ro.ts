@@ -410,6 +410,31 @@ export default {
         "Produsul nu mai e în magazin, așa că opțiunile nu se pot verifica.",
       proofMissing: "Bunul de tipar {proof} nu e în studio.",
     },
+    print: {
+      make: "Fișier de tipar",
+      making: "Se face fișierul…",
+      made: "Fișierul de tipar s-a descărcat. Pagini: {count}.",
+      saved: "Fișierul de tipar s-a descărcat.",
+      failed: "Fișierul de tipar nu s-a putut face: {message}",
+      notFound: "Studioul nu are bunul de tipar al acestui produs.",
+      toCheck: "De verificat în fișier",
+      more: "Încă {count} în fișier.",
+      place: "{piece} ({side})",
+      front: "față",
+      back: "verso",
+      missingDetails:
+        "Necompletate: {fields}. Rândurile lor nu sunt în fișier.",
+      overflow: "„{text}” nu încape în spațiul lui pe {place}.",
+      outsideSafeArea:
+        "„{text}” ajunge prea aproape de marginea de tăiere pe {place}.",
+      missingPhoto: "Rama foto de pe {place} e goală.",
+      missingArtwork: "Imaginea „{asset}” de pe {place} lipsește din fișier.",
+      lowResolution: "Imaginea de pe {place} are doar {dpi} dpi.",
+      missingGlyphs:
+        "{characters} de pe {place} nu e în niciun font și iese ca un pătrat gol.",
+      unusualCharacters:
+        "{characters} de pe {place} i-a apărut clientului cu alt font decât în fișier.",
+    },
   },
   expert: {
     mode: {

@@ -57,6 +57,7 @@
         "@jolene/backend": "workspace:*",
         "@jolene/design": "workspace:*",
         "@jolene/i18n": "workspace:*",
+        "@jolene/print": "workspace:*",
         "@jolene/suites": "workspace:*",
         "@jolene/ui": "workspace:*",
         "@t3-oss/env-nextjs": "^0.13.11",

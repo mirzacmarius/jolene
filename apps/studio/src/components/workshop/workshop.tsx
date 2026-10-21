@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
+import { PrintFile } from "./print-file";
+import { ToCheck } from "./to-check";
 
 type Read = FunctionReturnType<typeof api.workshop.orders>;
 type Order = Extract<Read, { status: "read" }>["orders"][number];
@@ -228,7 +230,10 @@ function OrderCard({ order }: { order: Order }) {
         </a>
       </header>
 
-      <Issues issues={order.issues} describe={describe} />
+      <ToCheck
+        title={t("workshop.toCheck")}
+        items={order.issues.map(describe)}
+      />
 
       <ul className="mt-6 flex flex-col divide-y">
         {order.lines.map((line) => (
@@ -288,7 +293,13 @@ function OrderCard({ order }: { order: Order }) {
                   {t("workshop.extras", { amount: money(line.extras) })}
                 </p>
               ) : null}
-              <Issues issues={line.issues} describe={describe} />
+              <ToCheck
+                title={t("workshop.toCheck")}
+                items={line.issues.map(describe)}
+              />
+              {line.proof ? (
+                <PrintFile proofId={line.proof.id} order={order.name} />
+              ) : null}
             </div>
           </li>
         ))}
@@ -317,30 +328,6 @@ function OrderCard({ order }: { order: Order }) {
         </footer>
       ) : null}
     </article>
-  );
-}
-
-function Issues({
-  issues,
-  describe,
-}: {
-  issues: Issue[];
-  describe: (issue: Issue) => string;
-}) {
-  const t = useI18n();
-  if (issues.length === 0) return null;
-  return (
-    <div className="mt-4 rounded-2xl bg-gold/10 p-4 text-sm">
-      <p className="flex items-center gap-2 font-medium">
-        <CircleAlert className="size-4 text-gold" aria-hidden />
-        {t("workshop.toCheck")}
-      </p>
-      <ul className="mt-2 flex list-disc flex-col gap-1 pl-6">
-        {issues.map((issue) => (
-          <li key={JSON.stringify(issue)}>{describe(issue)}</li>
-        ))}
-      </ul>
-    </div>
   );
 }
 

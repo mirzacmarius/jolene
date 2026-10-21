@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/", destination: "/studio", permanent: false }];
   },
+  // The workshop's print files (api/print-files) draw Jolene's artwork from
+  // the studio's own files, so the function that makes them carries them.
+  outputFileTracingIncludes: {
+    "/studio/api/print-files/[proofId]": ["./public/studio/art/**/*"],
+  },
   // Jolene's artwork: each file's name carries a hash of its content, so a
   // changed file is a new address and browsers can keep every one for good.
   async headers() {
