@@ -6,7 +6,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { toProductCard, toProductDetails } from "@/lib/product";
 import type { ProductCard, ProductDetails } from "@/lib/product/types";
 
-// Convex sends no webhook when the seed or Jolene's team changes a product, so "minutes" bounds how stale a page gets.
+// The workshop's refresh (app/api/catalog/refresh) can fail and the seed sends none, so "minutes" bounds how stale a page gets.
 export async function getProduct(handle: string): Promise<ProductDetails | undefined> {
   "use cache: remote";
   cacheLife("minutes");

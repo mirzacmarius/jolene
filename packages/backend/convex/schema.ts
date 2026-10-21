@@ -361,6 +361,8 @@ export default defineSchema({
      * as they made it.
      */
     editedAt: v.optional(v.number()),
+    /** The workshop account that last changed it. */
+    editedBy: v.optional(v.string()),
   })
     .index("by_handle", ["handle"])
     .index("by_published_and_forEvent_and_position", [
