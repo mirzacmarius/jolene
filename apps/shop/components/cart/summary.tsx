@@ -1,13 +1,22 @@
 "use client";
 
+import { useActionState } from "react";
+
 import { Price } from "@/components/product/price";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart/client";
 import type { Cart } from "@/lib/cart/types";
+import { checkoutAction } from "@/lib/checkout/action";
 
 export function CartSummary({ cart }: { cart: Cart }) {
   const { isUpdating } = useCart();
+  const [error, checkout, isOpening] = useActionState(checkoutAction, undefined);
   const hasProblems = cart.lines.some((line) => line.problems.length > 0);
+  const status = !cart.checkoutOpen
+    ? "Plata online se deschide în curând."
+    : hasProblems
+      ? "Rezolvă mai întâi produsele marcate în coș."
+      : error;
   return (
     <div className="grid gap-5">
       <div aria-busy={isUpdating || undefined} className="grid gap-2.5" role="group">
@@ -29,17 +38,18 @@ export function CartSummary({ cart }: { cart: Cart }) {
         </div>
         <p className="text-muted-foreground text-xs">Livrarea se calculează la plată.</p>
       </div>
-      <div className="grid gap-2.5">
-        {/* Jolene's own checkout (Stripe) takes over here next; until then the button waits. */}
-        <Button className="h-12 w-full justify-center" disabled type="button">
-          Mergi la plată
+      <form action={checkout} className="grid gap-2.5">
+        <Button
+          className="h-12 w-full justify-center"
+          disabled={!cart.checkoutOpen || hasProblems || isUpdating || isOpening}
+          type="submit"
+        >
+          {isOpening ? "Se deschide plata…" : "Mergi la plată"}
         </Button>
         <p className="text-xs text-muted-foreground" role="status">
-          {hasProblems
-            ? "Rezolvă mai întâi produsele marcate în coș."
-            : "Plata online se deschide în curând."}
+          {status ?? "Plătești pe pagina securizată a Stripe."}
         </p>
-      </div>
+      </form>
     </div>
   );
 }

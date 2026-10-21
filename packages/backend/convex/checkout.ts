@@ -9,10 +9,10 @@ import {
   internalQuery,
 } from "./_generated/server";
 import { findCart, priceCart } from "./cart";
+import { checkoutOpen } from "./checkout/open";
 import {
   type CheckoutForStripe,
   checkoutForStripeValidator,
-  checkoutOpen,
   paidSession,
   retrieveSession,
   sessionParams,

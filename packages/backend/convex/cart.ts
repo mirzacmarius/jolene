@@ -6,6 +6,7 @@ import {
   type QueryCtx,
   query,
 } from "./_generated/server";
+import { checkoutOpen } from "./checkout/open";
 import { proofSummaryValidator, summarize } from "./proofs";
 import { photoValidator, photoView } from "./shop/photos";
 import {
@@ -60,6 +61,8 @@ const cartValidator = v.object({
   total: v.number(),
   /** How many lines: each a product, as the couple chose it. */
   count: v.number(),
+  /** Paying online is set up on this deployment. */
+  checkoutOpen: v.boolean(),
 });
 
 export async function findCart(ctx: QueryCtx, token: string) {
@@ -170,7 +173,11 @@ export const get = query({
     const cart = await findCart(ctx, token);
     if (!cart) return null;
     const priced = await priceCart(ctx, cart._id);
-    return { ...priced, count: priced.lines.length };
+    return {
+      ...priced,
+      count: priced.lines.length,
+      checkoutOpen: checkoutOpen(),
+    };
   },
 });
 

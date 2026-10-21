@@ -18,11 +18,6 @@ import { deliveryCountries, deliveryOptions } from "./delivery";
  * and the order is recorded from the session once Stripe says it's paid.
  */
 
-/** Paying online is set up on this deployment. */
-export function checkoutOpen(): boolean {
-  return Boolean(env.STRIPE_SECRET_KEY?.trim());
-}
-
 /** Stripe's API, read when called so a key set on the deployment applies at once. */
 export function stripe(): Stripe {
   const key = env.STRIPE_SECRET_KEY?.trim();

@@ -30,6 +30,7 @@ import type * as catalog from "../catalog.js";
 import type * as catalog_save from "../catalog/save.js";
 import type * as checkout from "../checkout.js";
 import type * as checkout_delivery from "../checkout/delivery.js";
+import type * as checkout_open from "../checkout/open.js";
 import type * as checkout_stripe from "../checkout/stripe.js";
 import type * as crons from "../crons.js";
 import type * as designs from "../designs.js";
@@ -100,6 +101,7 @@ declare const fullApi: ApiFromModules<{
   "catalog/save": typeof catalog_save;
   checkout: typeof checkout;
   "checkout/delivery": typeof checkout_delivery;
+  "checkout/open": typeof checkout_open;
   "checkout/stripe": typeof checkout_stripe;
   crons: typeof crons;
   designs: typeof designs;
