@@ -1,8 +1,16 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  setSystemTime,
+  test,
+} from "bun:test";
 import { catalog } from "@jolene/products/data";
 import { photoUrl } from "@jolene/products/photos";
 import { testConvex } from "../../test/convex";
 import { api, internal } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
 
 const workshopEnv = ["WORKSHOP_EMAILS", "SITE_URL"] as const;
 
@@ -16,6 +24,7 @@ beforeEach(() => {
 // The functions read the environment through the same process.env object.
 afterEach(() => {
   for (const name of workshopEnv) Reflect.deleteProperty(process.env, name);
+  setSystemTime();
 });
 
 const firstPage = { numItems: 1000, cursor: null };
@@ -52,6 +61,24 @@ async function setUp() {
   };
 }
 
+type CatalogProduct = (typeof catalog.products)[number];
+
+/**
+ * What the product page sends of a product's photos, categories and order
+ * options as the seed left them.
+ */
+const asSeeded = (product: CatalogProduct) => ({
+  photos: product.images.map(({ alt }, kept) => ({ kept, alt })),
+  categories: product.categories,
+  lineOptions: product.lineOptions,
+});
+
+function catalogProduct(handle: string) {
+  const product = catalog.products.find((found) => found.handle === handle);
+  if (!product) throw new Error(`The catalog has no ${handle}`);
+  return product;
+}
+
 /** What the product page sends to save Luna as the seed left it. */
 const luna = {
   handle: LUNA,
@@ -62,7 +89,51 @@ const luna = {
   minQuantity: 20,
   surcharges: [],
   published: true,
+  ...asSeeded(catalogProduct(LUNA)),
 };
+
+/** The database's writer as it can be used on a stored file's record. */
+type StorageWriter = {
+  patch(
+    table: "_storage",
+    id: Id<"_storage">,
+    value: { contentType: string },
+  ): Promise<void>;
+};
+
+/**
+ * A file as the studio uploads it. Convex keeps its type from the upload's
+ * header; convex-test's storage leaves it out, so it's written here.
+ */
+const storePhoto = (t: Awaited<ReturnType<typeof setUp>>["t"], photo: Blob) =>
+  t.run(async (ctx) => {
+    const storageId = await ctx.storage.store(photo);
+    await (ctx.db as unknown as StorageWriter).patch("_storage", storageId, {
+      contentType: photo.type,
+    });
+    return storageId;
+  });
+
+/** A photo as the studio uploads one, and its upload kept for a product. */
+async function uploadPhoto(
+  { t, workshop }: Awaited<ReturnType<typeof setUp>>,
+  type = "image/jpeg",
+) {
+  const storageId = await storePhoto(t, new Blob(["a photo"], { type }));
+  const url = await workshop.mutation(api.workshop.products.photoUploaded, {
+    storageId,
+  });
+  return { storageId, url };
+}
+
+/** Whether a file is still in storage. */
+const stored = (
+  t: Awaited<ReturnType<typeof setUp>>["t"],
+  storageId: Id<"_storage">,
+) =>
+  t.run(
+    async (ctx) => (await ctx.db.system.get("_storage", storageId)) !== null,
+  );
 
 describe("the workshop's products", () => {
   test("lists them in Jolene's order, a category's, or by name", async () => {
@@ -139,6 +210,9 @@ describe("the workshop's products", () => {
       editedBy: null,
     });
     expect(product?.images).toHaveLength(withPaper.images.length);
+    expect(product?.lineOptions.map((option) => option.handle)).toEqual(
+      withPaper.lineOptions,
+    );
     expect(
       await workshop.query(api.workshop.products.product, {
         handle: "nowhere",
@@ -168,6 +242,7 @@ describe("the workshop's products", () => {
       minQuantity: withPaper.minQuantity ?? null,
       surcharges: papers,
       published: true,
+      ...asSeeded(withPaper),
     });
 
     expect(await t.query(api.shop.product, { handle: LUNA })).toMatchObject({
@@ -288,6 +363,23 @@ describe("the workshop's products", () => {
       { minQuantity: 0 },
       { minQuantity: 2.5 },
       { surcharges: [[0]] },
+      // Luna has two photos.
+      { photos: [{ kept: 2, alt: "" }] },
+      { photos: [{ kept: 0.5, alt: "" }] },
+      {
+        photos: [
+          { kept: 0, alt: "" },
+          { kept: 0, alt: "" },
+        ],
+      },
+      { photos: [{ kept: 0, alt: "L".repeat(201) }] },
+      { photos: Array.from({ length: 21 }, () => ({ kept: 0, alt: "" })) },
+      { categories: ["nowhere"] },
+      { categories: ["agende", "agende"] },
+      { lineOptions: ["nowhere"] },
+      { lineOptions: ["ciucure", "ciucure"] },
+      // Two that ask the envelope's colour, which a line answers once.
+      { lineOptions: ["culoare-plic", "culoare-plic-2"] },
     ])
       await expect(
         workshop.mutation(api.workshop.products.save, { ...luna, ...change }),
@@ -310,6 +402,155 @@ describe("the workshop's products", () => {
     ).rejects.toThrow("not-found");
   });
 
+  test("lists the order options a product can ask, by name", async () => {
+    const { workshop } = await setUp();
+    const options = await workshop.query(api.workshop.products.lineOptions, {});
+    expect(options).toHaveLength(catalog.lineOptions.length);
+    const envelopes = options.filter((option) => option.key === "culoare-plic");
+    expect(envelopes.map((option) => option.handle).slice(0, 3)).toEqual([
+      "culoare-plic",
+      "culoare-plic-2",
+      "culoare-plic-3",
+    ]);
+    const labels = options.map((option) => option.label);
+    expect(labels).toEqual(
+      [...labels].sort((a, b) => a.localeCompare(b, "ro")),
+    );
+    expect(
+      (await workshop.query(api.workshop.products.product, { handle: LUNA }))
+        ?.lineOptions,
+    ).toMatchObject([{ handle: "text-personalizat-2", kind: "textarea" }]);
+  });
+
+  test("changes its categories and its order options, which the shop shows", async () => {
+    const { t, workshop } = await setUp();
+    await workshop.mutation(api.workshop.products.save, {
+      ...luna,
+      categories: ["invitatii-botez", "agende"],
+      lineOptions: ["ciucure", "text-personalizat-2"],
+    });
+    const product = await t.query(api.shop.product, { handle: LUNA });
+    expect(product?.categories.map((category) => category.handle)).toEqual([
+      "invitatii-botez",
+      "agende",
+    ]);
+    expect(product?.lineOptions.map((option) => option.handle)).toEqual([
+      "ciucure",
+      "text-personalizat-2",
+    ]);
+    const onShelf = async (category: string) =>
+      (
+        await t.query(api.shop.products, {
+          category,
+          paginationOpts: firstPage,
+        })
+      ).page.some((card) => card.handle === LUNA);
+    expect(await onShelf("agende")).toBe(true);
+    expect(await onShelf("invitatii-botez-baieti")).toBe(false);
+
+    // The seed keeps them as the team left them.
+    await t.action(internal.init.seed, {});
+    expect(
+      (await t.query(api.shop.product, { handle: LUNA }))?.lineOptions.map(
+        (option) => option.handle,
+      ),
+    ).toEqual(["ciucure", "text-personalizat-2"]);
+  });
+
+  test("puts an uploaded photo first, and deletes it once taken off", async () => {
+    const setup = await setUp();
+    const { t, workshop } = setup;
+    const { storageId, url } = await uploadPhoto(setup);
+    await workshop.mutation(api.workshop.products.save, {
+      ...luna,
+      photos: [
+        { upload: storageId, alt: " Luna, pe masă " },
+        { kept: 1, alt: "Invitația Luna" },
+      ],
+    });
+    expect((await t.query(api.shop.product, { handle: LUNA }))?.images).toEqual(
+      [
+        { url, alt: "Luna, pe masă" },
+        {
+          url: photoUrl(catalogProduct(LUNA).images[1]?.url ?? ""),
+          alt: "Invitația Luna",
+        },
+      ],
+    );
+    // The product took the upload: it's no longer waiting to be saved.
+    expect(
+      await t.run((ctx) => ctx.db.query("photoUploads").collect()),
+    ).toEqual([]);
+
+    const editedAt =
+      (await workshop.query(api.workshop.products.product, { handle: LUNA }))
+        ?.editedAt ?? null;
+    await workshop.mutation(api.workshop.products.save, {
+      ...luna,
+      editedAt,
+      photos: [{ kept: 1, alt: "Invitația Luna" }],
+    });
+    expect(await stored(t, storageId)).toBe(false);
+    expect(
+      (await t.query(api.shop.product, { handle: LUNA }))?.images,
+    ).toHaveLength(1);
+  });
+
+  test("takes only a photo the shop can show, uploaded just now", async () => {
+    const setup = await setUp();
+    const { t, workshop } = setup;
+    await expect(uploadPhoto(setup, "application/pdf")).rejects.toThrow(
+      "invalid-image",
+    );
+    const big = await storePhoto(
+      t,
+      new Blob([new Uint8Array(10 * 1024 * 1024 + 1)], { type: "image/png" }),
+    );
+    await expect(
+      workshop.mutation(api.workshop.products.photoUploaded, {
+        storageId: big,
+      }),
+    ).rejects.toThrow("invalid-image");
+    const old = await storePhoto(
+      t,
+      new Blob(["a photo"], { type: "image/webp" }),
+    );
+    setSystemTime(new Date(Date.now() + 25 * 60 * 60 * 1000));
+    await expect(
+      workshop.mutation(api.workshop.products.photoUploaded, {
+        storageId: old,
+      }),
+    ).rejects.toThrow("invalid-image");
+    // A file the workshop didn't upload as a photo can't go on a product.
+    await expect(
+      workshop.mutation(api.workshop.products.save, {
+        ...luna,
+        photos: [{ upload: old, alt: "" }],
+      }),
+    ).rejects.toThrow("invalid-input");
+  });
+
+  test("forgets a day later the uploads no product took", async () => {
+    const setup = await setUp();
+    const { t, workshop } = setup;
+    const left = await uploadPhoto(setup);
+    const taken = await uploadPhoto(setup);
+    await workshop.mutation(api.workshop.products.save, {
+      ...luna,
+      photos: [{ upload: taken.storageId, alt: "" }],
+    });
+    await t.mutation(internal.workshop.products.forgetUploads, {});
+    expect(await stored(t, left.storageId)).toBe(true);
+
+    setSystemTime(new Date(Date.now() + 25 * 60 * 60 * 1000));
+    await t.mutation(internal.workshop.products.forgetUploads, {});
+    expect(await stored(t, left.storageId)).toBe(false);
+    expect(await stored(t, taken.storageId)).toBe(true);
+    expect(
+      await t.run((ctx) => ctx.db.query("photoUploads").collect()),
+    ).toEqual([]);
+  });
+
   test("open to the workshop alone", async () => {
     const { couple } = await setUp();
     await expect(
@@ -325,7 +566,13 @@ describe("the workshop's products", () => {
       couple.query(api.workshop.products.categories, {}),
     ).rejects.toThrow("workshop-only");
     await expect(
+      couple.query(api.workshop.products.lineOptions, {}),
+    ).rejects.toThrow("workshop-only");
+    await expect(
       couple.mutation(api.workshop.products.save, luna),
+    ).rejects.toThrow("workshop-only");
+    await expect(
+      couple.mutation(api.workshop.products.photoUploadUrl, {}),
     ).rejects.toThrow("workshop-only");
   });
 });
