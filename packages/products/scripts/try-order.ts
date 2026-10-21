@@ -130,9 +130,11 @@ const trial =
     if (!response?.ok())
       throw new Error(`${productUrl.href} answered ${response?.status()}.`);
     notes.push(`${productUrl.href}`);
-    notes.push(
-      `Title: ${(await page.locator("h1").first().innerText()).trim()}`,
-    );
+    const title = (await page.locator("h1").first().textContent())?.trim();
+    notes.push(`Title: ${title}`);
+    // A product Shopify doesn't return still answers 200 with the shop's own Not Found page.
+    if (title !== product.title)
+      throw new Error(`The page shows "${title}", not ${product.title}.`);
     for (const option of product.options)
       notes.push(`${option.name}: ${option.values[0]?.name}`);
   })) &&
