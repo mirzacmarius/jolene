@@ -134,6 +134,12 @@ export function fakeStripe() {
       status: "open",
       payment_status: "unpaid",
       client_reference_id: fields.get("client_reference_id"),
+      metadata: Object.fromEntries(
+        [...fields].flatMap(([key, value]) => {
+          const name = /^metadata\[(.+)\]$/.exec(key)?.[1];
+          return name ? [[name, value]] : [];
+        }),
+      ),
       locale: fields.get("locale"),
       livemode: false,
       created: Math.floor(Date.now() / 1000),
