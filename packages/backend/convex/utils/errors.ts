@@ -23,6 +23,8 @@ export const errors = {
   invalidImage: "invalid-image",
   /** A product that is off sale or doesn't exist. */
   productUnavailable: "product-unavailable",
+  /** Someone else changed the product first: the page shows their version. */
+  productChanged: "product-changed",
   /**
    * A cart line asking what its product doesn't: an option it doesn't have,
    * a value or choice it doesn't offer, a quantity out of range, a fee it

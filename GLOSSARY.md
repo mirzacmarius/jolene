@@ -146,6 +146,14 @@ _Avoid_: Preview (any view in the studio), draft
 Small keepsakes given to guests, sold in the shop alongside the stationery.
 _Avoid_: Gifts, souvenirs
 
+**Product** (ro: produs):
+What the shop sells: an item of a collection, favours or an accessory, with its price, papers, order options and photos. Each began as jolene.ro sold it, and keeps what the workshop changes on it.
+_Avoid_: Item (what a design makes), article, listing
+
+**For sale** (ro: la vânzare; code: published):
+A product the shop shows and sells. One taken off sale (ro: scos de la vânzare) leaves the shop and its categories, and a cart that holds it says it's no longer available; paid orders stay as they are.
+_Avoid_: Active, live, published (in UI: a couple publishes a digital invitation)
+
 **Category** (ro: categorie):
 A shelf of the shop, such as Invitații nuntă or Mărturii, as jolene.ro had them. Its address in the shop still says `/collections/`, as the template had it.
 _Avoid_: Collection (a family of designs)
@@ -239,7 +247,7 @@ An order paid in Stripe's test mode, with a test card: a trial, not a sale.
 _Avoid_: Sandbox order
 
 **Workshop** (ro: atelier):
-Jolene's team, who print, assemble and send what couples order, and their pages in the studio, where they see every paid order, make its print files, move it on and refund it, and set how long guest lists are kept.
+Jolene's team, who print, assemble and send what couples order, and their pages in the studio, where they see every paid order, make its print files, move it on and refund it, change the shop's products, and set how long guest lists are kept.
 _Avoid_: Admin, back office, staff
 
 ### Digital invitations
