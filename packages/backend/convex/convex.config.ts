@@ -78,7 +78,10 @@ const app = defineApp({
      * as http://127.0.0.1:12111. Never set on a real deployment.
      */
     STRIPE_API_URL: v.optional(v.string()),
-    /** Where Jolene's team hears of each new order; EMAIL_FROM's address when unset. */
+    /**
+     * Where Jolene's team hears of each new order, and where a couple's reply
+     * to their order's confirmation goes. EMAIL_FROM's address when unset.
+     */
     ORDERS_EMAIL: v.optional(v.string()),
   },
 });

@@ -96,8 +96,15 @@ export const record = internalMutation({
         await ctx.db.delete("cartLines", lineId);
     await ctx.db.delete("checkouts", checkout._id);
 
-    // Apart, so neither can stop a paid order being recorded.
-    await ctx.scheduler.runAfter(0, internal.orders.unlock, { orderId });
+    // In the order's transaction (ADR 0014), as a subtransaction: an unlock
+    // that fails rolls back alone, never the paid order.
+    try {
+      await ctx.runMutation(internal.orders.unlock, { orderId });
+    } catch (error) {
+      console.error(
+        `Order ${orderName(number)} couldn't unlock the digital invitation it paid for, so Jolene's team unlocks it by hand: ${String(error)}`,
+      );
+    }
     await ctx.scheduler.runAfter(0, internal.orders.sendEmails, { orderId });
     console.log(
       `Order ${orderName(number)} paid${session.test ? " in Stripe's test mode" : ""}`,
@@ -173,6 +180,7 @@ export const sendEmails = internalMutation({
     const pictures = await linePictures(ctx, order);
     const { name, address } = sender();
     const from = fromHeader(name, address);
+    const team = env.ORDERS_EMAIL?.trim() || address;
     if (order.customer.email) {
       const email = confirmationEmail(
         order,
@@ -185,12 +193,13 @@ export const sendEmails = internalMutation({
         subject: email.subject,
         text: email.text,
         html: emailLayout(email.html, email.footer),
+        replyTo: [team],
         idempotencyKey: `order-${order._id}`,
       });
     }
     const notice = noticeEmail(order, link);
     await sendEmail(ctx, {
-      to: env.ORDERS_EMAIL?.trim() || address,
+      to: team,
       from,
       subject: notice.subject,
       text: notice.text,

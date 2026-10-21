@@ -1,6 +1,6 @@
 # Jolene's shop
 
-The shop is jolene.ro's storefront: the home page, the catalog's categories and products, search and the cart. It started from the Vercel Shop template (2026.10.0) and keeps its Next.js patterns and code style, but it sells from Convex (ADR 0015), not Shopify.
+The shop is jolene.ro's storefront: the home page, the catalog's categories and products, search, the cart, checkout and each order's page. It started from the Vercel Shop template (2026.10.0) and keeps its Next.js patterns and code style, but it sells from Convex (ADR 0015), not Shopify.
 
 ## In the Jolene monorepo
 
@@ -17,9 +17,9 @@ Every feature belongs to one owner. If a change can't name its owner, or reaches
 
 **Convex owns selling** (`packages/backend/convex`).
 
-- Owns: the catalog (products, papers, order options, fees, categories, photos), prices in bani, carts and their lines, what a line costs and whether it can be ordered, and proofs.
-- Lives in: `shop.ts` (catalog reads), `shop/` (loading, pricing, validators), `cart.ts`, `proofs.ts`.
-- Must not be reimplemented here: totals, fees, minimums and what stops a line. The product page's running price is the one exception, worked out in `lib/line-options/` from the same catalog data the cart prices from.
+- Owns: the catalog (products, papers, order options, fees, categories, photos), prices in bani, carts and their lines, what a line costs and whether it can be ordered, proofs, Stripe's Checkout Sessions, delivery prices, and orders with their emails.
+- Lives in: `shop.ts` (catalog reads), `shop/` (loading, pricing, validators), `cart.ts`, `proofs.ts`, `checkout.ts` and `checkout/` (Stripe), `orders.ts` and `orders/`.
+- Must not be reimplemented here: totals, fees, minimums, what stops a line, and anything that talks to Stripe. The product page's running price is the one exception, worked out in `lib/line-options/` from the same catalog data the cart prices from.
 
 **Next.js owns the app.**
 
@@ -30,10 +30,11 @@ Every feature belongs to one owner. If a change can't name its owner, or reaches
 
 1. **Commerce facts come from Convex.** Read them with `fetchQuery` from `convex/nextjs`, on the server only, and derive types from the functions (`FunctionReturnType<typeof api.shop.product>`) rather than writing them by hand. Prices are whole bani everywhere; `lib/money/` formats them.
 2. **A cart is its token.** The `jolene_cart` cookie holds a random token, httpOnly, and the token is the cart's only key: `lib/cart/action.ts` makes it on the first add and passes it to `api.cart.*`. The browser never reads it. Components change the cart through `useCartActions()`, and the newest answer wins.
-3. **Convex reads, Next.js caches.** `lib/<domain>/server.ts` exports `get*` functions that own `"use cache: remote"`, `cacheLife` and `cacheTag`. Convex sends no webhook when the catalog changes, so `cacheLife("minutes")` bounds how stale a page gets. Each list's first page is cached; Load more pages stay live so their cursors meet the catalog as it is. Carts and proofs never enter a public cache: `getCart` is deduped per request with React `cache`.
-4. **`components/ui/` takes primitive props only.** No domain types or content helpers; wrappers in `components/<domain>/` supply labels and data.
-5. **Copy is inline, server-first and Romanian for now** (an English version comes later). Keep labels beside their component; reusable content functions go in `lib/content/index.ts`. Pass primitive labels to client leaves, never content functions.
-6. **Every user-configurable `process.env.X` read has a row in `.env.example`** with a short comment on when to set it, and every `process.env.X` read is listed in `turbo.json`; Turborepo's strict mode hides undeclared variables and leaves them out of cache keys.
+3. **Paying is a redirect.** `lib/checkout/action.ts` asks `api.checkout.start` for Stripe's page and sends the couple there; Stripe sends them back to `app/checkout/return/`, which asks `api.checkout.confirm` for their order and sends them to its page, `/orders/<token>`. The shop never sees a card or a total it worked out itself.
+4. **Convex reads, Next.js caches.** `lib/<domain>/server.ts` exports `get*` functions that own `"use cache: remote"`, `cacheLife` and `cacheTag`. Convex sends no webhook when the catalog changes, so `cacheLife("minutes")` bounds how stale a page gets. Each list's first page is cached; Load more pages stay live so their cursors meet the catalog as it is. Carts, proofs and orders never enter a public cache: `getCart` is deduped per request with React `cache`, and `getOrder` reads on every request.
+5. **`components/ui/` takes primitive props only.** No domain types or content helpers; wrappers in `components/<domain>/` supply labels and data.
+6. **Copy is inline, server-first and Romanian for now** (an English version comes later). Keep labels beside their component; reusable content functions go in `lib/content/index.ts`. Pass primitive labels to client leaves, never content functions.
+7. **Every user-configurable `process.env.X` read has a row in `.env.example`** with a short comment on when to set it, and every `process.env.X` read is listed in `turbo.json`; Turborepo's strict mode hides undeclared variables and leaves them out of cache keys.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
