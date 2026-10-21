@@ -101,7 +101,7 @@ describe("guestListCsv", () => {
       columns,
       statusLabel: (status) => status,
       sideLabel: (side) => side ?? "",
-      linkOf: (family) => `https://invitatie.jolene.ro/ana/${family.code}`,
+      linkOf: (family) => `https://invitatie.orvibo.it/ana/${family.code}`,
       separator,
     });
 
@@ -126,9 +126,9 @@ describe("guestListCsv", () => {
       .split("\r\n");
     expect(rows).toEqual([
       "Familie;Invitat;Copil;Meniu;Răspuns;Alergii;Mesaj;Telefon;Email;Invitații cui;Link",
-      "Popescu;Ion;nu;;coming;;;+40 722 123 456;;;https://invitatie.jolene.ro/ana/a",
-      "Popescu;Ana;da;;coming;;;+40 722 123 456;;;https://invitatie.jolene.ro/ana/a",
-      "Dobre;;;;not-coming;;;;;;https://invitatie.jolene.ro/ana/b",
+      "Popescu;Ion;nu;;coming;;;+40 722 123 456;;;https://invitatie.orvibo.it/ana/a",
+      "Popescu;Ana;da;;coming;;;+40 722 123 456;;;https://invitatie.orvibo.it/ana/a",
+      "Dobre;;;;not-coming;;;;;;https://invitatie.orvibo.it/ana/b",
     ]);
   });
 
