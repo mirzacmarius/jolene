@@ -352,6 +352,7 @@ export default {
     loadMore: "Show more",
     allOrders: "All orders",
     test: "Test",
+    pickup: "Pickup from the workshop",
     products: "Products: {count}",
     notFound: "There's no order {name}.",
     paidAt: "Paid on {date}",

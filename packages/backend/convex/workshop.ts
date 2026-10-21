@@ -49,6 +49,7 @@ export const orders = query({
         test: order.test,
         customer: order.customer.name,
         city: order.address?.city ?? null,
+        pickup: order.delivery?.key === "pickup",
         lines: order.lines.map(({ title, quantity }) => ({ title, quantity })),
         total: order.total,
       })),

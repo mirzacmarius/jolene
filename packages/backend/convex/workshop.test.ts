@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { suites } from "@jolene/suites";
 import { testConvex } from "../test/convex";
 import { api, internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { orderName, orderNumber } from "./orders/format";
 import type { OrderLine } from "./orders/validators";
 
@@ -93,6 +93,10 @@ async function order(
   t: ReturnType<typeof testConvex>,
   number: number,
   orderLines: OrderLine[],
+  delivery: Doc<"orders">["delivery"] = {
+    label: "Curier, la adresă",
+    price: 2000,
+  },
 ) {
   await t.run((ctx) =>
     ctx.db.insert("orders", {
@@ -105,7 +109,7 @@ async function order(
       lines: orderLines,
       fees: [{ key: "diacritice-50", label: "Diacritice", price: 5000 }],
       subtotal: 98_000,
-      delivery: { label: "Curier, la adresă", price: 2000 },
+      delivery,
       discount: 0,
       total: 100_000,
       vat: 15_966,
@@ -184,8 +188,17 @@ describe("the workshop", () => {
 
   test("lists the orders newest first, a page at a time", async () => {
     const { t, workshop, proofId } = await setUp();
-    for (const number of [1001, 1002, 1003])
-      await order(t, number, lines(proofId));
+    await order(t, 1001, lines(proofId));
+    await order(t, 1002, lines(proofId), {
+      key: "pickup",
+      label: "Ridicare de la atelier, Str. Ion Creangă 41, Iași",
+      price: 0,
+    });
+    await order(t, 1003, lines(proofId), {
+      key: "cargus",
+      label: "Curier Cargus, la adresă",
+      price: 2500,
+    });
     const first = await workshop.query(api.workshop.orders, {
       paginationOpts: { numItems: 2, cursor: null },
     });
@@ -198,12 +211,15 @@ describe("the workshop", () => {
       test: false,
       customer: "Ana Popescu",
       city: "Cluj-Napoca",
+      pickup: false,
       lines: [
         { title: "Invitație de nuntă Classic Roses", quantity: 60 },
         { title: "Meniu nuntă Classic Roses", quantity: 60 },
       ],
       total: 100_000,
     });
+    // Picked up from the workshop, wherever the couple lives.
+    expect(first.page[1]).toMatchObject({ city: "Cluj-Napoca", pickup: true });
     const rest = await workshop.query(api.workshop.orders, {
       paginationOpts: { numItems: 2, cursor: first.continueCursor },
     });

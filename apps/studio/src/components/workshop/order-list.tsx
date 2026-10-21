@@ -52,9 +52,12 @@ export function OrderList() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block font-medium">
-                  {order.city
-                    ? `${order.customer} · ${order.city}`
-                    : order.customer}
+                  {[
+                    order.customer,
+                    order.pickup ? t("workshop.pickup") : order.city,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
                 <span className="block truncate text-sm text-muted-foreground">
                   {order.lines

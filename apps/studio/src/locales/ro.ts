@@ -354,6 +354,7 @@ export default {
     loadMore: "Arată mai multe",
     allOrders: "Toate comenzile",
     test: "Test",
+    pickup: "Ridicare de la atelier",
     products: "Produse: {count}",
     notFound: "Nu există comanda {name}.",
     paidAt: "Plătită pe {date}",
