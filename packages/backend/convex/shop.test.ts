@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { catalog } from "@jolene/products/data";
 import { digitalInvitation } from "@jolene/products/digital-invitation";
+import { photoUrl } from "@jolene/products/photos";
 import { Glob } from "bun";
 import type { FunctionReturnType } from "convex/server";
 import { convexTest } from "convex-test";
@@ -53,11 +54,15 @@ describe("shop.product", () => {
       ],
       images: [
         {
-          url: "https://jolene.ro/wp-content/uploads/2021/10/Jolene_Fotograf_Irina_Mocanu_53.jpg",
+          url: photoUrl(
+            "https://jolene.ro/wp-content/uploads/2021/10/Jolene_Fotograf_Irina_Mocanu_53.jpg",
+          ),
           alt: "Invitatie botez baiat",
         },
         {
-          url: "https://jolene.ro/wp-content/uploads/2021/10/Jolene_Fotograf_Irina_Mocanu_56.jpg",
+          url: photoUrl(
+            "https://jolene.ro/wp-content/uploads/2021/10/Jolene_Fotograf_Irina_Mocanu_56.jpg",
+          ),
           alt: "Invitație botez Luna",
         },
       ],
@@ -211,8 +216,16 @@ describe("init.seed", () => {
     });
     await t.action(internal.init.seed, {});
     const luna = await t.query(api.shop.product, { handle: "18207" });
-    expect(luna?.images[0]?.url).not.toStartWith("https://jolene.ro/");
-    expect(luna?.images[1]?.url).toStartWith("https://jolene.ro/");
+    expect(luna?.images[0]?.url).not.toBe(
+      photoUrl(
+        "https://jolene.ro/wp-content/uploads/2021/10/Jolene_Fotograf_Irina_Mocanu_53.jpg",
+      ),
+    );
+    expect(luna?.images[1]?.url).toBe(
+      photoUrl(
+        "https://jolene.ro/wp-content/uploads/2021/10/Jolene_Fotograf_Irina_Mocanu_56.jpg",
+      ),
+    );
 
     const { _id, _creationTime, published, images, ...fields } = await t.run(
       async (ctx) => {
@@ -299,7 +312,7 @@ describe("shop.categories", () => {
     expect(
       categories.find((category) => category.handle === "invitatii-botez")
         ?.image,
-    ).toEqual({ url: photo.url, alt: photo.alt });
+    ).toEqual({ url: photoUrl(photo.url), alt: photo.alt });
     expect(
       await t.query(api.shop.category, { handle: "invitatii-botez" }),
     ).toEqual({ handle: "invitatii-botez", title: "Invitații botez" });
