@@ -119,39 +119,47 @@ export const latest = query({
   },
 });
 
+export const proofSummaryValidator = v.object({
+  designId: v.id("designs"),
+  kind: productKindValidator,
+  suite: labelsValidator,
+  product: v.union(v.string(), v.null()),
+  image: v.union(v.string(), v.null()),
+  approvedAt: v.number(),
+});
+
 /**
- * What the shop shows of a proof, to anyone with its link: the couple's cart
- * line and the workshop's order carry it. The document and the couple's
- * details stay in the studio; the picture shows them.
+ * What the shop shows of a proof: the design's item and collection, the
+ * product it's ordered as, the studio's picture of it and when it was
+ * approved. The document and the couple's details stay in the studio; the
+ * picture shows them.
+ */
+export async function summarize(ctx: QueryCtx, proofId: Id<"proofs">) {
+  const proof = await ctx.db.get("proofs", proofId);
+  if (!proof) return null;
+  const template = await ctx.db.get("templates", proof.templateId);
+  const suite = template && (await ctx.db.get("suites", template.suiteId));
+  if (!template || !suite) return null;
+  return {
+    designId: proof.designId,
+    kind: proof.kind,
+    suite: suite.name,
+    product: template.shopifyProductHandle ?? null,
+    image: proof.image ? await ctx.storage.getUrl(proof.image) : null,
+    approvedAt: proof.approvedAt,
+  };
+}
+
+/**
+ * A proof's summary, to anyone with its link: the couple's cart line and the
+ * workshop's order carry it.
  */
 export const summary = query({
   args: { proofId: v.string() },
-  returns: v.union(
-    v.object({
-      designId: v.id("designs"),
-      kind: productKindValidator,
-      suite: labelsValidator,
-      product: v.union(v.string(), v.null()),
-      image: v.union(v.string(), v.null()),
-      approvedAt: v.number(),
-    }),
-    v.null(),
-  ),
+  returns: v.union(proofSummaryValidator, v.null()),
   handler: async (ctx, args) => {
     const proofId = ctx.db.normalizeId("proofs", args.proofId);
-    const proof = proofId && (await ctx.db.get("proofs", proofId));
-    if (!proof) return null;
-    const template = await ctx.db.get("templates", proof.templateId);
-    const suite = template && (await ctx.db.get("suites", template.suiteId));
-    if (!template || !suite) return null;
-    return {
-      designId: proof.designId,
-      kind: proof.kind,
-      suite: suite.name,
-      product: template.shopifyProductHandle ?? null,
-      image: proof.image ? await ctx.storage.getUrl(proof.image) : null,
-      approvedAt: proof.approvedAt,
-    };
+    return proofId && (await summarize(ctx, proofId));
   },
 });
 

@@ -21,4 +21,12 @@ export const errors = {
   aiInvalidMessage: "ai-invalid-message",
   /** A picture that isn't a PNG or a JPEG, or is too large to keep. */
   invalidImage: "invalid-image",
+  /** A product that is off sale or doesn't exist. */
+  productUnavailable: "product-unavailable",
+  /**
+   * A cart line asking what its product doesn't: an option it doesn't have,
+   * a value or choice it doesn't offer, a quantity out of range, a fee it
+   * doesn't list, or a proof of another product.
+   */
+  invalidLine: "invalid-line",
 } as const;

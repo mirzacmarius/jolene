@@ -5,14 +5,13 @@ import {
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { type QueryCtx, query } from "./_generated/server";
+import { photoValidator, photoView } from "./shop/photos";
+import { loadProduct } from "./shop/pricing";
 import {
   choiceValidator,
   lineOptionKindValidator,
   productOptionValidator,
 } from "./shop/validators";
-
-/** A photo as the shop shows it: from storage once copied there. */
-const photoValidator = v.object({ url: v.string(), alt: v.string() });
 
 const categoryValidator = v.object({ handle: v.string(), title: v.string() });
 
@@ -64,14 +63,6 @@ const sortValidator = v.union(
   v.literal("price-ascending"),
   v.literal("price-descending"),
 );
-
-const photoView = async (
-  ctx: QueryCtx,
-  { source, alt, storageId }: Doc<"products">["images"][number],
-) => ({
-  url: (storageId && (await ctx.storage.getUrl(storageId))) || source,
-  alt,
-});
 
 const cardView = async (ctx: QueryCtx, product: Doc<"products">) => ({
   handle: product.handle,
@@ -127,24 +118,9 @@ export const product = query({
       .withIndex("by_handle", (q) => q.eq("handle", handle))
       .unique();
     if (!product?.published) return null;
-    const [images, lineOptions, fees, categories] = await Promise.all([
+    const [images, { lineOptions, fees }, categories] = await Promise.all([
       Promise.all(product.images.map((image) => photoView(ctx, image))),
-      Promise.all(
-        product.lineOptions.map((option) =>
-          ctx.db
-            .query("lineOptions")
-            .withIndex("by_handle", (q) => q.eq("handle", option))
-            .unique(),
-        ),
-      ),
-      Promise.all(
-        product.fees.map((fee) =>
-          ctx.db
-            .query("fees")
-            .withIndex("by_key", (q) => q.eq("key", fee))
-            .unique(),
-        ),
-      ),
+      loadProduct(ctx, product),
       Promise.all(
         product.categories.map((category) =>
           ctx.db
@@ -163,10 +139,8 @@ export const product = query({
       minQuantity: product.minQuantity,
       images,
       options: product.options,
-      lineOptions: lineOptions.flatMap((option) =>
-        option ? [lineOptionView(option)] : [],
-      ),
-      fees: fees.flatMap((fee) => (fee ? [feeView(fee)] : [])),
+      lineOptions: lineOptions.map(lineOptionView),
+      fees: fees.map(feeView),
       categories: categories.flatMap((category) =>
         category ? [categoryView(category)] : [],
       ),

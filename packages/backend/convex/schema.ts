@@ -9,8 +9,10 @@ import {
   aiUsageValidator,
 } from "./ai/validators";
 import {
+  answerValidator,
   choiceValidator,
   lineOptionKindValidator,
+  pickedValidator,
   productImageValidator,
   productOptionValidator,
 } from "./shop/validators";
@@ -385,6 +387,30 @@ export default defineSchema({
     choices: v.array(choiceValidator),
     editedAt: v.optional(v.number()),
   }).index("by_handle", ["handle"]),
+
+  /**
+   * A visitor's cart in the shop. The shop's server keeps its token in a
+   * cookie and finds the cart by it; the token is its only key.
+   */
+  carts: defineTable({
+    token: v.string(),
+    updatedAt: v.number(),
+  }).index("by_token", ["token"]),
+
+  /** A product in a cart, with what the couple chose for it. */
+  cartLines: defineTable({
+    cartId: v.id("carts"),
+    productId: v.id("products"),
+    quantity: v.number(),
+    /** A value for each of the product's options, such as its paper. */
+    options: v.array(pickedValidator),
+    /** The order options' answers, by the option's key. */
+    answers: v.array(answerValidator),
+    /** The keys of the fees the couple chose with it: the order pays each once. */
+    fees: v.array(v.string()),
+    /** The design the couple approved for it in the studio. */
+    proofId: v.optional(v.id("proofs")),
+  }).index("by_cartId", ["cartId"]),
 
   /** A one-off charge on an order, such as for diacritics or an urgent order. */
   fees: defineTable({
