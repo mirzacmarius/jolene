@@ -6,6 +6,12 @@ export function orderName(number: number): string {
   return `J${number}`;
 }
 
+/** The number in an order's name, such as 1001 in J1001; null for no name. */
+export function orderNumber(name: string): number | null {
+  const digits = /^J(\d{4,9})$/i.exec(name.trim())?.[1];
+  return digits ? Number(digits) : null;
+}
+
 /**
  * A price in bani as Romanian shops write it, "1.234,50 lei", without Intl,
  * whose locale data Convex's runtime may not carry.

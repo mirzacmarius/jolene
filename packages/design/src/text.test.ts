@@ -5,6 +5,7 @@ import {
   formatDate,
   isIsoDate,
   monogram,
+  namesOf,
   previewFields,
   resolveText,
   tokensIn,
@@ -62,6 +63,15 @@ describe("resolveText", () => {
       }),
     ).toBe("AM");
     expect(monogram({ child: "sofia" }, "christening")).toBe("S");
+  });
+
+  test("names who a design is for", () => {
+    expect(namesOf(options.fields, "wedding")).toBe("Ana & Mihai");
+    expect(namesOf({ partner2: " Mihai " }, "wedding")).toBe("Mihai");
+    expect(namesOf({ child: "Sofia", partner1: "Ana" }, "christening")).toBe(
+      "Sofia",
+    );
+    expect(namesOf({}, "wedding")).toBe("");
   });
 
   test("lists tokens once, in order", () => {

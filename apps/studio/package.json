@@ -17,6 +17,7 @@
     "@jolene/backend": "workspace:*",
     "@jolene/design": "workspace:*",
     "@jolene/i18n": "workspace:*",
+    "@jolene/print": "workspace:*",
     "@jolene/products": "workspace:*",
     "@jolene/suites": "workspace:*",
     "@jolene/ui": "workspace:*",

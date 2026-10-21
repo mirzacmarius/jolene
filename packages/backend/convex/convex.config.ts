@@ -91,6 +91,11 @@ const app = defineApp({
      * to their order's confirmation goes. EMAIL_FROM's address when unset.
      */
     ORDERS_EMAIL: v.optional(v.string()),
+    /**
+     * The accounts the workshop's pages open to, by email address,
+     * comma-separated. They open to no one while unset.
+     */
+    WORKSHOP_EMAILS: v.optional(v.string()),
   },
 });
 

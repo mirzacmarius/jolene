@@ -60,4 +60,6 @@ export const errors = {
   cartNotReady: "cart-not-ready",
   /** The event's digital invitation is open to every guest already. */
   inviteUnlocked: "invite-unlocked",
+  /** The workshop's pages are for the accounts in WORKSHOP_EMAILS alone. */
+  workshopOnly: "workshop-only",
 } as const;

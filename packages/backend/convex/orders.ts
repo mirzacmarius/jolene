@@ -171,7 +171,7 @@ export async function unopenedInvitations(
  * The pictures of an order's lines: the couple's design, the invitation
  * guests see for a line bought for an event, or the product's photo.
  */
-async function linePictures(ctx: QueryCtx, order: Doc<"orders">) {
+export async function linePictures(ctx: QueryCtx, order: Doc<"orders">) {
   return await Promise.all(
     order.lines.map(async (line) => {
       const proof = line.proof && (await summarize(ctx, line.proof));
