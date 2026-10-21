@@ -1,7 +1,11 @@
+import { blog } from "@jolene/products/blog";
+import { photoFolder, photoStore } from "@jolene/products/photos";
 import { withMicrofrontends } from "@vercel/microfrontends/next/config";
 import type { NextConfig } from "next";
 
 import { withShopConfig } from "./lib/config/server";
+
+const POSTS = `:post(${blog.map(({ slug }) => slug).join("|")})`;
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
@@ -20,7 +24,7 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   reactCompiler: true,
   // Guests' links on invitatie.orvibo.it are short, /<invitation>/<family code>: they go to the studio's /invitatie on the same address, and the address's root to Jolene.
-  // jolene.ro's WooCommerce addresses, so links and search results find the products, categories and policies here.
+  // jolene.ro's WordPress and WooCommerce addresses, so links and search results find the products, categories, posts and policies here.
   async redirects() {
     const guests = [{ type: "host" as const, value: "invitatie\\..+" }];
     return [
@@ -68,7 +72,59 @@ const nextConfig: NextConfig = {
         permanent: true,
         source: "/politica-de-confidentialitate-jolene",
       },
+      { destination: "/:post", permanent: true, source: `/${POSTS}/:rest+` },
+      {
+        destination: "/blog",
+        permanent: true,
+        source:
+          "/:archive(author|blog-invitatii-nunta-jolene|category|comments|feed|page|tag|\\d{4})/:rest*",
+      },
+      {
+        destination: "/search?q=:query",
+        has: [{ key: "s", type: "query" as const, value: "(?<query>.+)" }],
+        permanent: true,
+        source: "/",
+      },
+      { destination: "/cart", permanent: true, source: "/cos-cumpararturi" },
+      {
+        destination: "/cart",
+        permanent: true,
+        source: "/checkout-invitatii-de-nunta-jolene/:rest*",
+      },
+      { destination: "/collections/all", permanent: true, source: "/product-tag/:rest*" },
+      { destination: "/collections/all", permanent: true, source: "/shop-jolene/:rest*" },
+      { destination: "/collections/all", permanent: true, source: "/wishlist-jolene" },
+      {
+        destination: "/contact",
+        permanent: true,
+        source: "/:page(contact-jolene|solicita-oferta)",
+      },
+      {
+        destination: "/#poveste",
+        permanent: true,
+        source: "/despre-jolene-invitatii-nunta-accesorii-nunta",
+      },
+      { destination: "/studio", permanent: true, source: "/personalizare-invitatii-de-nunta" },
+      {
+        destination: "/",
+        permanent: true,
+        source:
+          "/:page(cmm4e_menu|coming-soon|contul-meu-jolene|home-01|left-sidebar|no-sidebar|portfolio-category|portfolio-item|testimonials-category)/:rest*",
+      },
+      ...(photoStore
+        ? [
+            {
+              destination: `${photoStore}/${photoFolder}:path*`,
+              permanent: false,
+              source: "/wp-content/uploads/:path*",
+            },
+          ]
+        : []),
     ];
+  },
+  // jolene.ro's blog posts keep their addresses.
+  async rewrites() {
+    return [{ destination: "/blog/:post", source: `/${POSTS}` }];
   },
   turbopack: {
     rules: {

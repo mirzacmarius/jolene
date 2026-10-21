@@ -9,6 +9,7 @@ The shop is jolene.ro's storefront: the home page, the catalog's categories and 
 - Environment variables are declared in the root `turbo.json`, under the build task's `env`.
 - `/studio` belongs to the designer (`apps/studio`), another app on this domain, and so does `/invitatie`, where guests open digital invitations: `microfrontends.json` routes both there before this app sees the request. Link to them with a plain `<a>`, never `Link`, so the browser loads the other app. On the guests' own address, invitatie.orvibo.it, `next.config.ts` redirects an invitation's short link to `/invitatie`.
 - Vercel builds the shop with `packages/backend/scripts/vercel-build-shop.sh`: it deploys the Convex functions to the studio's deployment (production, or the branch's preview), seeds the catalog, then builds against it. Locally, `bun run setup` at the root writes `NEXT_PUBLIC_CONVEX_URL` to `.env.local`.
+- jolene.ro's blog comes from `@jolene/products/blog`, lifted from its WordPress. Each post keeps its old address, `/<slug>`, which `next.config.ts` rewrites to `app/blog/[slug]`; `proxy.ts` answers 404 to `/blog/<slug>` itself, so a post has one address and an unknown one is a real 404. `next.config.ts` also redirects jolene.ro's other WordPress and WooCommerce addresses.
 - Order options, papers, fees and minimum orders (ADR 0008) come with each product from `api.shop.product`. The product page shows a line's price as the couple chooses; the cart, priced by Convex, says what stops a line being ordered (`convex/shop/pricing.ts`).
 
 ## Two owners

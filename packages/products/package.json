@@ -6,12 +6,14 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./blog": "./src/blog.ts",
     "./catalog": "./src/catalog.ts",
     "./data": "./src/data.ts",
     "./digital-invitation": "./src/digital-invitation.ts",
     "./photos": "./src/photos.ts"
   },
   "scripts": {
+    "blog": "bun scripts/blog.ts",
     "lift": "bun scripts/lift.ts",
     "lint": "biome lint",
     "photos": "bun scripts/photos.ts",
