@@ -26,7 +26,11 @@ import {
 } from "./orders/emails";
 import { orderName } from "./orders/format";
 import { orderUrl, shopUrl } from "./orders/links";
-import { parcelValidator, shipmentValidator } from "./orders/validators";
+import {
+  type Parcel,
+  parcelValidator,
+  shipmentValidator,
+} from "./orders/validators";
 import schema from "./schema";
 import { bookingOf, STANDARD_PARCEL, validParcel } from "./shipments/booking";
 import {
@@ -137,31 +141,40 @@ async function orderByNumber(ctx: MutationCtx, number: number) {
  * asked for again; Colete Online may have booked a stuck one all the same,
  * so the team looks there first.
  */
+export async function bookShipment(
+  ctx: MutationCtx,
+  order: Doc<"orders">,
+  parcel: Parcel = STANDARD_PARCEL,
+): Promise<void> {
+  if (!coleteOnline()) throw new ConvexError(errors.courierUnavailable);
+  if (
+    order.delivery?.key !== "courier" ||
+    !order.address ||
+    !validParcel(parcel)
+  )
+    throw new ConvexError(errors.invalidInput);
+  const { shipment } = order;
+  if (shipment?.status === "booked" || inFlight(shipment))
+    throw new ConvexError(errors.shipmentBooked);
+  const key = randomCode(KEY_LENGTH);
+  await ctx.db.patch("orders", order._id, {
+    shipment: { status: "booking", at: Date.now(), parcel, key },
+  });
+  await ctx.scheduler.runAfter(0, internal.shipments.create, {
+    orderId: order._id,
+    key,
+  });
+}
+
+/** Books the courier for an order's parcel, for the workshop (bookShipment). */
 export const book = mutation({
   args: { number: v.number(), parcel: v.optional(parcelValidator) },
   returns: v.null(),
-  handler: async (ctx, { number, parcel = STANDARD_PARCEL }) => {
+  handler: async (ctx, { number, parcel }) => {
     await requireWorkshop(ctx);
     const order = await orderByNumber(ctx, number);
     if (!order) throw new ConvexError(errors.notFound);
-    if (!coleteOnline()) throw new ConvexError(errors.courierUnavailable);
-    if (
-      order.delivery?.key !== "courier" ||
-      !order.address ||
-      !validParcel(parcel)
-    )
-      throw new ConvexError(errors.invalidInput);
-    const { shipment } = order;
-    if (shipment?.status === "booked" || inFlight(shipment))
-      throw new ConvexError(errors.shipmentBooked);
-    const key = randomCode(KEY_LENGTH);
-    await ctx.db.patch("orders", order._id, {
-      shipment: { status: "booking", at: Date.now(), parcel, key },
-    });
-    await ctx.scheduler.runAfter(0, internal.shipments.create, {
-      orderId: order._id,
-      key,
-    });
+    await bookShipment(ctx, order, parcel);
     return null;
   },
 });

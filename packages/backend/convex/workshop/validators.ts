@@ -5,6 +5,7 @@ import {
   addressValidator,
   customerValidator,
   deliveryValidator,
+  invoiceValidator,
   orderFeeValidator,
   orderLineValidator,
 } from "../orders/validators";
@@ -92,6 +93,16 @@ export const refundEntryValidator = v.object({
   by: v.optional(v.string()),
 });
 
+/** An invoice or a credit note in SmartBill, as the workshop's order page shows it. */
+export const workshopInvoiceValidator = invoiceValidator
+  .omit("series", "number", "file")
+  .extend({
+    /** Its series and number, as JOL 0042, once SmartBill gave them. */
+    name: v.optional(v.string()),
+    /** Where its PDF downloads from. */
+    url: v.optional(v.string()),
+  });
+
 /** An order as the workshop's order page shows it: all of it. */
 export const workshopOrderValidator = v.object({
   number: v.number(),
@@ -129,6 +140,13 @@ export const workshopOrderValidator = v.object({
   refunded: v.number(),
   /** Its refunds, newest first, failed ones too. */
   refunds: v.array(refundEntryValidator),
+  /** Its invoice, and the credit note that reverses it after a refund. */
+  invoice: v.optional(workshopInvoiceValidator),
+  creditNote: v.optional(workshopInvoiceValidator),
+  /** SmartBill issues this deployment's invoices: its keys are set. */
+  invoicing: v.boolean(),
+  /** Colete Online books this deployment's couriers: its keys are set. */
+  courierBooking: v.boolean(),
 });
 
 /** What the print file of an order's designed line is made from. */

@@ -1,9 +1,19 @@
-import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  type Mock,
+  spyOn,
+  test,
+} from "bun:test";
 import { suites } from "@jolene/suites";
+import { coleteOnlineClient, fakeColeteOnline } from "../test/coleteOnline";
 import { testConvex } from "../test/convex";
 import { fakeStripe } from "../test/stripe";
 import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
+import { pickupReadyEmail, shipmentEmail } from "./orders/emails";
 import { orderName, orderNumber } from "./orders/format";
 import type { OrderLine } from "./orders/validators";
 
@@ -651,6 +661,345 @@ describe("a refund", () => {
       amount: 70_000,
     });
     expect(await reversals()).toEqual([[{ orderId }]]);
+  });
+});
+
+describe("sending an order", () => {
+  const courier = {
+    key: "courier" as const,
+    label: "Curier la adresă",
+    price: 2500,
+  };
+  const pickup = {
+    key: "pickup" as const,
+    label: "Ridicare de la atelier, Str. Ion Creangă 41, Iași",
+    price: 0,
+  };
+  const sendingEnv = [
+    "COLETE_ONLINE_CLIENT_ID",
+    "COLETE_ONLINE_CLIENT_SECRET",
+    "CONVEX_SITE_URL",
+    "SMARTBILL_USERNAME",
+    "SMARTBILL_TOKEN",
+    "SMARTBILL_SERIES",
+  ] as const;
+  let colete: ReturnType<typeof fakeColeteOnline> | undefined;
+  let log: Mock<typeof console.log>;
+  let warn: Mock<typeof console.warn>;
+
+  beforeEach(() => {
+    log = spyOn(console, "log").mockImplementation(() => {});
+    warn = spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    colete?.restore();
+    colete = undefined;
+    log.mockRestore();
+    warn.mockRestore();
+    for (const name of sendingEnv) Reflect.deleteProperty(process.env, name);
+  });
+
+  /** Colete Online's keys on the deployment, and its fake answering. */
+  function coleteOnline() {
+    Object.assign(process.env, {
+      COLETE_ONLINE_CLIENT_ID: coleteOnlineClient.id,
+      COLETE_ONLINE_CLIENT_SECRET: coleteOnlineClient.secret,
+      CONVEX_SITE_URL: "https://jolene-test.convex.site",
+    });
+    colete = fakeColeteOnline();
+    return colete;
+  }
+
+  /** The subjects of the couple's emails, as the logs have them while none goes out. */
+  const emailed = () =>
+    log.mock.calls.flatMap((call) => {
+      const subject = /email "(.*)" went by no email/.exec(String(call[0]));
+      return subject ? [subject[1]] : [];
+    });
+
+  async function stored(t: ReturnType<typeof testConvex>, number: number) {
+    const order = await t.run((ctx) =>
+      ctx.db
+        .query("orders")
+        .withIndex("by_number", (q) => q.eq("number", number))
+        .unique(),
+    );
+    if (!order) throw new Error(`No order ${number}`);
+    return order;
+  }
+
+  test("books the courier for the box the team packed, and moves the order on to sent", async () => {
+    const { t, workshop, proofId } = await setUp();
+    coleteOnline();
+    await order(t, 1001, lines(proofId), courier);
+    await workshop.mutation(api.workshop.setStatus, {
+      number: 1001,
+      from: "paid",
+      status: "making",
+    });
+    expect(
+      (await workshop.query(api.workshop.order, { number: 1001 }))
+        ?.courierBooking,
+    ).toBe(true);
+    const parcel = { weight: 2.5, length: 40, width: 30, height: 10 };
+    await workshop.mutation(api.workshop.bookCourier, {
+      number: 1001,
+      from: "making",
+      parcel,
+    });
+    await t.finishAllScheduledFunctions(() => {});
+    const shown = await workshop.query(api.workshop.order, { number: 1001 });
+    expect(shown?.status).toBe("sent");
+    expect(shown?.history[0]).toMatchObject({
+      by: "atelier@jolene.ro",
+      kind: "status",
+      from: "making",
+      status: "sent",
+    });
+    expect(
+      await workshop.query(api.shipments.forWorkshop, { number: 1001 }),
+    ).toMatchObject({
+      status: "booked",
+      parcel,
+      courier: "Cargus",
+      awb: "1000000001",
+      label: expect.any(String),
+    });
+    // The booking tells the couple, once; the change of status doesn't.
+    const sent = await stored(t, 1001);
+    expect(emailed()).toEqual([
+      shipmentEmail(sent, { courier: "Cargus", awb: "1000000001" }, null)
+        .subject,
+    ]);
+    await expect(
+      workshop.mutation(api.workshop.bookCourier, { number: 1001, from: "sent" }),
+    ).rejects.toThrow("shipment-booked");
+  });
+
+  test("says why Colete Online refused, and books again", async () => {
+    const { t, workshop, proofId } = await setUp();
+    const fake = coleteOnline();
+    await order(t, 1001, lines(proofId), courier);
+    fake.fail("order", {
+      status: 422,
+      body: {
+        message: "The given data was invalid.",
+        errors: { "recipient.contact.phone": ["Numărul nu e valid."] },
+      },
+    });
+    await workshop.mutation(api.workshop.bookCourier, {
+      number: 1001,
+      from: "paid",
+    });
+    await t.finishAllScheduledFunctions(() => {});
+    expect(
+      await workshop.query(api.shipments.forWorkshop, { number: 1001 }),
+    ).toMatchObject({
+      status: "failed",
+      parcel: { weight: 1, length: 35, width: 25, height: 5 },
+      error:
+        "Colete Online a răspuns 422: The given data was invalid. Numărul nu e valid.",
+    });
+    // The team asked for it to go: it stays sent while they book again.
+    expect(
+      (await workshop.query(api.workshop.order, { number: 1001 }))?.status,
+    ).toBe("sent");
+    expect(emailed()).toEqual([]);
+    fake.recover("order");
+    await workshop.mutation(api.workshop.bookCourier, {
+      number: 1001,
+      from: "sent",
+    });
+    await t.finishAllScheduledFunctions(() => {});
+    expect(
+      await workshop.query(api.shipments.forWorkshop, { number: 1001 }),
+    ).toMatchObject({ status: "booked", awb: "1000000001" });
+    const shown = await workshop.query(api.workshop.order, { number: 1001 });
+    expect(shown?.history.filter((entry) => entry.kind === "status")).toEqual([
+      expect.objectContaining({ from: "paid", status: "sent" }),
+    ]);
+  });
+
+  test("records a courier the team booked itself, and corrects its AWB", async () => {
+    const { t, workshop, proofId } = await setUp();
+    await order(t, 1001, lines(proofId), courier);
+    expect(
+      (await workshop.query(api.workshop.order, { number: 1001 }))
+        ?.courierBooking,
+    ).toBe(false);
+    // Without Colete Online's keys, the team types the AWB in.
+    await expect(
+      workshop.mutation(api.workshop.bookCourier, { number: 1001, from: "paid" }),
+    ).rejects.toThrow("courier-unavailable");
+    await workshop.mutation(api.workshop.recordAwb, {
+      number: 1001,
+      from: "paid",
+      courier: " Sameday ",
+      awb: "4EMG 1234 5678",
+    });
+    expect(
+      await workshop.query(api.shipments.forWorkshop, { number: 1001 }),
+    ).toMatchObject({ status: "booked", courier: "Sameday", awb: "4EMG12345678" });
+    await workshop.mutation(api.workshop.recordAwb, {
+      number: 1001,
+      from: "sent",
+      courier: "Sameday",
+      awb: "4EMG12345679",
+    });
+    const shown = await workshop.query(api.workshop.order, { number: 1001 });
+    expect(shown?.status).toBe("sent");
+    expect(
+      shown?.history.filter((entry) => entry.kind === "status"),
+    ).toHaveLength(1);
+    expect(
+      await workshop.query(api.shipments.forWorkshop, { number: 1001 }),
+    ).toMatchObject({ awb: "4EMG12345679" });
+    // The couple heard of each AWB.
+    expect(emailed()).toHaveLength(2);
+    for (const typed of [
+      { courier: "", awb: "   " },
+      { courier: "", awb: "1".repeat(101) },
+      { courier: "x".repeat(101), awb: "123" },
+    ])
+      await expect(
+        workshop.mutation(api.workshop.recordAwb, {
+          number: 1001,
+          from: "sent",
+          ...typed,
+        }),
+      ).rejects.toThrow("invalid-input");
+  });
+
+  test("sends nothing from a page the order moved on from, nor a cancelled order or one picked up", async () => {
+    const { t, workshop, couple, proofId } = await setUp();
+    coleteOnline();
+    await order(t, 1001, lines(proofId), courier);
+    await order(t, 1002, lines(proofId), pickup);
+    await workshop.mutation(api.workshop.setStatus, {
+      number: 1001,
+      from: "paid",
+      status: "making",
+    });
+    // Someone else's page still showed it paid.
+    await expect(
+      workshop.mutation(api.workshop.bookCourier, { number: 1001, from: "paid" }),
+    ).rejects.toThrow("order-moved");
+    await expect(
+      workshop.mutation(api.workshop.recordAwb, {
+        number: 1001,
+        from: "paid",
+        courier: "",
+        awb: "123",
+      }),
+    ).rejects.toThrow("order-moved");
+    await workshop.mutation(api.workshop.setStatus, {
+      number: 1001,
+      from: "making",
+      status: "cancelled",
+    });
+    await expect(
+      workshop.mutation(api.workshop.bookCourier, {
+        number: 1001,
+        from: "cancelled",
+      }),
+    ).rejects.toThrow("invalid-input");
+    expect(
+      await workshop.query(api.shipments.forWorkshop, { number: 1001 }),
+    ).toBeNull();
+    // No courier takes an order the couple picks up, and it stays as it was.
+    await expect(
+      workshop.mutation(api.workshop.bookCourier, { number: 1002, from: "paid" }),
+    ).rejects.toThrow("invalid-input");
+    await expect(
+      workshop.mutation(api.workshop.recordAwb, {
+        number: 1002,
+        from: "paid",
+        courier: "",
+        awb: "123",
+      }),
+    ).rejects.toThrow("invalid-input");
+    const pickedUp = await workshop.query(api.workshop.order, { number: 1002 });
+    expect(pickedUp?.status).toBe("paid");
+    expect(pickedUp?.history).toEqual([]);
+    await expect(
+      couple.mutation(api.workshop.bookCourier, { number: 1002, from: "paid" }),
+    ).rejects.toThrow("workshop-only");
+    await expect(
+      couple.mutation(api.workshop.recordAwb, {
+        number: 1002,
+        from: "paid",
+        courier: "",
+        awb: "123",
+      }),
+    ).rejects.toThrow("workshop-only");
+  });
+
+  test("tells the couple their order is ready to pick up", async () => {
+    const { t, workshop, proofId } = await setUp();
+    await order(t, 1001, lines(proofId), pickup);
+    await workshop.mutation(api.workshop.setStatus, {
+      number: 1001,
+      from: "paid",
+      status: "making",
+    });
+    expect(emailed()).toEqual([]);
+    await workshop.mutation(api.workshop.setStatus, {
+      number: 1001,
+      from: "making",
+      status: "ready",
+    });
+    expect(emailed()).toEqual([
+      pickupReadyEmail(await stored(t, 1001), null).subject,
+    ]);
+  });
+
+  test("shows the order's invoice and its credit note, with their PDFs", async () => {
+    const { t, workshop, proofId } = await setUp();
+    await order(t, 1001, lines(proofId));
+    expect(
+      await workshop.query(api.workshop.order, { number: 1001 }),
+    ).toMatchObject({ invoicing: false, courierBooking: false });
+    const file = await t.run((ctx) =>
+      ctx.storage.store(
+        new Blob(["%PDF-1.4 JOL 0042"], { type: "application/pdf" }),
+      ),
+    );
+    const { _id } = await stored(t, 1001);
+    await t.run((ctx) =>
+      ctx.db.patch("orders", _id, {
+        invoice: {
+          status: "issued",
+          at: 1,
+          series: "JOL",
+          number: "0042",
+          file,
+        },
+        creditNote: {
+          status: "failed",
+          at: 2,
+          error: "SmartBill a răspuns 400: Factura nu poate fi stornată.",
+        },
+      }),
+    );
+    Object.assign(process.env, {
+      SMARTBILL_USERNAME: "atelier@jolene.ro",
+      SMARTBILL_TOKEN: "smartbill-token",
+      SMARTBILL_SERIES: "JOL",
+    });
+    const shown = await workshop.query(api.workshop.order, { number: 1001 });
+    expect(shown?.invoicing).toBe(true);
+    expect(shown?.invoice).toEqual({
+      status: "issued",
+      at: 1,
+      name: "JOL 0042",
+      url: expect.any(String),
+    });
+    expect(shown?.creditNote).toEqual({
+      status: "failed",
+      at: 2,
+      error: "SmartBill a răspuns 400: Factura nu poate fi stornată.",
+    });
   });
 });
 
