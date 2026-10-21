@@ -7,7 +7,13 @@ import { env } from "../_generated/server";
  */
 export function aiConfig() {
   return {
-    model: env.AI_MODEL?.trim() || "claude-opus-5-5",
+    /**
+     * Sonnet unless AI_MODEL names another: in the second trial on the real
+     * model it wrote almost as well as Opus, at a fifth of the cost and
+     * faster. Haiku cost a seventieth, but wrote plainer and checked its work
+     * less.
+     */
+    model: env.AI_MODEL?.trim() || "claude-sonnet-5-5",
     /** How much the model thinks before it answers and between changes. */
     effort: effortOf(env.AI_EFFORT),
     /** The local stand-in answers instead of the model (standIn.ts). */

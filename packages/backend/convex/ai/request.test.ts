@@ -95,6 +95,26 @@ describe("the request", () => {
     });
     expect(request.output_config).toEqual({ effort: "xhigh" });
   });
+
+  test("asks Opus and Sonnet for a fallback and progress updates, Haiku for neither", () => {
+    for (const model of ["claude-opus-5-5", "claude-sonnet-5-5"]) {
+      const request = buildRequest({ ...config, model }, [], {
+        userId: "u1",
+        wrapUp: false,
+      });
+      expect(request.fallbacks).toBe("default");
+      expect(request.thinking).toMatchObject({ display: "updates" });
+    }
+    const haiku = buildRequest({ ...config, model: "claude-haiku-5-5" }, [], {
+      userId: "u1",
+      wrapUp: false,
+    });
+    expect(haiku).not.toHaveProperty("fallbacks");
+    expect(haiku.thinking).toEqual({
+      type: "adaptive",
+      block_binding: { prefix_mismatch_behavior: "drop_block" },
+    });
+  });
 });
 
 describe("the answer", () => {
