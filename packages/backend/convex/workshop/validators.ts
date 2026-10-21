@@ -60,6 +60,7 @@ export const proofValidator = v.object({
 /** An entry in an order's history, as the workshop's order page shows it. */
 export const historyEntryValidator = v.union(
   v.object({
+    id: v.id("orderHistory"),
     at: v.number(),
     /** The workshop account's email. */
     by: v.string(),
@@ -68,6 +69,7 @@ export const historyEntryValidator = v.union(
     status: orderStatusValidator,
   }),
   v.object({
+    id: v.id("orderHistory"),
     at: v.number(),
     by: v.string(),
     kind: v.literal("note"),

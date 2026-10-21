@@ -359,6 +359,7 @@ describe("an order's status", () => {
     expect(shown?.status).toBe("sent");
     expect(shown?.history).toEqual([
       {
+        id: expect.any(String),
         at: expect.any(Number),
         by: "atelier@jolene.ro",
         kind: "status",
@@ -366,6 +367,7 @@ describe("an order's status", () => {
         status: "sent",
       },
       {
+        id: expect.any(String),
         at: expect.any(Number),
         by: "atelier@jolene.ro",
         kind: "status",
@@ -463,12 +465,14 @@ describe("an order's status", () => {
     const shown = await workshop.query(api.workshop.order, { number: 1001 });
     expect(shown?.history).toEqual([
       {
+        id: expect.any(String),
         at: expect.any(Number),
         by: "marius@example.com",
         kind: "note",
         note: "Clientul a sunat.",
       },
       {
+        id: expect.any(String),
         at: expect.any(Number),
         by: "atelier@jolene.ro",
         kind: "note",

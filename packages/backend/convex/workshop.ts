@@ -142,6 +142,7 @@ export const order = query({
       status: statusOf(order),
       statuses: statusesOf(order),
       history: history.map(({ _id, _creationTime, orderId, ...entry }) => ({
+        id: _id,
         at: _creationTime,
         ...entry,
       })),
