@@ -1,10 +1,12 @@
 import type { Catalog, FeeKey } from "../catalog";
 import { fees } from "../catalog";
+import { digitalInvitation } from "../digital-invitation";
 import { apiVersion, type Document } from "./documents";
 import {
   choiceDefinition,
   choiceUpserts,
   collectionInput,
+  digitalInvitationInput,
   extras,
   extrasInput,
   feeHandles,
@@ -208,6 +210,7 @@ class Sync {
           feeProductInput(handle, { status: "DRAFT" }),
         ),
         extrasInput({ status: "DRAFT" }),
+        digitalInvitationInput({ status: "DRAFT" }),
         ...catalog.products.flatMap((p) => [
           productInput(p, placeholders, { status: "DRAFT" }),
           productInput(p, placeholders),
@@ -396,8 +399,13 @@ class Sync {
     );
     this.tally("Categories", handles(catalog.categories), this.collections);
     this.tally("Fees and extras", services, this.products);
+    this.tally("Digital invitation", [digitalInvitation.handle], this.products);
     this.tally("Products", handles(catalog.products), this.products);
-    const ours = new Set([...handles(catalog.products), ...services]);
+    const ours = new Set([
+      ...handles(catalog.products),
+      ...services,
+      digitalInvitation.handle,
+    ]);
     const others = [...this.products.keys()].filter((h) => !ours.has(h));
     if (others.length > 0)
       this.say(
@@ -515,6 +523,12 @@ class Sync {
         feeProductInput(handle, creating),
       );
     await this.setProduct(store, "Fees and extras", extras.handle, extrasInput);
+    await this.setProduct(
+      store,
+      "Digital invitation",
+      digitalInvitation.handle,
+      digitalInvitationInput,
+    );
     await this.each(catalog.products, (product) =>
       this.setProduct(store, "Products", product.handle, (creating) =>
         productInput(product, this.ids, creating),
@@ -553,6 +567,7 @@ class Sync {
       ...catalog.products.map((product) => product.handle),
       ...feeHandles,
       extras.handle,
+      digitalInvitation.handle,
     ].flatMap((handle) => this.products.get(handle)?.id ?? []);
     if (mode === "publish")
       for (const category of catalog.categories) {
@@ -571,13 +586,16 @@ class Sync {
     );
   }
 
-  /** Puts the catalog's drafts on sale, and the fees and extras unlisted. */
+  /**
+   * Puts the catalog's drafts on sale, and the fees, extras and digital
+   * invitation unlisted: the shop and the studio add those to carts.
+   */
   private async activate(store: Store) {
     const statuses: [string, Status][] = [
       ...this.options.catalog.products.map(
         (p) => [p.handle, "ACTIVE"] as [string, Status],
       ),
-      ...[...feeHandles, extras.handle].map(
+      ...[...feeHandles, extras.handle, digitalInvitation.handle].map(
         (handle) => [handle, "UNLISTED"] as [string, Status],
       ),
     ];

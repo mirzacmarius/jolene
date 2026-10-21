@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { Product } from "../catalog";
 import { readCatalog } from "../files";
+import { digitalInvitation } from "../digital-invitation";
 import {
   choiceUpserts,
+  digitalInvitationInput,
   extras,
   extrasInput,
   extrasValue,
@@ -159,6 +161,24 @@ test("fee products have a variant for each fee", () => {
     ],
     [["200 lei", "200.00"]],
   ]);
+});
+
+test("the digital invitation is one variant, not shipped, with its SKU", () => {
+  const input = digitalInvitationInput({ status: "DRAFT" });
+  expect(input.handle).toBe("invitatie-digitala");
+  expect(input.variants).toEqual([
+    {
+      optionValues: [{ optionName: "Title", name: "Default Title" }],
+      price: "249.00",
+      inventoryItem: {
+        tracked: false,
+        requiresShipping: false,
+        sku: digitalInvitation.sku,
+      },
+    },
+  ]);
+  expect(input.status).toBe("DRAFT");
+  expect(digitalInvitationInput()).not.toHaveProperty("status");
 });
 
 test("money is lei with two decimals", () => {

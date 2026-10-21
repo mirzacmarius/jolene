@@ -5,7 +5,8 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./digital-invitation": "./src/digital-invitation.ts"
   },
   "scripts": {
     "lift": "bun scripts/lift.ts",

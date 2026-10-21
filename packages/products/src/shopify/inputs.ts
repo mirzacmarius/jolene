@@ -6,6 +6,7 @@ import {
   type LineOption,
   type Product,
 } from "../catalog";
+import { digitalInvitation } from "../digital-invitation";
 import { slug } from "../lift/text";
 
 /**
@@ -424,6 +425,35 @@ export function extrasInput(creating?: { status: Status }) {
 /** "4,50 lei" */
 export function extrasValue(price: number): string {
   return `${price.toFixed(2).replace(".", ",")} lei`;
+}
+
+/**
+ * The digital invitation, sold from the studio with the event it opens:
+ * Shopify's one default variant, not shipped, with the SKU the order
+ * webhook unlocks the invitation by.
+ */
+export function digitalInvitationInput(creating?: { status: Status }) {
+  const { optionValues, ...variant } = serviceVariant(
+    "Title",
+    "Default Title",
+    digitalInvitation.price,
+  );
+  return {
+    handle: digitalInvitation.handle,
+    title: digitalInvitation.title,
+    descriptionHtml:
+      "<p>Invitația voastră, trimisă prin link tuturor invitaților: o deschid pe telefon, văd programul zilei cu hărți și confirmă venirea. Fiecare confirmare apare în studio, în lista voastră de invitați.</p><p>Se cumpără din studio, de pe pagina invitației digitale, ca să știm pentru ce eveniment este.</p>",
+    vendor: "Jolene",
+    productOptions: [{ name: "Title", values: [{ name: "Default Title" }] }],
+    variants: [
+      {
+        optionValues,
+        ...variant,
+        inventoryItem: { ...variant.inventoryItem, sku: digitalInvitation.sku },
+      },
+    ],
+    ...(creating && { status: creating.status }),
+  };
 }
 
 /** A variant of something Jolene charges for that isn't shipped. */
