@@ -14,5 +14,5 @@ A printed order needs a courier booked for its parcel, an AWB, and a label to st
 
 - A Convex deployment books couriers once it has `COLETE_ONLINE_CLIENT_ID` and `COLETE_ONLINE_CLIENT_SECRET`, from Colete Online's API settings, and the workshop's address is saved in Colete Online: the first address saved, or the one `COLETE_ONLINE_ADDRESS_ID` names. Until then the workshop books couriers in Colete Online itself and can type their AWBs in.
 - What Colete Online charges for a courier is the shop's cost. The couple pay the delivery price of ADR 0015, 25 lei, or nothing from 800 lei.
-- Booking a courier doesn't change the order's status: statuses are the workshop's to set.
+- `shipments.book` doesn't change the order's status. The workshop's order page books through `workshop.bookCourier`, which also moves a paid or being-made order on to sent (docs/adr/0009).
 - Colete Online's API documentation couldn't be read from the sessions that wrote this, so the calls follow a published PHP client of it, and its staging API is taken to accept the same keys. The first live booking is worth checking in Colete Online, the street and number of the address above all, and so is the webhook's first call.

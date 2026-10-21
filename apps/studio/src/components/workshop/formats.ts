@@ -22,10 +22,13 @@ export function useFormats() {
       month: "long",
       year: "numeric",
     });
+    const plain = new Intl.NumberFormat(tag, { maximumFractionDigits: 2 });
     const regions = new Intl.DisplayNames(tag, { type: "region" });
     return {
       /** An amount in bani, in lei: "1.234,50 lei". */
       lei: (bani: number) => `${amount.format(bani / 100)} lei`,
+      /** A measure, such as a parcel's 1,5 kg: "1,5". */
+      number: (value: number) => plain.format(value),
       time: (at: number) => time.format(at),
       day: (at: number) => day.format(at),
       /** A country's name from its two letters, such as România for RO. */

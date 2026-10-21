@@ -25,11 +25,7 @@ import {
   statusOf,
 } from "./orders/status";
 import { parcelValidator } from "./orders/validators";
-import {
-  bookShipment,
-  recordPickupReady,
-  recordShipment,
-} from "./shipments";
+import { bookShipment, recordPickupReady, recordShipment } from "./shipments";
 import { coleteOnline } from "./shipments/coleteOnline";
 import { errors } from "./utils/errors";
 import { printJobOf } from "./workshop/proofs";
@@ -110,10 +106,7 @@ function paymentUrl(order: Doc<"orders">) {
 }
 
 /** An invoice or credit note as the workshop sees it, named, with its PDF. */
-async function invoiceView(
-  ctx: QueryCtx,
-  invoice: Doc<"orders">["invoice"],
-) {
+async function invoiceView(ctx: QueryCtx, invoice: Doc<"orders">["invoice"]) {
   if (!invoice) return null;
   const { series, number, file, ...shown } = invoice;
   const url = file ? await ctx.storage.getUrl(file) : null;

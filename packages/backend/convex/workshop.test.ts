@@ -773,7 +773,10 @@ describe("sending an order", () => {
         .subject,
     ]);
     await expect(
-      workshop.mutation(api.workshop.bookCourier, { number: 1001, from: "sent" }),
+      workshop.mutation(api.workshop.bookCourier, {
+        number: 1001,
+        from: "sent",
+      }),
     ).rejects.toThrow("shipment-booked");
   });
 
@@ -830,7 +833,10 @@ describe("sending an order", () => {
     ).toBe(false);
     // Without Colete Online's keys, the team types the AWB in.
     await expect(
-      workshop.mutation(api.workshop.bookCourier, { number: 1001, from: "paid" }),
+      workshop.mutation(api.workshop.bookCourier, {
+        number: 1001,
+        from: "paid",
+      }),
     ).rejects.toThrow("courier-unavailable");
     await workshop.mutation(api.workshop.recordAwb, {
       number: 1001,
@@ -840,7 +846,11 @@ describe("sending an order", () => {
     });
     expect(
       await workshop.query(api.shipments.forWorkshop, { number: 1001 }),
-    ).toMatchObject({ status: "booked", courier: "Sameday", awb: "4EMG12345678" });
+    ).toMatchObject({
+      status: "booked",
+      courier: "Sameday",
+      awb: "4EMG12345678",
+    });
     await workshop.mutation(api.workshop.recordAwb, {
       number: 1001,
       from: "sent",
@@ -883,7 +893,10 @@ describe("sending an order", () => {
     });
     // Someone else's page still showed it paid.
     await expect(
-      workshop.mutation(api.workshop.bookCourier, { number: 1001, from: "paid" }),
+      workshop.mutation(api.workshop.bookCourier, {
+        number: 1001,
+        from: "paid",
+      }),
     ).rejects.toThrow("order-moved");
     await expect(
       workshop.mutation(api.workshop.recordAwb, {
@@ -909,7 +922,10 @@ describe("sending an order", () => {
     ).toBeNull();
     // No courier takes an order the couple picks up, and it stays as it was.
     await expect(
-      workshop.mutation(api.workshop.bookCourier, { number: 1002, from: "paid" }),
+      workshop.mutation(api.workshop.bookCourier, {
+        number: 1002,
+        from: "paid",
+      }),
     ).rejects.toThrow("invalid-input");
     await expect(
       workshop.mutation(api.workshop.recordAwb, {
