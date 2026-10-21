@@ -41,6 +41,9 @@ jobs:
         env:
           SHOP: ${{ inputs.shop || 'https://www.orvibo.it' }}
           PRODUCT: ${{ inputs.product || 'invitatie-nunta-olive-goldy' }}
+          # A store behind a password, such as a Shopify dev store, asks for it
+          # before checkout.
+          SHOPIFY_STORE_PASSWORD: ${{ secrets.SHOPIFY_STORE_PASSWORD }}
       - name: Report
         if: always()
         run: tee -a "$GITHUB_STEP_SUMMARY" < "$RUNNER_TEMP/order/report.md" || true

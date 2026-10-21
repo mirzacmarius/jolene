@@ -8,7 +8,9 @@
  *
  *   bun scripts/try-order.ts [--shop <address>] [--product <handle>] [--out <folder>] [--chrome <path>]
  *
- * It runs Google Chrome, or the Chromium that --chrome names.
+ * It runs Google Chrome, or the Chromium that --chrome names. A store behind
+ * a password, as Shopify's dev stores always are, asks for it before
+ * checkout; SHOPIFY_STORE_PASSWORD gives it.
  */
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
@@ -27,6 +29,7 @@ const { values } = parseArgs({
 });
 const shop = new URL(values.shop);
 const out = values.out;
+const password = process.env.SHOPIFY_STORE_PASSWORD;
 await mkdir(out, { recursive: true });
 
 const catalog = await readCatalog();
@@ -65,6 +68,17 @@ page.on("console", (message) => {
   if (message.type() === "error")
     problems.push(`${page.url()}: ${message.text()}`);
 });
+/** The first address off the shop the page goes to: the cart's checkout link. */
+let checkoutLink: string | undefined;
+page.on("request", (request) => {
+  if (
+    !checkoutLink &&
+    request.isNavigationRequest() &&
+    request.frame() === page.mainFrame() &&
+    new URL(request.url()).host !== shop.host
+  )
+    checkoutLink = request.url();
+});
 
 /**
  * Runs a step and screenshots the page after it. A step that fails ends the
@@ -89,6 +103,14 @@ async function step(name: string, run: (notes: string[]) => Promise<void>) {
     .catch(() => undefined);
   steps.push({ name, ok, notes, shot });
   return ok;
+}
+
+/** Whether Shopify shows the store's password page instead of checkout. */
+async function passwordAsked() {
+  return (
+    new URL(page.url()).pathname.startsWith("/password") ||
+    (await page.locator('input[type="password"]').count()) > 0
+  );
 }
 
 /** The cart's lines once Shopify and the cart's own changes have settled. */
@@ -243,6 +265,22 @@ const trial =
           : "The cart didn't go on to checkout in 45 seconds.",
       );
     }
+    if (await passwordAsked()) {
+      if (!password)
+        throw new Error(
+          "Shopify asks for the store's password before checkout, and SHOPIFY_STORE_PASSWORD doesn't give it.",
+        );
+      if (!checkoutLink)
+        throw new Error("The cart's checkout link went by unseen.");
+      // The storefront's own password form, whatever the theme shows of it.
+      await page.request.post(new URL("/password", page.url()).href, {
+        form: { form_type: "storefront_password", utf8: "✓", password },
+      });
+      await page.goto(checkoutLink);
+      if (await passwordAsked())
+        throw new Error("Shopify refused the store's password.");
+      notes.push("Gave the store's password.");
+    }
     const shown = await page
       .getByText(product.title)
       .filter({ visible: true })
@@ -254,11 +292,6 @@ const trial =
     notes.push(
       `Checkout: ${url.origin}${url.pathname}, "${await page.title()}"`,
     );
-    if (
-      url.pathname.startsWith("/password") ||
-      (await page.locator('input[type="password"]').count())
-    )
-      throw new Error("Shopify asks for the store's password before checkout.");
     if (!shown)
       throw new Error(`Checkout doesn't show ${product.title} in 30 seconds.`);
     const summary = page.locator("aside, [role=complementary]").first();
