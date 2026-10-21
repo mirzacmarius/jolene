@@ -158,6 +158,7 @@ export function CourierPanel({
           order={order}
           number={number}
           again={shipment !== null}
+          previous={shipment?.parcel}
           onType={() => setTyping(true)}
         />
       ) : null}
@@ -269,17 +270,23 @@ function Booked({
   );
 }
 
-/** Books Colete Online's courier for the usual box, or one the team measured. */
+/**
+ * Books Colete Online's courier for the usual box, or one the team measured:
+ * booking again starts from the box the refused or stuck booking was for.
+ */
 function BookForm({
   order,
   number,
   again,
+  previous,
   onType,
 }: {
   order: Order;
   number: number;
   /** A booking was refused or got stuck before. */
   again: boolean;
+  /** That booking's parcel. */
+  previous: Parcel | undefined;
   onType: () => void;
 }) {
   const t = useI18n();
@@ -287,15 +294,20 @@ function BookForm({
   const format = useFormats();
   const id = useId();
   const book = useMutation(api.workshop.bookCourier);
-  const [box, setBox] = useState<"standard" | "other">("standard");
+  const [box, setBox] = useState<"standard" | "other">(() =>
+    !previous || MEASURES.every((key) => previous[key] === STANDARD_PARCEL[key])
+      ? "standard"
+      : "other",
+  );
   const [measures, setMeasures] = useState<Measures>(() => {
+    const from = previous ?? STANDARD_PARCEL;
     const typed = (value: number) =>
       locale === "ro" ? String(value).replace(".", ",") : String(value);
     return {
-      weight: typed(STANDARD_PARCEL.weight),
-      length: typed(STANDARD_PARCEL.length),
-      width: typed(STANDARD_PARCEL.width),
-      height: typed(STANDARD_PARCEL.height),
+      weight: typed(from.weight),
+      length: typed(from.length),
+      width: typed(from.width),
+      height: typed(from.height),
     };
   });
   const [busy, setBusy] = useState(false);
