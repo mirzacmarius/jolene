@@ -17,6 +17,7 @@ import {
   retrieveSession,
   sessionParams,
   stripe,
+  stripeTaxReady,
   verifiedEvent,
 } from "./checkout/stripe";
 import { shopUrl } from "./orders/links";
@@ -100,7 +101,8 @@ export const prepare = internalMutation({
 
 /**
  * Opens Stripe's checkout page for a cart, priced as it is now, and returns
- * its address: the shop's server sends the couple there.
+ * its address: the shop's server sends the couple there. Stripe Tax works
+ * out the VAT in it once it's set up in Jolene's Stripe account.
  */
 export const start = action({
   args: { token: v.string(), language: languageValidator },
@@ -113,8 +115,10 @@ export const start = action({
       internal.checkout.prepare,
       { token, language },
     );
-    const session = await stripe().checkout.sessions.create(
-      sessionParams(checkout, shop),
+    const client = stripe();
+    const vat = await stripeTaxReady(client);
+    const session = await client.checkout.sessions.create(
+      sessionParams(checkout, shop, { vat }),
       { idempotencyKey: `checkout-${checkout.id}` },
     );
     if (!session.url)

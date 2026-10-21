@@ -90,7 +90,7 @@ describe("checkout.start", () => {
     const session = stripe.latest();
     expect(url).toBe(session.url as string);
 
-    const [request] = stripe.requests;
+    const [request] = stripe.opened();
     const fields = Object.fromEntries(request?.fields ?? []);
     const checkouts = await t.run((ctx) => ctx.db.query("checkouts").take(5));
     expect(checkouts).toHaveLength(1);
@@ -100,18 +100,23 @@ describe("checkout.start", () => {
     );
     expect(fields).toMatchObject({
       mode: "payment",
+      integration_identifier: "jolene-shop-xwzmartx",
       client_reference_id: checkout._id,
       locale: "ro",
       "line_items[0][quantity]": "30",
       "line_items[0][price_data][currency]": "ron",
       "line_items[0][price_data][unit_amount]": "1050",
+      "line_items[0][price_data][tax_behavior]": "inclusive",
       "line_items[0][price_data][product_data][description]":
         "Carton: Ivory texturat 300 gr",
       "line_items[1][quantity]": "1",
       "line_items[1][price_data][unit_amount]": "5000",
       "line_items[1][price_data][product_data][name]": "Diacritice",
+      "line_items[1][price_data][tax_behavior]": "inclusive",
       "shipping_address_collection[allowed_countries][0]": "RO",
       "shipping_options[0][shipping_rate_data][fixed_amount][amount]": "2000",
+      "shipping_options[0][shipping_rate_data][tax_behavior]": "inclusive",
+      "automatic_tax[enabled]": "false",
       "phone_number_collection[enabled]": "true",
       allow_promotion_codes: "true",
       success_url:
@@ -147,7 +152,7 @@ describe("checkout.start", () => {
     process.env.SHOP_URL = "https://www.orvibo.it/";
     const { t, stripe } = await withCart();
     await t.action(api.checkout.start, { token, language: "ro" });
-    const fields = Object.fromEntries(stripe.requests[0]?.fields ?? []);
+    const fields = Object.fromEntries(stripe.opened()[0]?.fields ?? []);
     expect(fields).toMatchObject({
       success_url:
         "https://www.orvibo.it/checkout/return?session_id={CHECKOUT_SESSION_ID}",
@@ -158,7 +163,41 @@ describe("checkout.start", () => {
   test("speaks the couple's language on Stripe's page", async () => {
     const { t, stripe } = await withCart();
     await t.action(api.checkout.start, { token, language: "en" });
-    expect(stripe.requests[0]?.fields.get("locale")).toBe("en");
+    expect(stripe.opened()[0]?.fields.get("locale")).toBe("en");
+  });
+
+  test("lets Stripe Tax find the VAT in the prices once it's set up", async () => {
+    const { t, stripe } = await withCart();
+    stripe.tax("set up");
+    await t.action(api.checkout.start, { token, language: "ro" });
+    expect(stripe.opened()[0]?.fields.get("automatic_tax[enabled]")).toBe(
+      "true",
+    );
+  });
+
+  test("leaves Stripe Tax off until it's set up, and when Stripe won't say", async () => {
+    const { t, stripe } = await withCart();
+    stripe.tax("no tax code");
+    await t.action(api.checkout.start, { token, language: "ro" });
+    stripe.tax("forbidden");
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const url = await t.action(api.checkout.start, {
+        token,
+        language: "ro",
+      });
+      expect(url).toBe(stripe.latest().url as string);
+      expect(String(warn.mock.calls[0]?.[0])).toStartWith(
+        "Stripe Tax is off for this checkout, as Stripe didn't say if it's set up",
+      );
+    } finally {
+      warn.mockRestore();
+    }
+    expect(
+      stripe
+        .opened()
+        .map((request) => request.fields.get("automatic_tax[enabled]")),
+    ).toEqual(["false", "false"]);
   });
 
   test("refuses a cart with nothing to pay for, or a line short of its minimum", async () => {
@@ -249,6 +288,21 @@ describe("checkout.confirm", () => {
       paymentIntent: session.payment_intent as string,
       customer: { phone: "+40712345678" },
     });
+    expect(order).not.toHaveProperty("vat");
+  });
+
+  test("keeps the VAT Stripe Tax found in the total", async () => {
+    const setup = await withCart();
+    const { t } = setup;
+    setup.stripe.tax("set up");
+    const session = await paid(setup);
+    const orderToken = await t.action(api.checkout.confirm, {
+      session: session.id,
+    });
+    // 21% inside 385 lei.
+    expect(
+      await t.query(api.orders.byToken, { token: orderToken as string }),
+    ).toMatchObject({ total: 38_500, vat: 6682 });
   });
 
   test("numbers orders one after another", async () => {
@@ -489,6 +543,15 @@ describe("a paid order", () => {
       "We've received order J1001 and your payment of 385,00 lei.",
     );
     expect(english.html).toContain('src="https://example.com/proof.png"');
+    expect(email.text).not.toContain("TVA");
+
+    const withVat = { ...order, vat: 6682 };
+    expect(confirmationEmail(withVat, link, [null]).text).toContain(
+      "Total: 385,00 lei\nDin care TVA: 66,82 lei",
+    );
+    expect(
+      confirmationEmail({ ...withVat, language: "en" }, link, [null]).text,
+    ).toContain("Including VAT: 66,82 lei");
   });
 
   test("tells the team everything the workshop needs", async () => {
@@ -502,6 +565,17 @@ describe("a paid order", () => {
     );
     expect(notice.text).toContain("  Text personalizat: Ana și Mihai");
     expect(notice.text).toContain(`Plata în Stripe: ${order.paymentIntent}`);
+    expect(notice.text).not.toContain("TVA");
+  });
+
+  test("tells the team when Stripe Tax put no VAT in it", async () => {
+    const order = await recorded();
+    expect(noticeEmail({ ...order, vat: 6682 }, null).text).toContain(
+      "Din care TVA: 66,82 lei",
+    );
+    expect(noticeEmail({ ...order, vat: 0 }, null).text).toContain(
+      "Stripe Tax n-a pus TVA în comandă",
+    );
   });
 });
 
@@ -533,6 +607,21 @@ describe("paidSession", () => {
       discount: 0,
       total: 1000,
     });
+  });
+
+  test("reads the VAT Stripe Tax found, only when it was on", () => {
+    const taxed = {
+      ...session,
+      automatic_tax: { enabled: true, status: "complete" },
+      total_details: { amount_discount: 0, amount_tax: 174 },
+    } as unknown as Stripe.Checkout.Session;
+    expect(paidSession(taxed)?.vat).toBe(174);
+    expect(
+      paidSession({
+        ...taxed,
+        automatic_tax: { ...taxed.automatic_tax, enabled: false },
+      }),
+    ).not.toHaveProperty("vat");
   });
 
   test("is null until Stripe has the money, and for a session no checkout opened", () => {

@@ -68,8 +68,10 @@ const app = defineApp({
      */
     SHOP_URL: v.optional(v.string()),
     /**
-     * Stripe's secret key, sk_test_… in test mode: the shop's checkout opens
-     * with it. Without it the shop says paying online opens soon.
+     * Stripe's key for the shop's checkout, …_test_… in test mode: a
+     * restricted key (rk_…), as Stripe advises, or the secret key (sk_…).
+     * The shop's checkout opens with it. Without it the shop says paying
+     * online opens soon.
      */
     STRIPE_SECRET_KEY: v.optional(v.string()),
     /**

@@ -483,6 +483,12 @@ export default defineSchema({
     discount: v.number(),
     /** What Stripe charged, in bani. */
     total: v.number(),
+    /**
+     * The VAT in the total, in bani, as Stripe Tax worked it out: prices
+     * include it. None when Stripe Tax was off, and 0 when it found no VAT
+     * to charge, as without a registration where the order goes.
+     */
+    vat: v.optional(v.number()),
     customer: customerValidator,
     address: v.optional(addressValidator),
     paidAt: v.number(),

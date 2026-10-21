@@ -87,6 +87,7 @@ export const record = internalMutation({
       ...(session.delivery && { delivery: session.delivery }),
       discount: session.discount,
       total: session.total,
+      ...(session.vat !== undefined && { vat: session.vat }),
       customer: session.customer,
       ...(session.address && { address: session.address }),
       paidAt: Date.now(),
@@ -231,6 +232,8 @@ const orderViewValidator = v.object({
   delivery: v.optional(deliveryValidator),
   discount: v.number(),
   total: v.number(),
+  /** The VAT in the total, when Stripe Tax worked it out. */
+  vat: v.optional(v.number()),
   customer: v.object({ name: v.string(), email: v.string() }),
   address: v.optional(addressValidator),
 });
@@ -265,6 +268,7 @@ export const byToken = query({
       ...(order.delivery && { delivery: order.delivery }),
       discount: order.discount,
       total: order.total,
+      ...(order.vat !== undefined && { vat: order.vat }),
       customer: { name: order.customer.name, email: order.customer.email },
       ...(order.address && { address: order.address }),
     };

@@ -24,6 +24,7 @@ const words = {
     delivery: "Livrare",
     discount: "Reducere",
     total: "Total",
+    vat: "Din care TVA",
     address: "Livrăm la",
     footer: "Jolene · jolene.ro",
   },
@@ -40,6 +41,7 @@ const words = {
     delivery: "Delivery",
     discount: "Discount",
     total: "Total",
+    vat: "Including VAT",
     address: "Delivering to",
     footer: "Jolene · jolene.ro",
   },
@@ -82,7 +84,7 @@ function addressLines(address: NonNullable<Order["address"]>): string[] {
   ];
 }
 
-/** What the order adds up to, each with its amount. */
+/** What the order adds up to, each with its amount, and the VAT in it. */
 function totals(order: Order, w: (typeof words)[keyof typeof words]) {
   return [
     [w.subtotal, lei(order.subtotal)],
@@ -91,6 +93,7 @@ function totals(order: Order, w: (typeof words)[keyof typeof words]) {
       : []),
     ...(order.discount > 0 ? [[w.discount, lei(-order.discount)]] : []),
     [w.total, lei(order.total)],
+    ...(order.vat ? [[w.vat, lei(order.vat)]] : []),
   ] as [string, string][];
 }
 
@@ -183,8 +186,8 @@ export function confirmationEmail(
       lineRow(line, pictures[index] ?? null, details(line)),
     ),
     `<tr><td style="border-top:1px solid #e8e0d6;"></td></tr>`,
-    ...sums.map(([label, amount], index) =>
-      amountRow(label, amount, index === sums.length - 1),
+    ...sums.map(([label, amount]) =>
+      amountRow(label, amount, label === w.total),
     ),
     ...(address
       ? [
@@ -226,6 +229,12 @@ export function noticeEmail(order: Order, link: string | null) {
     "",
     ...order.fees.map((fee) => `${fee.label}: ${lei(fee.price)}`),
     ...totals(order, w).map(([label, amount]) => `${label}: ${amount}`),
+    ...(order.vat === 0 && order.total > 0
+      ? [
+          "",
+          "Stripe Tax n-a pus TVA în comandă: verificați în Stripe, la Tax > Locations, că România e adăugată.",
+        ]
+      : []),
     ...(order.paymentIntent
       ? ["", `Plata în Stripe: ${order.paymentIntent}`]
       : []),

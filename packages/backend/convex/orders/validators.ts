@@ -70,6 +70,8 @@ export const paidSessionValidator = v.object({
   subtotal: v.number(),
   discount: v.number(),
   total: v.number(),
+  /** The VAT in the total, as Stripe Tax worked it out; none when it was off. */
+  vat: v.optional(v.number()),
 });
 
 export type OrderLine = Infer<typeof orderLineValidator>;

@@ -35,6 +35,32 @@ export function stripe(): Stripe {
   });
 }
 
+/**
+ * Tags the shop's Checkout Sessions in Stripe's Dashboard, to tell them from
+ * any other way Jolene takes payments. Stripe asks for 8 random letters at
+ * the end.
+ */
+const INTEGRATION = "jolene-shop-xwzmartx";
+
+/**
+ * Whether Stripe Tax can work out the VAT in a payment: Jolene's Stripe
+ * account has its head office and a preset product tax code, which the
+ * shop's products use. Stripe Tax then puts VAT in a payment only where the
+ * account has a tax registration, such as Romania's. Off when Stripe can't
+ * say, so a checkout never waits on it.
+ */
+export async function stripeTaxReady(client: Stripe): Promise<boolean> {
+  try {
+    const settings = await client.tax.settings.retrieve();
+    return settings.status === "active" && Boolean(settings.defaults.tax_code);
+  } catch (error) {
+    console.warn(
+      `Stripe Tax is off for this checkout, as Stripe didn't say if it's set up: ${String(error)}`,
+    );
+    return false;
+  }
+}
+
 /** A checkout as Convex priced it, with the picture Stripe shows by each line. */
 export const checkoutForStripeValidator = v.object({
   id: v.string(),
@@ -56,11 +82,14 @@ function describe(line: OrderLine, language: Language): string | undefined {
 /**
  * The Checkout Session for a checkout: its lines and fees in lei, a courier
  * to an address in Romania, the couple's phone for the courier, and the
- * shop's pages Stripe sends them back to.
+ * shop's pages Stripe sends them back to. Prices include VAT, so Stripe Tax,
+ * when `vat` turns it on, shows the VAT inside them and never adds to what
+ * the couple pays.
  */
 export function sessionParams(
   checkout: CheckoutForStripe,
   shop: string,
+  { vat }: { vat: boolean },
 ): Stripe.Checkout.SessionCreateParams {
   const item = (
     name: string,
@@ -73,6 +102,7 @@ export function sessionParams(
     price_data: {
       currency: "ron",
       unit_amount: price,
+      tax_behavior: "inclusive" as const,
       product_data: {
         name,
         ...(description && { description }),
@@ -82,6 +112,7 @@ export function sessionParams(
   });
   return {
     mode: "payment",
+    integration_identifier: INTEGRATION,
     client_reference_id: checkout.id,
     metadata: { checkout: checkout.id },
     locale: checkout.language,
@@ -103,8 +134,10 @@ export function sessionParams(
         type: "fixed_amount",
         display_name: option.label,
         fixed_amount: { amount: option.price, currency: "ron" },
+        tax_behavior: "inclusive",
       },
     })),
+    automatic_tax: { enabled: vat },
     phone_number_collection: { enabled: true },
     allow_promotion_codes: true,
     success_url: `${shop}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
@@ -120,9 +153,9 @@ export async function retrieveSession(id: string) {
 }
 
 /**
- * What a paid Checkout Session says of its order: who paid, where it goes and
- * what Stripe charged. Null until it's paid, and for a session no checkout
- * opened.
+ * What a paid Checkout Session says of its order: who paid, where it goes,
+ * what Stripe charged and, when Stripe Tax worked it out, the VAT in it.
+ * Null until it's paid, and for a session no checkout opened.
  */
 export function paidSession(
   session: Stripe.Checkout.Session,
@@ -171,6 +204,10 @@ export function paidSession(
     subtotal: session.amount_subtotal ?? 0,
     discount: session.total_details?.amount_discount ?? 0,
     total: session.amount_total ?? 0,
+    ...(session.automatic_tax?.enabled &&
+      session.automatic_tax.status === "complete" && {
+        vat: session.total_details?.amount_tax ?? 0,
+      }),
   };
 }
 

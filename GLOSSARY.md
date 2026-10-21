@@ -170,6 +170,10 @@ _Avoid_: Payment page
 How a printed order reaches the couple, and what that costs, chosen on Stripe's page.
 _Avoid_: Shipping (in copy)
 
+**VAT** (ro: TVA; code: vat):
+The value added tax inside the shop's prices. Jolene's prices include it, so Stripe Tax shows how much of what the couple paid is VAT, and never adds to it.
+_Avoid_: Tax (in Romanian, taxă is a fee)
+
 **Order** (ro: comandă):
 What a couple paid for in one checkout: its lines and fees as they were priced, its delivery, where it goes and what Stripe charged.
 _Avoid_: Purchase, sale

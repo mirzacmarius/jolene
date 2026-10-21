@@ -1,6 +1,7 @@
 /**
  * A stand-in for Stripe's API in tests: it answers the Stripe SDK's calls
- * for Checkout Sessions from memory, so a test can pay for one, or not.
+ * for Checkout Sessions and Stripe Tax's settings from memory, so a test can
+ * pay for a session, or not.
  */
 
 type Session = Record<string, unknown> & {
@@ -22,6 +23,28 @@ const shippingRate = {
   object: "shipping_rate",
   display_name: "Curier, la adresă",
 };
+
+/** Stripe Tax's settings on an account that hasn't set it up. */
+const taxNotSetUp = {
+  object: "tax.settings",
+  defaults: { tax_code: null, tax_behavior: null },
+  head_office: null,
+  livemode: false,
+  status: "pending",
+  status_details: { pending: { missing_fields: ["head_office"] } },
+};
+
+/** Stripe Tax's settings with Jolene's head office and a preset tax code. */
+const taxSetUp = {
+  ...taxNotSetUp,
+  defaults: { tax_code: "txcd_99999999", tax_behavior: null },
+  head_office: { address: { city: "Iași", country: "RO" } },
+  status: "active",
+  status_details: { active: {} },
+};
+
+/** Romania's standard VAT rate, inside the price, as Stripe Tax would find it. */
+const romanianVat = (amount: number) => Math.round((amount * 21) / 121);
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -45,6 +68,8 @@ const notFound = (id: string) =>
 export function fakeStripe() {
   const sessions = new Map<string, Session>();
   const requests: StripeRequest[] = [];
+  /** Stripe Tax's settings: null when the key may not read them. */
+  let taxSettings: Record<string, unknown> | null = taxNotSetUp;
 
   /** A session as the API returns it, its delivery's rate expanded if asked. */
   const view = (session: Session, expand: string[]) => {
@@ -62,6 +87,7 @@ export function fakeStripe() {
       subtotal +=
         Number(fields.get(`line_items[${i}][quantity]`)) *
         Number(fields.get(`line_items[${i}][price_data][unit_amount]`));
+    const automaticTax = fields.get("automatic_tax[enabled]") === "true";
     const session: Session = {
       id,
       object: "checkout.session",
@@ -76,6 +102,12 @@ export function fakeStripe() {
       amount_subtotal: subtotal,
       amount_total: subtotal,
       total_details: { amount_discount: 0, amount_shipping: 0, amount_tax: 0 },
+      automatic_tax: {
+        enabled: automaticTax,
+        liability: automaticTax ? { type: "self" } : null,
+        provider: automaticTax ? "stripe" : null,
+        status: automaticTax ? "requires_location_inputs" : null,
+      },
       customer_details: null,
       collected_information: null,
       shipping_cost: null,
@@ -107,6 +139,19 @@ export function fakeStripe() {
     const expand = [...fields]
       .filter(([key]) => /^expand\[\d*\]$/.test(key))
       .map(([, value]) => value);
+    if (url.pathname === "/v1/tax/settings" && method === "GET")
+      return taxSettings
+        ? json(taxSettings)
+        : json(
+            {
+              error: {
+                type: "invalid_request_error",
+                message:
+                  "The provided key does not have the required permissions for this endpoint.",
+              },
+            },
+            403,
+          );
     const one = /^\/v1\/checkout\/sessions\/([^/]+)$/.exec(url.pathname);
     if (url.pathname === "/v1/checkout/sessions" && method === "POST")
       return json(create(fields));
@@ -138,6 +183,28 @@ export function fakeStripe() {
   return {
     sessions,
     requests,
+    /**
+     * Sets Stripe Tax up, or up but without the preset tax code the shop's
+     * products use, or not at all, or forbids the key to read its settings.
+     */
+    tax(settings: "set up" | "no tax code" | "not set up" | "forbidden") {
+      taxSettings = {
+        "set up": taxSetUp,
+        "no tax code": {
+          ...taxSetUp,
+          defaults: { tax_code: null, tax_behavior: null },
+        },
+        "not set up": taxNotSetUp,
+        forbidden: null,
+      }[settings];
+    },
+    /** The Checkout Sessions the shop asked Stripe to open. */
+    opened() {
+      return requests.filter(
+        (request) =>
+          request.method === "POST" && request.path === "/v1/checkout/sessions",
+      );
+    },
     /** The session the latest checkout opened. */
     latest() {
       const session = [...sessions.values()].at(-1);
@@ -146,11 +213,21 @@ export function fakeStripe() {
     },
     /**
      * Pays for a session as Stripe's page would: the couple's details, a
-     * courier to Cluj, and a promotion code's discount if any.
+     * courier to Cluj, a promotion code's discount if any and, with Stripe
+     * Tax on, Romania's VAT inside the total unless `vat` says otherwise.
      */
-    pay(id: string, { discount = 0, delivery = 2000 } = {}) {
+    pay(
+      id: string,
+      {
+        discount = 0,
+        delivery = 2000,
+        vat,
+      }: { discount?: number; delivery?: number; vat?: number } = {},
+    ) {
       const session = sessions.get(id);
       if (!session) throw new Error(`No Checkout Session ${id}`);
+      const total = session.amount_subtotal - discount + delivery;
+      const automaticTax = session.automatic_tax as { enabled: boolean };
       Object.assign(session, {
         status: "complete",
         payment_status: "paid",
@@ -179,9 +256,12 @@ export function fakeStripe() {
         total_details: {
           amount_discount: discount,
           amount_shipping: delivery,
-          amount_tax: 0,
+          amount_tax: automaticTax.enabled ? (vat ?? romanianVat(total)) : 0,
         },
-        amount_total: session.amount_subtotal - discount + delivery,
+        ...(automaticTax.enabled && {
+          automatic_tax: { ...automaticTax, status: "complete" },
+        }),
+        amount_total: total,
         payment_intent: `pi_${id.slice(8, 20)}`,
       });
       return session;

@@ -143,6 +143,12 @@ function OrderTotals({ order }: { order: Order }) {
         <span>Total plătit</span>
         <Price amount={order.total} className="font-medium text-xl" />
       </div>
+      {order.vat ? (
+        <div className="flex items-baseline justify-between gap-2.5 text-xs text-muted-foreground">
+          <span>Din care TVA</span>
+          <Price amount={order.vat} className="text-xs text-muted-foreground" />
+        </div>
+      ) : null}
     </div>
   );
 }
