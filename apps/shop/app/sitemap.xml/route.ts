@@ -1,3 +1,5 @@
+import { BLOG_PATH, getPostPath } from "@/lib/blog";
+import { getPosts } from "@/lib/blog/server";
 import { ALL_PRODUCTS_HANDLE } from "@/lib/categories";
 import { getCategories } from "@/lib/categories/server";
 import { shopConfig } from "@/lib/config";
@@ -18,6 +20,9 @@ export async function GET(): Promise<Response> {
     ...categories.map((category) => category.path),
     ...handles.map((handle) => `/products/${handle}`),
     ...LEGAL_PAGE_ORDER.flatMap((page) => [LEGAL_PAGES[page].ro.path, LEGAL_PAGES[page].en.path]),
+    "/contact",
+    BLOG_PATH,
+    ...getPosts().map((post) => getPostPath(post.slug)),
   ];
   const entries = paths
     .map((path) => `  <url><loc>${escapeXml(`${shopConfig.site.url}${path}`)}</loc></url>`)

@@ -22,6 +22,10 @@ _Avoid_: Product, piece (a piece is one sheet of an item)
 What the stationery is for: a wedding (nuntă) or a christening (botez).
 _Avoid_: Event type, category
 
+**Blog post** (ro: articol; code: post):
+One of jolene.ro's articles, such as Texte invitații nuntă, which the shop shows at the address it had there. The blog (ro: blog) lists them, newest first.
+_Avoid_: Article (in code), news, story
+
 **Photo store** (code only):
 The public Vercel Blob store the shop shows product photos from, which production and every preview share. Photos from jolene.ro keep their path there.
 _Avoid_: Bucket, CDN, media library

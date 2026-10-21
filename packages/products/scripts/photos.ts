@@ -1,6 +1,6 @@
 /**
- * Copies the catalog's photos from jolene.ro to the photo store (ADR 0016),
- * fit for the web, leaving those it already has:
+ * Copies the catalog's and the blog's photos from jolene.ro to the photo
+ * store (ADR 0016), fit for the web, leaving those it already has:
  *
  *   bun scripts/photos.ts [--to folder] [--minutes n]
  *
@@ -10,6 +10,7 @@
  * long; the next run copies the rest.
  */
 import { parseArgs } from "node:util";
+import { blogPhotos } from "../src/blog";
 import { catalog } from "../src/data";
 import { blobStore, copyPhotos, folder } from "../src/photo-store";
 
@@ -18,9 +19,12 @@ const { values } = parseArgs({
 });
 const destination = values.to ? folder(values.to) : blobStore();
 const started = Date.now();
-const urls = new Set(
-  catalog.products.flatMap((product) => product.images.map(({ url }) => url)),
-);
+const urls = new Set([
+  ...catalog.products.flatMap((product) =>
+    product.images.map(({ url }) => url),
+  ),
+  ...blogPhotos(),
+]);
 const report = await copyPhotos(urls, destination, {
   deadline: values.minutes
     ? started + Number(values.minutes) * 60_000
@@ -31,7 +35,7 @@ const report = await copyPhotos(urls, destination, {
 const seconds = Math.round((Date.now() - started) / 1000);
 console.log(
   [
-    `${report.had + report.copied.length} of the catalog's ${urls.size} photos are in ${destination.address() ?? "the photo store"}`,
+    `${report.had + report.copied.length} of the catalog's and the blog's ${urls.size} photos are in ${destination.address() ?? "the photo store"}`,
     `${report.copied.length} copied now, in ${seconds} s`,
     ...(report.failed.length ? [`${report.failed.length} failed`] : []),
     ...(report.left.length
