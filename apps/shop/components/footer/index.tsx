@@ -3,6 +3,7 @@ import Image from "next/image";
 
 import { Container } from "@/components/ui/container";
 import { Link } from "@/components/ui/link";
+import { BLOG_PATH, getPostPath } from "@/lib/blog";
 import { shopConfig } from "@/lib/config";
 import { LEGAL_PAGES } from "@/lib/legal";
 
@@ -10,28 +11,27 @@ import anpcSal from "./anpc-sal.webp";
 import logo from "./jolene-logo.webp";
 import { type SocialLink, SocialLinks } from "./social-links";
 
-// The blog's articles still live on jolene.ro: they must move here before jolene.ro points at this shop.
-const JOLENE_RO = "https://jolene.ro";
-
 const PAGES = [
   { href: "/#intrebari", label: "Întrebări utile" },
   { href: LEGAL_PAGES.delivery.ro.path, label: LEGAL_PAGES.delivery.ro.title },
   { href: LEGAL_PAGES.returns.ro.path, label: LEGAL_PAGES.returns.ro.title },
+  { href: "/contact", label: "Contact" },
 ];
 
 const ARTICLES = [
   {
-    href: `${JOLENE_RO}/prima-regula-a-unei-invitatii-de-nunta-reusite-pasiune/`,
+    href: getPostPath("prima-regula-a-unei-invitatii-de-nunta-reusite-pasiune"),
     label: "Prima regulă a unei invitații de nuntă reușite: pasiune.",
   },
   {
-    href: `${JOLENE_RO}/cum-sa-alegi-invitatiile-de-nunta/`,
+    href: getPostPath("cum-sa-alegi-invitatiile-de-nunta"),
     label: "Cum să alegi invitațiile de nuntă?",
   },
   {
-    href: `${JOLENE_RO}/20-idei-cadouri-de-logodna-18-e-chiar-interesant/`,
+    href: getPostPath("20-idei-cadouri-de-logodna-18-e-chiar-interesant"),
     label: "20+ idei cadouri de logodnă. 18 e chiar interesant!",
   },
+  { href: BLOG_PATH, label: "Toate articolele" },
 ];
 
 const LEGAL = [

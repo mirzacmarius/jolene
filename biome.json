@@ -153,6 +153,7 @@
       "!**/.convex",
       "!**/.next",
       "!apps/shop",
+      "!packages/products/blog",
       "!packages/products/catalog"
     ]
   },
