@@ -4,18 +4,19 @@ import Image from "next/image";
 import { Container } from "@/components/ui/container";
 import { Link } from "@/components/ui/link";
 import { shopConfig } from "@/lib/config";
+import { LEGAL_PAGES } from "@/lib/legal";
 
 import anpcSal from "./anpc-sal.webp";
 import logo from "./jolene-logo.webp";
 import { type SocialLink, SocialLinks } from "./social-links";
 
-// These pages and articles still live on jolene.ro: they must move here before jolene.ro points at this shop.
+// The blog's articles still live on jolene.ro: they must move here before jolene.ro points at this shop.
 const JOLENE_RO = "https://jolene.ro";
 
 const PAGES = [
-  { href: `${JOLENE_RO}/intrebari-utile/`, label: "Întrebări utile" },
-  { href: `${JOLENE_RO}/politica-de-comanda-si-livrare/`, label: "Politica de comandă și livrare" },
-  { href: `${JOLENE_RO}/politica-de-retur/`, label: "Politica de retur" },
+  { href: "/#intrebari", label: "Întrebări utile" },
+  { href: LEGAL_PAGES.delivery.ro.path, label: LEGAL_PAGES.delivery.ro.title },
+  { href: LEGAL_PAGES.returns.ro.path, label: LEGAL_PAGES.returns.ro.title },
 ];
 
 const ARTICLES = [
@@ -34,9 +35,9 @@ const ARTICLES = [
 ];
 
 const LEGAL = [
-  { href: `${JOLENE_RO}/termeni-si-conditii/`, label: "Termeni și condiții" },
-  { href: `${JOLENE_RO}/politica-de-confidentialitate/`, label: "Politica de confidențialitate" },
-  { href: `${JOLENE_RO}/politica-de-cookies/`, label: "Politica de cookies" },
+  { href: LEGAL_PAGES.terms.ro.path, label: LEGAL_PAGES.terms.ro.title },
+  { href: LEGAL_PAGES.privacy.ro.path, label: LEGAL_PAGES.privacy.ro.title },
+  { href: LEGAL_PAGES.cookies.ro.path, label: LEGAL_PAGES.cookies.ro.title },
   { href: "https://anpc.ro/", label: "ANPC" },
 ];
 
@@ -96,9 +97,7 @@ export function Footer() {
               <ul className="flex flex-wrap gap-x-5 gap-y-2.5">
                 {LEGAL.map(({ href, label }) => (
                   <li key={href}>
-                    <a className={LINK_CLASS} href={href}>
-                      {label}
-                    </a>
+                    <FooterLink href={href}>{label}</FooterLink>
                   </li>
                 ))}
               </ul>
@@ -124,12 +123,27 @@ function FooterLinks({ links, title }: FooterLinksProps) {
       <ul className="grid gap-2.5 text-[0.8125rem] leading-normal">
         {links.map(({ href, label }) => (
           <li key={href}>
-            <a className={LINK_CLASS} href={href}>
-              {label}
-            </a>
+            <FooterLink href={href}>{label}</FooterLink>
           </li>
         ))}
       </ul>
     </div>
+  );
+}
+
+interface FooterLinkProps {
+  children: string;
+  href: string;
+}
+
+function FooterLink({ children, href }: FooterLinkProps) {
+  return href.startsWith("/") ? (
+    <Link className={LINK_CLASS} href={href}>
+      {children}
+    </Link>
+  ) : (
+    <a className={LINK_CLASS} href={href}>
+      {children}
+    </a>
   );
 }
