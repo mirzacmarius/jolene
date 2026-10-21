@@ -86,6 +86,25 @@ export function OrderDetails({ order }: { order: Order }) {
               </address>
             </div>
           ) : null}
+          {order.invoice ? (
+            <div className="grid gap-1 text-sm">
+              <h2 className="font-medium text-foreground">Factura</h2>
+              <a
+                className="justify-self-start text-foreground underline underline-offset-4"
+                href={order.invoice.url}
+              >
+                {order.invoice.name}, PDF
+              </a>
+              {order.creditNote ? (
+                <a
+                  className="justify-self-start text-foreground underline underline-offset-4"
+                  href={order.creditNote.url}
+                >
+                  Stornată de {order.creditNote.name}, PDF
+                </a>
+              ) : null}
+            </div>
+          ) : null}
           <p className="text-sm text-muted-foreground">
             Întrebări despre comandă? Scrieți-ne la{" "}
             <a

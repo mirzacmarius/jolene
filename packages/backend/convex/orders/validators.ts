@@ -60,6 +60,31 @@ export const billingValidator = v.object({
   address: addressValidator,
 });
 
+/**
+ * An invoice in SmartBill (convex/invoices.ts): being issued, issued, or
+ * refused. A credit note, which reverses an invoice, is kept the same way.
+ */
+export const invoiceValidator = v.object({
+  status: v.union(
+    v.literal("issuing"),
+    v.literal("issued"),
+    v.literal("failed"),
+  ),
+  /** When it was asked for, then when it was issued or refused. */
+  at: v.number(),
+  /** Its series and number in SmartBill, as JOL and 0042. */
+  series: v.optional(v.string()),
+  number: v.optional(v.string()),
+  /** A test order's: a draft in SmartBill, never a fiscal document. */
+  draft: v.optional(v.boolean()),
+  /** Its PDF, as SmartBill made it. */
+  file: v.optional(v.id("_storage")),
+  /** Why SmartBill refused it. */
+  error: v.optional(v.string()),
+  /** What went wrong once it was issued, for the team to look at. */
+  warning: v.optional(v.string()),
+});
+
 export const customerValidator = v.object({
   name: v.string(),
   email: v.string(),
@@ -105,6 +130,7 @@ export const paidSessionValidator = v.object({
 });
 
 export type Address = Infer<typeof addressValidator>;
+export type Invoice = Infer<typeof invoiceValidator>;
 export type DeliveryKey = Infer<typeof deliveryKeyValidator>;
 export type OrderLine = Infer<typeof orderLineValidator>;
 export type OrderFee = Infer<typeof orderFeeValidator>;

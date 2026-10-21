@@ -186,9 +186,13 @@ _Avoid_: Collection (a family of designs)
 The value added tax inside the shop's prices. Jolene's prices include it, so Stripe Tax shows how much of what the couple paid is VAT, and never adds to it.
 _Avoid_: Tax (in Romanian, taxă is a fee)
 
-**Invoice** (ro: factură):
-The fiscal document of a paid order, made out to whoever paid or the company they bought as, which Jolene's invoicing tool sends to e-Factura.
+**Invoice** (ro: factură; code: invoice):
+The fiscal document of a paid order, made out to whoever paid or the company they bought as, which SmartBill issues as soon as the order is paid and sends to e-Factura. A test order's is a draft.
 _Avoid_: Receipt (a fiscal receipt, bon fiscal, is another document)
+
+**Credit note** (ro: factură de stornare; code: creditNote):
+The invoice that reverses a refunded order's invoice in full, which SmartBill issues in the same series.
+_Avoid_: Storno (in English), refund invoice
 
 **Billing details** (ro: date de facturare; code: billing):
 Who an order's invoice is for, as Stripe's page took them: the payer's name and billing address and, for a company, its name and tax code (CUI).

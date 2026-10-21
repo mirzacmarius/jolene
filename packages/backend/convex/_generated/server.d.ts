@@ -45,6 +45,10 @@ type Env = {
   readonly SHOP_SECRET: string | undefined;
   readonly SHOP_URL: string | undefined;
   readonly SITE_URL: string | undefined;
+  readonly SMARTBILL_CIF: string | undefined;
+  readonly SMARTBILL_SERIES: string | undefined;
+  readonly SMARTBILL_TOKEN: string | undefined;
+  readonly SMARTBILL_USERNAME: string | undefined;
   readonly STRIPE_API_URL: string | undefined;
   readonly STRIPE_SECRET_KEY: string | undefined;
   readonly STRIPE_WEBHOOK_SECRET: string | undefined;
