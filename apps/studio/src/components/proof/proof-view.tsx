@@ -26,14 +26,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { JOLENE_EMAIL, useShopSells } from "@/lib/shop";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { DesignPreview } from "../design/design-preview";
 import { canvasBlob, renderCanvas } from "../design/render-image";
 import { useProofCheck } from "./use-proof-check";
-
-/** Where a couple writes to order an item the shop doesn't sell online yet. */
-const JOLENE_EMAIL = "invitatii.jolene@gmail.com";
 
 /** The long side of the proof's picture for the order, in pixels. */
 const PICTURE_LONG_SIDE = 1200;
@@ -260,32 +258,6 @@ function Issues({
       </ul>
     </section>
   );
-}
-
-/**
- * Whether the shop sells an item, which is whether its product has a page:
- * the shop answers each product page in Markdown too, at its address with
- * ".md". Undefined while the shop is asked. Asked afresh each time, past the
- * browser's cache, which would keep a "not sold" for an hour after the shop
- * starts selling the item.
- */
-function useShopSells(handle: string | null) {
-  const [answer, setAnswer] = useState<{ handle: string; sells: boolean }>();
-  useEffect(() => {
-    if (!handle) return;
-    let live = true;
-    fetch(`/products/${encodeURIComponent(handle)}.md`, { cache: "no-store" })
-      .then((response) => response.ok)
-      .catch(() => false)
-      .then((sells) => {
-        if (live) setAnswer({ handle, sells });
-      });
-    return () => {
-      live = false;
-    };
-  }, [handle]);
-  if (!handle) return false;
-  return answer?.handle === handle ? answer.sells : undefined;
 }
 
 /**
