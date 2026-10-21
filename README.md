@@ -15,6 +15,7 @@ designs and an AI co-designer, then order printed.
 | `packages/backend` | Convex backend: designs, the couple's details, collections, proofs, sign-in, the workshop's order list |
 | `packages/design` | The design document: schema, operations, layout and the React renderer |
 | `packages/i18n` | The languages Jolene speaks and how a visitor's is chosen |
+| `packages/print` | The print file: a design as a PDF, a page for each ink, with bleed and crop marks (`bun run samples` there makes every template's) |
 | `packages/suites` | Jolene's collections as templates, with their artwork (lifted from jolene.ro by `lift/`), a sheet that draws every template (`bun run preview` there) and the invitations the shop's home page shows (`bun run shots` there) |
 | `packages/ui` | Shared UI components (shadcn/Tailwind) |
 | `tooling/typescript` | Shared TypeScript config |
@@ -57,3 +58,5 @@ CI (`.github/workflows/check.yml`) runs all four on every push, then builds the 
   - `SHOPIFY_STORE_DOMAIN`, `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET`, the same as the Products workflow's (`packages/products`).
 
   Without them the page says what's missing; couples sign in and design as before.
+
+  Each line with a proof has a print file button: the studio makes the PDF from the proof the couple approved, and lists what its checks found (docs/adr/0010).
