@@ -78,8 +78,9 @@ export function DeliveryEn() {
       <ul>
         <li>
           <strong>Cargus courier, to your address:</strong> 25 lei, free for orders from 800 lei
-          (products and fees, before delivery). The courier usually delivers within 1–2 working days
-          of collecting the parcel, and may call you on the number you gave at checkout.
+          (products and fees, before delivery and any discount code). The courier usually delivers
+          within 1–2 working days of collecting the parcel, and may call you on the number you gave
+          at checkout.
         </li>
         <li>
           <strong>Collection from our workshop:</strong> free, from {COMPANY.workshop}. We email you
@@ -163,9 +164,9 @@ export function DeliveryRo() {
       <ul>
         <li>
           <strong>Curier Cargus, la adresa dumneavoastră:</strong> 25 de lei, gratuit pentru
-          comenzile de la 800 de lei (produsele și taxele, fără livrare). Curierul livrează de
-          obicei în 1–2 zile lucrătoare de la preluarea coletului și vă poate suna la numărul dat la
-          plată.
+          comenzile de la 800 de lei (produsele și taxele, fără livrare și înainte de codurile de
+          reducere). Curierul livrează de obicei în 1–2 zile lucrătoare de la preluarea coletului și
+          vă poate suna la numărul dat la plată.
         </li>
         <li>
           <strong>Ridicare din atelier:</strong> gratuit, din {COMPANY.workshop}. Vă scriem când
