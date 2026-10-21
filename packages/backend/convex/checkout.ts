@@ -20,6 +20,7 @@ import {
   stripeTaxReady,
   verifiedEvent,
 } from "./checkout/stripe";
+import { sameSecret, shopSecret, visitorKey } from "./checkout/visitor";
 import { shopUrl } from "./orders/links";
 import type { PaidSession } from "./orders/validators";
 import { errors } from "./utils/errors";
@@ -51,20 +52,27 @@ const KEEP_UNPAID = 30 * 24 * 60 * 60 * 1000;
  * for, and what their order holds once they have. Refuses a cart with
  * nothing in it, with a line that can't be ordered as it is, or with a
  * digital invitation to pay for that the couple hasn't agreed to unlock
- * right away.
+ * right away, and one past its limit, its visitor's when the shop's server
+ * names them, or everyone's.
  */
 export const prepare = internalMutation({
   args: {
     token: v.string(),
     language: languageValidator,
     unlockNow: v.optional(v.boolean()),
+    visitor: v.optional(v.string()),
   },
   returns: checkoutForStripeValidator,
-  handler: async (ctx, { token, language, unlockNow }) => {
+  handler: async (ctx, { token, language, unlockNow, visitor }) => {
     const cart = await findCart(ctx, token);
     if (!cart) throw new ConvexError(errors.cartEmpty);
-    const limit = await rateLimiter.limit(ctx, "checkout", { key: cart._id });
-    if (!limit.ok || !(await rateLimiter.limit(ctx, "checkouts")).ok)
+    if (
+      !(await rateLimiter.limit(ctx, "checkout", { key: cart._id })).ok ||
+      (visitor !== undefined &&
+        !(await rateLimiter.limit(ctx, "visitorCheckouts", { key: visitor }))
+          .ok) ||
+      !(await rateLimiter.limit(ctx, "checkouts")).ok
+    )
       throw new ConvexError(errors.tooMany);
 
     const priced = await priceCart(ctx, cart._id);
@@ -117,22 +125,33 @@ export const prepare = internalMutation({
  * its address: the shop's server sends the couple there. Stripe Tax works
  * out the VAT in it once it's set up in Jolene's Stripe account. `unlockNow`
  * is the couple's tick in the cart, agreeing to unlock right away the
- * digital invitation they pay for.
+ * digital invitation they pay for. Once SHOP_SECRET is set, it opens only
+ * for the shop's server, which sends the secret and the visitor's address
+ * as `server`.
  */
 export const start = action({
   args: {
     token: v.string(),
     language: languageValidator,
     unlockNow: v.optional(v.boolean()),
+    server: v.optional(v.object({ secret: v.string(), visitor: v.string() })),
   },
   returns: v.string(),
-  handler: async (ctx, { token, language, unlockNow }): Promise<string> => {
+  handler: async (
+    ctx,
+    { token, language, unlockNow, server },
+  ): Promise<string> => {
     const shop = shopUrl();
     if (!checkoutOpen() || !shop)
       throw new ConvexError(errors.checkoutUnavailable);
+    const secret = shopSecret();
+    if (secret && !sameSecret(server?.secret ?? "", secret))
+      throw new ConvexError(errors.shopOnly);
+    // Only the shop's server can say who the visitor is.
+    const visitor = secret && server ? visitorKey(server.visitor) : undefined;
     const checkout: CheckoutForStripe = await ctx.runMutation(
       internal.checkout.prepare,
-      { token, language, unlockNow },
+      { token, language, unlockNow, ...(visitor !== undefined && { visitor }) },
     );
     const client = stripe();
     const vat = await stripeTaxReady(client);

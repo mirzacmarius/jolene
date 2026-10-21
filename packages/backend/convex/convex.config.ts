@@ -68,6 +68,14 @@ const app = defineApp({
      */
     SHOP_URL: v.optional(v.string()),
     /**
+     * A long random secret the shop's server shares, as SHOP_SECRET on the
+     * shop's Vercel project too. Once it's set here, Stripe's page opens only
+     * for the shop's server, which says who each visitor is, so that no one
+     * visitor can use up the checkouts everyone shares. Set it on the shop
+     * first: until then the shop's checkouts are refused.
+     */
+    SHOP_SECRET: v.optional(v.string()),
+    /**
      * Stripe's key for the shop's checkout, …_test_… in test mode: a
      * restricted key (rk_…), as Stripe advises, or the secret key (sk_…).
      * The shop's checkout opens with it. Without it the shop says paying

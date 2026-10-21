@@ -42,6 +42,7 @@ type Env = {
   readonly ORDERS_EMAIL: string | undefined;
   readonly RESEND_API_KEY: string | undefined;
   readonly RESEND_WEBHOOK_SECRET: string | undefined;
+  readonly SHOP_SECRET: string | undefined;
   readonly SHOP_URL: string | undefined;
   readonly SITE_URL: string | undefined;
   readonly STRIPE_API_URL: string | undefined;
