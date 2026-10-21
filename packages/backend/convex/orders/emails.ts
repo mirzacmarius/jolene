@@ -1,4 +1,5 @@
 import type { Doc } from "../_generated/dataModel";
+import { WORKSHOP_ADDRESS } from "../checkout/delivery";
 import { escapeHtml } from "../emails";
 import { lei, orderName } from "./format";
 
@@ -26,7 +27,10 @@ const words = {
     discount: "Reducere",
     total: "Total",
     vat: "Din care TVA",
+    free: "gratuit",
     address: "Livrăm la",
+    pickup: "Ridicați comanda de la atelier",
+    pickupNote: "Vă anunțăm când e gata de ridicat.",
     footer: "Jolene · jolene.ro",
   },
   en: {
@@ -44,13 +48,19 @@ const words = {
     discount: "Discount",
     total: "Total",
     vat: "Including VAT",
+    free: "free",
     address: "Delivering to",
+    pickup: "Pick up your order from the workshop",
+    pickupNote: "We'll let you know when it's ready.",
     footer: "Jolene · jolene.ro",
   },
 } as const;
 
 /** "[Test] " before a test order's subjects. */
 const testMark = (order: Order) => (order.test ? "[Test] " : "");
+
+/** The couple picks it up from the workshop: nothing goes to their address. */
+const pickedUp = (order: Order) => order.delivery?.key === "pickup";
 
 /**
  * The name to thank: the first word of the name the parcel goes to, as the
@@ -91,7 +101,12 @@ function totals(order: Order, w: (typeof words)[keyof typeof words]) {
   return [
     [w.subtotal, lei(order.subtotal)],
     ...(order.delivery
-      ? [[`${w.delivery} (${order.delivery.label})`, lei(order.delivery.price)]]
+      ? [
+          [
+            `${w.delivery} (${order.delivery.label})`,
+            order.delivery.price > 0 ? lei(order.delivery.price) : w.free,
+          ],
+        ]
       : []),
     ...(order.discount > 0 ? [[w.discount, lei(-order.discount)]] : []),
     [w.total, lei(order.total)],
@@ -143,7 +158,7 @@ const button = (link: string, label: string) =>
 /**
  * The couple's confirmation of their order, in the language they paid in:
  * what they bought, with the picture of each line, what they paid, where it
- * goes, and the link to the order's page.
+ * goes or where they pick it up, and the link to the order's page.
  */
 export function confirmationEmail(
   order: Order,
@@ -166,7 +181,12 @@ export function confirmationEmail(
     ...order.fees.map((fee): [string, string] => [fee.label, lei(fee.price)]),
     ...totals(order, w),
   ];
-  const address = order.address && addressLines(order.address);
+  // Where it goes, under its heading, or where the couple picks it up.
+  const destination: [string, string[]] | null = pickedUp(order)
+    ? [w.pickup, [WORKSHOP_ADDRESS, w.pickupNote]]
+    : order.address
+      ? [w.address, addressLines(order.address)]
+      : null;
   const text = [
     ...intro,
     ...(order.test ? ["", w.test] : []),
@@ -177,7 +197,7 @@ export function confirmationEmail(
     ]),
     "",
     ...sums.map(([label, amount]) => `${label}: ${amount}`),
-    ...(address ? ["", `${w.address}:`, ...address] : []),
+    ...(destination ? ["", `${destination[0]}:`, ...destination[1]] : []),
     ...(link ? ["", `${w.button}: ${link}`] : []),
     "",
     w.footer,
@@ -192,9 +212,9 @@ export function confirmationEmail(
     ...sums.map(([label, amount]) =>
       amountRow(label, amount, label === w.total),
     ),
-    ...(address
+    ...(destination
       ? [
-          `<tr><td style="padding-top:24px;${sans}font-size:14px;line-height:22px;${muted}"><strong>${escapeHtml(w.address)}</strong><br>${address.map(escapeHtml).join("<br>")}</td></tr>`,
+          `<tr><td style="padding-top:24px;${sans}font-size:14px;line-height:22px;${muted}"><strong>${escapeHtml(destination[0])}</strong><br>${destination[1].map(escapeHtml).join("<br>")}</td></tr>`,
         ]
       : []),
     ...(link ? [button(link, w.button)] : []),
@@ -222,7 +242,15 @@ export function noticeEmail(order: Order, link: string | null) {
     "",
     `Client: ${[customer.name, customer.email, customer.phone].filter(Boolean).join(" · ")}`,
     `Limba: ${order.language === "ro" ? "română" : "engleză"}`,
-    ...(order.address ? ["Adresa:", ...addressLines(order.address)] : []),
+    ...(pickedUp(order)
+      ? [`Ridicare de la atelier (${WORKSHOP_ADDRESS}): nu se livrează.`]
+      : []),
+    ...(order.address
+      ? [
+          pickedUp(order) ? "Adresa clientului:" : "Adresa:",
+          ...addressLines(order.address),
+        ]
+      : []),
     "",
     ...order.lines.flatMap((line) => [
       `${line.quantity} × ${line.title} (${line.product}): ${lei(line.total)}`,

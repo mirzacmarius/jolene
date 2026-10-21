@@ -18,11 +18,44 @@ export interface StripeRequest {
   headers: Headers;
 }
 
-const shippingRate = {
-  id: "shr_courier",
-  object: "shipping_rate",
-  display_name: "Curier, la adresă",
-};
+/** A way to travel a session offered, as its shipping rate. */
+interface Rate {
+  id: string;
+  object: "shipping_rate";
+  display_name: string;
+  fixed_amount: { amount: number; currency: string };
+  metadata: Record<string, string>;
+}
+
+/** The shipping rates of a session's shipping options, as Stripe makes them. */
+function ratesOf(fields: URLSearchParams): Rate[] {
+  const rates: Rate[] = [];
+  for (
+    let i = 0;
+    fields.has(`shipping_options[${i}][shipping_rate_data][display_name]`);
+    i++
+  ) {
+    const data = `shipping_options[${i}][shipping_rate_data]`;
+    const metadata: Record<string, string> = {};
+    for (const [key, value] of fields) {
+      const name = key.startsWith(`${data}[metadata][`)
+        ? key.slice(`${data}[metadata][`.length, -1)
+        : null;
+      if (name) metadata[name] = value;
+    }
+    rates.push({
+      id: `shr_${i}_${crypto.randomUUID().slice(0, 8)}`,
+      object: "shipping_rate",
+      display_name: fields.get(`${data}[display_name]`) ?? "",
+      fixed_amount: {
+        amount: Number(fields.get(`${data}[fixed_amount][amount]`)),
+        currency: fields.get(`${data}[fixed_amount][currency]`) ?? "ron",
+      },
+      metadata,
+    });
+  }
+  return rates;
+}
 
 /** Stripe Tax's settings on an account that hasn't set it up. */
 const taxNotSetUp = {
@@ -67,16 +100,22 @@ const notFound = (id: string) =>
 /** Replaces fetch with a Stripe that keeps Checkout Sessions in memory. */
 export function fakeStripe() {
   const sessions = new Map<string, Session>();
+  /** The shipping rates each session offered, by the session's id. */
+  const rates = new Map<string, Rate[]>();
   const requests: StripeRequest[] = [];
   /** Stripe Tax's settings: null when the key may not read them. */
   let taxSettings: Record<string, unknown> | null = taxNotSetUp;
 
   /** A session as the API returns it, its delivery's rate expanded if asked. */
   const view = (session: Session, expand: string[]) => {
-    const cost = session.shipping_cost as { shipping_rate: unknown } | null;
+    const cost = session.shipping_cost as { shipping_rate: string } | null;
+    const rate = rates
+      .get(session.id)
+      ?.find((offered) => offered.id === cost?.shipping_rate);
     return cost &&
+      rate &&
       expand.some((path) => path.endsWith("shipping_cost.shipping_rate"))
-      ? { ...session, shipping_cost: { ...cost, shipping_rate: shippingRate } }
+      ? { ...session, shipping_cost: { ...cost, shipping_rate: rate } }
       : session;
   };
 
@@ -126,6 +165,7 @@ export function fakeStripe() {
       payment_intent: null,
     };
     sessions.set(id, session);
+    rates.set(id, ratesOf(fields));
     return session;
   };
 
@@ -223,24 +263,32 @@ export function fakeStripe() {
       if (!session) throw new Error("No Checkout Session yet");
       return session;
     },
+    /** The shipping rates a session offered, in the order it offered them. */
+    rates(id: string) {
+      return rates.get(id) ?? [];
+    },
     /**
-     * Pays for a session as Stripe's page would: the couple's details, a
-     * courier to Cluj when the session asks for an address, a promotion
-     * code's discount if any and, with Stripe Tax on, Romania's VAT inside
-     * the total unless `vat` says otherwise.
+     * Pays for a session as Stripe's page would: the couple's details, an
+     * address in Cluj when the session asks for one, with the way to travel
+     * they chose (the first offered unless `delivery` names another), a
+     * promotion code's discount if any and, with Stripe Tax on, Romania's VAT
+     * inside the total unless `vat` says otherwise.
      */
     pay(
       id: string,
       {
         discount = 0,
-        delivery: price = 2000,
+        delivery: chosen = 0,
         vat,
       }: { discount?: number; delivery?: number; vat?: number } = {},
     ) {
       const session = sessions.get(id);
       if (!session) throw new Error(`No Checkout Session ${id}`);
       const ships = session.shipping_address_collection !== null;
-      const delivery = ships ? price : 0;
+      const rate = ships ? rates.get(id)?.[chosen] : undefined;
+      if (ships && !rate)
+        throw new Error(`Session ${id} offered no option ${chosen}`);
+      const delivery = rate?.fixed_amount.amount ?? 0;
       const phone = session.phone_number_collection as { enabled: boolean };
       const total = session.amount_subtotal - discount + delivery;
       const automaticTax = session.automatic_tax as { enabled: boolean };
@@ -267,8 +315,8 @@ export function fakeStripe() {
               },
             }
           : null,
-        shipping_cost: ships
-          ? { amount_total: delivery, shipping_rate: shippingRate.id }
+        shipping_cost: rate
+          ? { amount_total: delivery, shipping_rate: rate.id }
           : null,
         total_details: {
           amount_discount: discount,

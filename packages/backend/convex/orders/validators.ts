@@ -53,8 +53,19 @@ export const customerValidator = v.object({
   phone: v.optional(v.string()),
 });
 
-/** How an order travels, and what that cost in bani. */
+/**
+ * Which way an order travels (checkout/delivery.ts): Cargus to the door, or
+ * picked up from the workshop in Iași.
+ */
+export const deliveryKeyValidator = v.union(
+  v.literal("cargus"),
+  v.literal("pickup"),
+);
+
+/** How an order travels, as Stripe's page named it, and what that cost in bani. */
 export const deliveryValidator = v.object({
+  /** None on an order whose delivery Convex didn't offer by key. */
+  key: v.optional(deliveryKeyValidator),
   label: v.string(),
   price: v.number(),
 });
@@ -79,6 +90,7 @@ export const paidSessionValidator = v.object({
   vat: v.optional(v.number()),
 });
 
+export type DeliveryKey = Infer<typeof deliveryKeyValidator>;
 export type OrderLine = Infer<typeof orderLineValidator>;
 export type OrderFee = Infer<typeof orderFeeValidator>;
 export type PaidSession = Infer<typeof paidSessionValidator>;

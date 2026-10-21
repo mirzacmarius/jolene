@@ -167,8 +167,16 @@ Paying for the cart on Stripe's page. Convex keeps the cart as it was priced whe
 _Avoid_: Payment page
 
 **Delivery** (ro: livrare):
-How a printed order reaches the couple, and what that costs, chosen on Stripe's page.
+How a printed order reaches the couple, and what that costs, chosen on Stripe's page: by courier or by pickup.
 _Avoid_: Shipping (in copy)
+
+**Courier** (ro: curier; code: cargus):
+Delivery to the couple's door by Cargus: 25 lei, and nothing from 800 lei.
+_Avoid_: Carrier, shipping
+
+**Pickup** (ro: ridicare de la atelier; code: pickup):
+Delivery by the couple picking their order up from the workshop in Iași, for nothing. Stripe's page asks for their address all the same.
+_Avoid_: Collection (a family of designs)
 
 **VAT** (ro: TVA; code: vat):
 The value added tax inside the shop's prices. Jolene's prices include it, so Stripe Tax shows how much of what the couple paid is VAT, and never adds to it.

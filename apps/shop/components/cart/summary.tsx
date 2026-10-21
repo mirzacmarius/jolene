@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart/client";
 import type { Cart } from "@/lib/cart/types";
 import { checkoutAction } from "@/lib/checkout/action";
+import { formatPrice } from "@/lib/money";
 
 export function CartSummary({ cart }: { cart: Cart }) {
   const { isUpdating } = useCart();
@@ -36,8 +37,13 @@ export function CartSummary({ cart }: { cart: Cart }) {
             <Price amount={cart.total} className="font-medium text-xl" />
           )}
         </div>
-        {cart.lines.some((line) => !line.event) ? (
-          <p className="text-muted-foreground text-xs">Livrarea se calculează la plată.</p>
+        {cart.delivery ? (
+          <p className="text-muted-foreground text-xs">
+            {cart.delivery.price > 0
+              ? `Livrare Cargus: ${formatPrice(cart.delivery.price)}, gratuită de la ${formatPrice(cart.delivery.freeFrom)}.`
+              : "Livrare Cargus gratuită."}{" "}
+            Sau ridici comanda gratuit din atelierul din Iași. Alegi la plată.
+          </p>
         ) : null}
       </div>
       <form action={checkout} className="grid gap-2.5">

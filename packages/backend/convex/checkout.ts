@@ -98,6 +98,7 @@ export const prepare = internalMutation({
           : line;
       }),
       fees: priced.fees,
+      subtotal: priced.total,
     };
   },
 });
