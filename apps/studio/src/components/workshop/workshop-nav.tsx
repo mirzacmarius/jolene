@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { getI18n } from "@/locales/server";
 
-/** The workshop's sections, each with its list. */
+/** The workshop's sections. */
 const SECTIONS = [
   { key: "orders", href: "/studio/atelier" },
   { key: "products", href: "/studio/atelier/produse" },
+  { key: "settings", href: "/studio/atelier/setari" },
 ] as const;
 
 /** Links between the workshop's sections, the open one marked. */

@@ -448,6 +448,7 @@ export default {
       label: "Workshop pages",
       orders: "Orders",
       products: "Products",
+      settings: "Settings",
     },
     catalog: {
       title: "Products",

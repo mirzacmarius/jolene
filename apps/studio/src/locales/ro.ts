@@ -450,6 +450,7 @@ export default {
       label: "Paginile atelierului",
       orders: "Comenzi",
       products: "Produse",
+      settings: "Setări",
     },
     catalog: {
       title: "Produse",
