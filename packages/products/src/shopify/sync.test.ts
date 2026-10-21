@@ -101,7 +101,11 @@ class FakeStore implements Store {
     switch (name) {
       case "access":
         return {
-          shop: { name: "Jolene", myshopifyDomain: "jolene.myshopify.com" },
+          shop: {
+            id: "gid://shopify/Shop/1",
+            name: "Jolene",
+            myshopifyDomain: "jolene.myshopify.com",
+          },
           currentAppInstallation: {
             accessScopes: this.scopes.map((handle) => ({ handle })),
           },
