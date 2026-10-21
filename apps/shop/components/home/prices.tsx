@@ -21,7 +21,7 @@ interface Price {
   text: string;
 }
 
-// Shopify doesn't sell Jolene's catalog yet: these are jolene.ro's prices in October 2026.
+// jolene.ro's prices in October 2026, written out until this section reads the catalog.
 const PRICES: Price[] = [
   {
     amount: 5.5,

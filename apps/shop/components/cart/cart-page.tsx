@@ -7,64 +7,53 @@ import { Link } from "@/components/ui/link";
 import { Page } from "@/components/ui/page";
 import { Sections } from "@/components/ui/sections";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSuspenseCart } from "@/lib/cart/client";
-import { countProductLines } from "@/lib/line-options";
+import { useCart } from "@/lib/cart/client";
 
 import { CartLineItems } from "./line-item";
 import { CartSummary } from "./summary";
-import { CartWarnings } from "./warnings";
 
 export function CartPageContent() {
-  const cart = useSuspenseCart((state) => state.data);
-
-  if (cart.totalQuantity === 0) {
+  const { cart, isLoading } = useCart();
+  if (isLoading) return <CartPageSkeleton />;
+  if (!cart?.lines.length)
     return (
-      <div className="flex flex-col items-center justify-center gap-5 py-10 px-5">
+      <div className="flex flex-col items-center justify-center gap-5 px-5 py-10">
         <h2 className="text-2xl sm:text-3xl">Coșul e gol</h2>
         <Link
-          href="/"
-          className="inline-flex cursor-pointer items-center justify-center h-12 px-8 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="inline-flex h-12 cursor-pointer items-center justify-center rounded-lg bg-primary px-8 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          href="/collections/all"
         >
-          Înapoi la magazin
+          Vezi produsele
         </Link>
       </div>
     );
-  }
-
   return (
     <CartPageLayout
       count={
         <span className="flex size-7 items-center justify-center rounded-full bg-foreground text-sm text-background">
-          {countProductLines(cart.lines.nodes)}
+          {cart.count}
         </span>
       }
       summary={<CartSummary cart={cart} />}
-      warnings={<CartWarnings />}
     >
-      <CartLineItems lines={cart.lines.nodes} />
+      <CartLineItems lines={cart.lines} />
     </CartPageLayout>
   );
 }
 
-export function CartPageSkeleton() {
+function CartPageSkeleton() {
   return (
     <CartPageLayout
       aria-busy="true"
       count={<Skeleton className="size-7 rounded-full" />}
       summary={
         <div className="grid gap-5">
-          <div className="grid gap-2.5">
-            <div className="flex gap-2.5">
-              <Skeleton className="h-9 flex-1" />
-              <Skeleton className="h-9 w-18 rounded-lg" />
+          <div className="grid gap-1">
+            <div className="flex h-7 items-center justify-between">
+              <Skeleton className="h-5 w-28" />
+              <Skeleton className="h-6 w-20" />
             </div>
-            <div className="grid gap-1">
-              <div className="flex h-7 items-center justify-between">
-                <Skeleton className="h-5 w-28" />
-                <Skeleton className="h-6 w-20" />
-              </div>
-              <Skeleton className="h-4 w-48" />
-            </div>
+            <Skeleton className="h-4 w-48" />
           </div>
           <Skeleton className="h-12 rounded-lg" />
         </div>
@@ -72,7 +61,7 @@ export function CartPageSkeleton() {
     >
       <ul className="grid gap-5">
         {[0, 1, 2].map((index) => (
-          <li key={index} className="flex gap-2.5">
+          <li className="flex gap-2.5" key={index}>
             <Skeleton className="size-18 shrink-0 rounded-none" />
             <div className="grid min-h-18 flex-1 gap-2.5 pt-0.5">
               <div className="grid gap-1">
@@ -92,10 +81,9 @@ export function CartPageSkeleton() {
 interface CartPageLayoutProps extends ComponentProps<"div"> {
   count: ReactNode;
   summary: ReactNode;
-  warnings?: ReactNode;
 }
 
-function CartPageLayout({ children, count, summary, warnings, ...props }: CartPageLayoutProps) {
+function CartPageLayout({ children, count, summary, ...props }: CartPageLayoutProps) {
   return (
     <Page {...props}>
       <Container>
@@ -104,7 +92,6 @@ function CartPageLayout({ children, count, summary, warnings, ...props }: CartPa
             <h1 className="text-3xl sm:text-4xl md:text-5xl">Coș</h1>
             {count}
           </div>
-          {warnings}
           <div className="grid gap-5 lg:grid-cols-12">
             <div className="lg:col-span-8 xl:col-span-9">{children}</div>
             <aside className="lg:col-span-4 xl:col-span-3">

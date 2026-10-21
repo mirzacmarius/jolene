@@ -8,7 +8,7 @@ import { display, sans } from "@/app/fonts";
 export const viewport = { themeColor: "#fbf8f3" };
 
 /**
- * The page guests open an invitation on, at invitatie.jolene.ro: a layout of
+ * The page guests open an invitation on, at invitatie.orvibo.it: a layout of
  * its own, without the studio's header or its sign-in. Its language is the
  * invitation's, which the page sets once it knows it; Romanian until then.
  */

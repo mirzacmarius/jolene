@@ -267,7 +267,17 @@ describe("shop.search", () => {
 describe("shop.categories", () => {
   test("lists the categories in the menu's order, and finds one", async () => {
     const t = await seeded();
-    expect(await t.query(api.shop.categories, {})).toEqual(catalog.categories);
+    const categories = await t.query(api.shop.categories, {});
+    expect(categories).toMatchObject(catalog.categories);
+    // Each shows the first photo of the first product it lists.
+    const photo = catalog.products.find((product) =>
+      product.categories.includes("invitatii-botez"),
+    )?.images[0];
+    if (!photo) throw new Error("A baptism invitation has a photo");
+    expect(
+      categories.find((category) => category.handle === "invitatii-botez")
+        ?.image,
+    ).toEqual({ url: photo.url, alt: photo.alt });
     expect(
       await t.query(api.shop.category, { handle: "invitatii-botez" }),
     ).toEqual({ handle: "invitatii-botez", title: "Invitații botez" });

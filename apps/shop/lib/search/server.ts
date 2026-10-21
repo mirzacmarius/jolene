@@ -1,71 +1,35 @@
-import { createPredictiveSearchServerHandlers, gql } from "@shopify/hydrogen";
+import { api } from "@jolene/backend/convex/_generated/api";
+import { fetchQuery } from "convex/nextjs";
+import { cacheLife, cacheTag } from "next/cache";
 
-import { PRODUCTS_PER_PAGE } from "@/lib/collections";
-import type { BrowseResults, BrowseState } from "@/lib/collections/types";
-import {
-  fetchSearchFacets,
-  fetchSearchIndexProducts,
-} from "@/lib/shopify/operations/products/server";
+import type { SortValue } from "@/lib/categories/types";
+import { toProductCard } from "@/lib/product";
+import type { ProductCard } from "@/lib/product/types";
+import { sortSearchResults } from "@/lib/search";
+import type { SearchResults } from "@/lib/search/types";
 
-export async function fetchSearchResults({
-  query,
-  statePromise,
-}: {
-  query?: string;
-  statePromise: Promise<BrowseState>;
-}): Promise<BrowseResults> {
-  const { dataSearch, filters, sort } = await statePromise;
-  const [{ pageInfo, products }, { facets, total }] = await Promise.all([
-    fetchSearchIndexProducts({
-      filters,
-      limit: PRODUCTS_PER_PAGE,
-      query,
-      sortKey: sort,
-    }),
-    fetchSearchFacets({
-      filters,
-      query,
-    }),
-  ]);
-  return {
-    dataSearch,
-    facets,
-    pageInfo,
-    products,
-    source: { query, type: "search" },
-    total,
-  };
+export const SEARCH_LIMIT = 100;
+
+export async function searchProducts(query: string, limit: number): Promise<ProductCard[]> {
+  "use cache: remote";
+  cacheLife("minutes");
+  cacheTag("products", "products-index");
+
+  const term = query.trim();
+  if (!term) return [];
+  return (await fetchQuery(api.shop.search, { limit, query: term })).map(toProductCard);
 }
 
-const PRODUCT_FRAGMENT = gql(/* GraphQL */ `
-  fragment PredictiveSearchProductFragment on Product {
-    featuredImage {
-      altText
-      height
-      url
-      width
-    }
-    priceRange {
-      minVariantPrice {
-        amount
-        currencyCode
-      }
-    }
-  }
-`);
-
-const QUERY_FRAGMENT = gql(/* GraphQL */ `
-  fragment PredictiveSearchQueryFragment on SearchQuerySuggestion {
-    styledText
-    text
-  }
-`);
-
-export const predictiveSearchHandlers = createPredictiveSearchServerHandlers({
-  fragments: {
-    product: PRODUCT_FRAGMENT,
-    query: QUERY_FRAGMENT,
-  },
-  limit: 3,
-  types: ["PRODUCT", "QUERY"],
-});
+export async function getSearchResults({
+  query,
+  sort,
+}: {
+  query: string;
+  sort: SortValue;
+}): Promise<SearchResults> {
+  return {
+    products: sortSearchResults(await searchProducts(query, SEARCH_LIMIT), sort),
+    query: query.trim(),
+    sort,
+  };
+}

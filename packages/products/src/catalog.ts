@@ -1,8 +1,7 @@
 /**
  * jolene.ro's catalog as the shop sells it, lifted from the WooCommerce
- * shop by scripts/lift.ts and written to catalog/. Shopify gets it through
- * scripts/sync.ts; after that, Shopify's admin is where it changes. The
- * studio's seed loads it into Convex too (ADR 0015), which replaces Shopify.
+ * shop by scripts/lift.ts and written to catalog/. The studio's seed loads
+ * it into Convex (ADR 0015), where the shop reads it.
  */
 
 /** A product the shop sells, under the name it had on jolene.ro. */
@@ -15,8 +14,8 @@ export type Product = {
   /** The price before a sale, while the product is on sale. */
   compareAtPrice?: number;
   /**
-   * What the product is made of, such as its paper, as Shopify's options:
-   * a variant for each combination of values, priced with their surcharges.
+   * What the product is made of, such as its paper: each value priced with
+   * its surcharge.
    */
   options: ProductOption[];
   /** The handles of the options that go with the cart line, in order. */
@@ -38,17 +37,17 @@ export type ProductOption = {
   values: { name: string; surcharge: number }[];
 };
 
-/** A product's photo: where Shopify fetches it from, and what it shows. */
+/** A product's photo: where it's fetched from, and what it shows. */
 export type Image = { url: string; alt: string };
 
 /**
  * An option a couple chooses or writes when they order, which goes with the
  * cart line: the seal's colour, the edges, a text. Products share one when
- * they ask the same with the same choices and prices, so a price changed in
- * Shopify changes for all of them.
+ * they ask the same with the same choices and prices, so a price changed
+ * once changes for all of them.
  */
 export type LineOption = {
-  /** Unique in the catalog, and the option's metaobject handle in Shopify. */
+  /** Unique in the catalog. */
   handle: string;
   /**
    * What the option asks, the same for every option that asks it, such as
@@ -72,7 +71,7 @@ export type Choice = { label: string; price: number };
 
 /**
  * A shelf of the shop, one of jolene.ro's categories, such as "Invitații
- * nuntă": a collection in Shopify.
+ * nuntă".
  */
 export type Category = { handle: string; title: string };
 
@@ -83,28 +82,21 @@ export type Catalog = {
 };
 
 /**
- * The one-off charges jolene.ro's descriptions mention, each a variant of a
- * product of its own that the shop adds at quantity one, and what a couple
- * reads of it when they order.
+ * The one-off charges jolene.ro's descriptions mention, which an order pays
+ * once, and what a couple reads of each when they order.
  */
 export const fees = {
   "diacritice-50": {
-    product: "diacritice",
-    variant: "50 lei",
     price: 50,
     label: "Diacritice",
     description: "Textul tipărit cu diacritice, o dată pe comandă.",
   },
   "diacritice-10": {
-    product: "diacritice",
-    variant: "10 lei",
     price: 10,
     label: "Diacritice",
     description: "Textul tipărit cu diacritice, o dată pe comandă.",
   },
   "comanda-urgenta": {
-    product: "comanda-urgenta",
-    variant: "200 lei",
     price: 200,
     label: "Comandă urgentă",
     description: "Comanda lucrată în regim de urgență.",

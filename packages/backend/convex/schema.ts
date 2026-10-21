@@ -17,8 +17,17 @@ import {
   unlockValidator,
 } from "./invites/validators";
 import {
+  addressValidator,
+  customerValidator,
+  deliveryValidator,
+  orderFeeValidator,
+  orderLineValidator,
+} from "./orders/validators";
+import {
+  answerValidator,
   choiceValidator,
   lineOptionKindValidator,
+  pickedValidator,
   productImageValidator,
   productOptionValidator,
 } from "./shop/validators";
@@ -98,7 +107,7 @@ export default defineSchema({
     slug: v.string(),
     kind: productKindValidator,
     document: documentValidator,
-    /** The Shopify product a finished design is ordered as. */
+    /** The shop's product a finished design is ordered as, named when Shopify sold it. */
     shopifyProductHandle: v.optional(v.string()),
     sortOrder: v.number(),
     /**
@@ -400,6 +409,30 @@ export default defineSchema({
     editedAt: v.optional(v.number()),
   }).index("by_handle", ["handle"]),
 
+  /**
+   * A visitor's cart in the shop. The shop's server keeps its token in a
+   * cookie and finds the cart by it; the token is its only key.
+   */
+  carts: defineTable({
+    token: v.string(),
+    updatedAt: v.number(),
+  }).index("by_token", ["token"]),
+
+  /** A product in a cart, with what the couple chose for it. */
+  cartLines: defineTable({
+    cartId: v.id("carts"),
+    productId: v.id("products"),
+    quantity: v.number(),
+    /** A value for each of the product's options, such as its paper. */
+    options: v.array(pickedValidator),
+    /** The order options' answers, by the option's key. */
+    answers: v.array(answerValidator),
+    /** The keys of the fees the couple chose with it: the order pays each once. */
+    fees: v.array(v.string()),
+    /** The design the couple approved for it in the studio. */
+    proofId: v.optional(v.id("proofs")),
+  }).index("by_cartId", ["cartId"]),
+
   /** A one-off charge on an order, such as for diacritics or an urgent order. */
   fees: defineTable({
     key: v.string(),
@@ -409,6 +442,60 @@ export default defineSchema({
     price: v.number(),
     editedAt: v.optional(v.number()),
   }).index("by_key", ["key"]),
+
+  /**
+   * A cart as it went to Stripe's checkout, priced from the catalog then:
+   * what the couple pays for, and what their order keeps once they have.
+   */
+  checkouts: defineTable({
+    cartId: v.id("carts"),
+    /** Its cart lines, taken out of the cart once it's paid. */
+    cartLines: v.array(v.id("cartLines")),
+    lines: v.array(orderLineValidator),
+    fees: v.array(orderFeeValidator),
+    /** The lines and the fees together, in bani, before delivery and discounts. */
+    subtotal: v.number(),
+    language: languageValidator,
+  }),
+
+  /**
+   * What a couple paid for in one checkout: its lines and fees as priced
+   * when they went to pay, how it travels and where to.
+   */
+  orders: defineTable({
+    /** What the couple and the workshop call it: J and this, as J1001. */
+    number: v.number(),
+    /** The order page's key, in the link the couple's emails carry. */
+    token: v.string(),
+    /** The Stripe Checkout Session it was paid through: one order each. */
+    session: v.string(),
+    paymentIntent: v.optional(v.string()),
+    /** Paid in Stripe's test mode: a trial, not a sale. */
+    test: v.boolean(),
+    language: languageValidator,
+    lines: v.array(orderLineValidator),
+    fees: v.array(orderFeeValidator),
+    /** The lines and the fees together, in bani. */
+    subtotal: v.number(),
+    /** None when nothing in it travels. */
+    delivery: v.optional(deliveryValidator),
+    /** What a promotion code took off, in bani. */
+    discount: v.number(),
+    /** What Stripe charged, in bani. */
+    total: v.number(),
+    /**
+     * The VAT in the total, in bani, as Stripe Tax worked it out: prices
+     * include it. None when Stripe Tax was off, and 0 when it found no VAT
+     * to charge, as without a registration where the order goes.
+     */
+    vat: v.optional(v.number()),
+    customer: customerValidator,
+    address: v.optional(addressValidator),
+    paidAt: v.number(),
+  })
+    .index("by_number", ["number"])
+    .index("by_token", ["token"])
+    .index("by_session", ["session"]),
 
   /**
    * Who manages an event with its owner: a partner who joined by the

@@ -1,5 +1,4 @@
 // Adapted from Marée by LN (MIT License): see THIRD-PARTY-NOTICES.md.
-import { cn } from "cn";
 import Image from "next/image";
 
 import { Container } from "@/components/ui/container";
@@ -55,8 +54,7 @@ export function Footer() {
     <footer className="pt-20">
       <div className="bg-primary text-primary-foreground">
         <Container>
-          {/* pb-22 clears the fixed agent ActionBar pill when it renders */}
-          <div className={cn("grid gap-5 pt-16 pb-6", shopConfig.agent.isEnabled && "pb-22")}>
+          <div className="grid gap-5 pt-16 pb-6">
             <div className="grid gap-10 pb-10 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
               <Link className="flex self-start sm:col-span-2 lg:col-span-1" href="/">
                 {/* Unoptimized: images.deviceSizes would serve it 1320 px wide; brand/generate.py sizes it. */}

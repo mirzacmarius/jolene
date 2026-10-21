@@ -32,3 +32,12 @@ export const productImageValidator = v.object({
   alt: v.string(),
   storageId: v.optional(v.id("_storage")),
 });
+
+/** A product's option, such as its paper, and the value the couple picked. */
+export const pickedValidator = v.object({
+  name: v.string(),
+  value: v.string(),
+});
+
+/** An order option's answer: a choice's label, or what the couple wrote. */
+export const answerValidator = v.object({ key: v.string(), value: v.string() });

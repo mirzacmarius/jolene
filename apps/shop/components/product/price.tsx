@@ -4,17 +4,17 @@ import type { ComponentProps } from "react";
 import { formatPrice } from "@/lib/money";
 
 interface PriceProps extends ComponentProps<"span"> {
-  amount: string;
-  currencyCode: string;
+  /** In bani. */
+  amount: number;
 }
 
-export function Price({ amount, currencyCode, className, ...props }: PriceProps) {
+export function Price({ amount, className, ...props }: PriceProps) {
   return (
     <span
       className={cn("font-mono text-xl text-foreground tabular-nums tracking-tight", className)}
       {...props}
     >
-      {formatPrice({ amount, currencyCode })}
+      {formatPrice(amount)}
     </span>
   );
 }

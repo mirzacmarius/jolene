@@ -1,16 +1,18 @@
 import { cn } from "cn";
 import Image from "next/image";
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
 import { DiscountBadge } from "@/components/product/discount-badge";
 import { Price } from "@/components/product/price";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import type { Image as ImageType } from "@/lib/media/types";
+import { getDiscountPercent } from "@/lib/product";
 
 function ProductCard({ className, children, ...props }: ComponentProps<"article">) {
   return (
     <article
       data-slot="product-card"
-      className={cn("relative flex flex-col h-full overflow-hidden", className)}
+      className={cn("group relative flex flex-col h-full overflow-hidden", className)}
       {...props}
     >
       {children}
@@ -31,53 +33,42 @@ function ProductCardImageContainer({ className, children, ...props }: ComponentP
 }
 
 interface ProductCardImageProps {
-  alt: string;
-  children?: ReactNode;
   className?: string;
-  height?: number;
+  images: ImageType[];
   loading?: "eager" | "lazy";
-  outOfStock?: boolean;
-  outOfStockText?: string;
-  src?: string | null;
-  width?: number;
+  title: string;
 }
 
-function ProductCardImage({
-  alt,
-  children,
-  className,
-  height,
-  loading = "lazy",
-  outOfStock = false,
-  outOfStockText,
-  src,
-  width,
-}: ProductCardImageProps) {
+// A second photo, when there is one, fades in on hover.
+function ProductCardImage({ className, images, loading = "lazy", title }: ProductCardImageProps) {
+  const [first, second] = images;
   return (
     <div
       data-slot="product-card-image"
-      className={cn("relative aspect-square overflow-hidden", className)}
+      className={cn("relative aspect-square overflow-hidden bg-accent", className)}
     >
-      {src ? (
+      {first ? (
         <Image
-          src={src}
-          alt={alt}
-          {...(width && height ? { height, width } : { fill: true })}
+          alt={first.altText || title}
           className="absolute inset-0 size-full object-cover"
+          fill
           loading={loading}
           sizes="100vw"
+          src={first.url}
         />
       ) : (
         <ImagePlaceholder className="size-full" />
       )}
-      {outOfStock && (
-        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-          <span className="text-destructive-foreground font-medium text-xs px-2 py-1 bg-destructive rounded">
-            {outOfStockText}
-          </span>
-        </div>
-      )}
-      {children}
+      {second ? (
+        <Image
+          alt=""
+          className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          fill
+          loading="lazy"
+          sizes="100vw"
+          src={second.url}
+        />
+      ) : null}
     </div>
   );
 }
@@ -107,58 +98,23 @@ function ProductCardTitle({ className, children, ...props }: ComponentProps<"h3"
 }
 
 interface ProductCardPriceProps {
-  amount: string;
-  currencyCode: string;
-  maxAmount?: string;
-  compareAtAmount?: string;
-  compareAtCurrencyCode?: string;
   className?: string;
+  compareAtPrice?: number;
+  price: number;
 }
 
-function getDiscountPercent(price: number, compareAtPrice: number | undefined): number | null {
-  if (!compareAtPrice || compareAtPrice <= price) return null;
-  return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
-}
-
-function ProductCardPrice({
-  amount,
-  currencyCode,
-  maxAmount,
-  compareAtAmount,
-  compareAtCurrencyCode,
-  className,
-}: ProductCardPriceProps) {
-  const priceNum = parseFloat(amount);
-  const compareAtNum = compareAtAmount ? parseFloat(compareAtAmount) : undefined;
-  const isRange = maxAmount != null && maxAmount !== amount;
-  // A range's per-variant discounts differ, so a single compare-at would be misleading.
-  const discountPercent = isRange ? null : getDiscountPercent(priceNum, compareAtNum);
+function ProductCardPrice({ className, compareAtPrice, price }: ProductCardPriceProps) {
+  const discountPercent = getDiscountPercent(price, compareAtPrice);
   return (
     <div data-slot="product-card-price" className={cn(className)}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="inline-flex items-baseline gap-x-1 text-sm text-foreground">
-          <Price amount={amount} currencyCode={currencyCode} className="text-sm text-foreground" />
-          {isRange && (
-            <>
-              <span>–</span>
-              <Price
-                amount={maxAmount}
-                currencyCode={currencyCode}
-                className="text-sm text-foreground"
-              />
-            </>
-          )}
-        </span>
-        {discountPercent && compareAtAmount && compareAtCurrencyCode && (
+        <Price amount={price} className="text-sm text-foreground" />
+        {discountPercent && compareAtPrice ? (
           <>
-            <Price
-              amount={compareAtAmount}
-              currencyCode={compareAtCurrencyCode}
-              className="text-xs text-muted-foreground line-through"
-            />
+            <Price amount={compareAtPrice} className="text-xs text-muted-foreground line-through" />
             <DiscountBadge percent={discountPercent} />
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
