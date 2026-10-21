@@ -85,6 +85,64 @@ export const invoiceValidator = v.object({
   warning: v.optional(v.string()),
 });
 
+/** The box a printed order travels in: its weight in kg, its sides in cm. */
+export const parcelValidator = v.object({
+  weight: v.number(),
+  length: v.number(),
+  width: v.number(),
+  height: v.number(),
+});
+
+/**
+ * The courier taking an order's parcel (convex/shipments.ts): one Colete
+ * Online is booking, booked or refused, or one the workshop booked itself
+ * and typed the AWB of.
+ */
+export const shipmentValidator = v.object({
+  status: v.union(
+    v.literal("booking"),
+    v.literal("booked"),
+    v.literal("failed"),
+  ),
+  /** When it was asked for, then when it was booked or refused. */
+  at: v.number(),
+  /** The box, as the workshop packed it for Colete Online's booking. */
+  parcel: v.optional(parcelValidator),
+  /**
+   * The secret in the address Colete Online tells of the parcel's progress
+   * at, so no one else can make Convex ask for it.
+   */
+  key: v.string(),
+  /**
+   * Colete Online's id for the booking, its label and its progress: none
+   * for a courier the workshop booked itself.
+   */
+  id: v.optional(v.string()),
+  /** The courier's number for the parcel, on its label. */
+  awb: v.optional(v.string()),
+  /** The courier Colete Online chose, such as Cargus, and its service. */
+  courier: v.optional(v.string()),
+  service: v.optional(v.string()),
+  /** What Colete Online charges for it, VAT included, in bani. */
+  price: v.optional(v.number()),
+  /** The day the courier should collect it, YYYY-MM-DD, as Colete Online guessed. */
+  pickupDate: v.optional(v.string()),
+  /** The label to print and stick on the parcel, as a PDF. */
+  label: v.optional(v.id("_storage")),
+  /** Where it is, as the courier last said, in Romanian, and since when. */
+  tracking: v.optional(
+    v.object({
+      text: v.string(),
+      at: v.number(),
+      code: v.optional(v.number()),
+    }),
+  ),
+  /** Why Colete Online refused it. */
+  error: v.optional(v.string()),
+  /** What went wrong once it was booked, for the team to look at. */
+  warning: v.optional(v.string()),
+});
+
 export const customerValidator = v.object({
   name: v.string(),
   email: v.string(),
@@ -131,6 +189,8 @@ export const paidSessionValidator = v.object({
 
 export type Address = Infer<typeof addressValidator>;
 export type Invoice = Infer<typeof invoiceValidator>;
+export type Parcel = Infer<typeof parcelValidator>;
+export type Shipment = Infer<typeof shipmentValidator>;
 export type DeliveryKey = Infer<typeof deliveryKeyValidator>;
 export type OrderLine = Infer<typeof orderLineValidator>;
 export type OrderFee = Infer<typeof orderFeeValidator>;

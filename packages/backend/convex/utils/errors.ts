@@ -86,4 +86,8 @@ export const errors = {
    * Stripe makes it once, and the order's page shows it.
    */
   sameRefund: "same-refund",
+  /** Booking couriers isn't set up on this deployment yet (no Colete Online keys). */
+  courierUnavailable: "courier-unavailable",
+  /** The order's courier is booked already, or being booked. */
+  shipmentBooked: "shipment-booked",
 } as const;

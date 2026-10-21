@@ -178,6 +178,18 @@ _Avoid_: Shipping (in copy)
 Delivery to the couple's door by the courier Colete Online books cheapest for the parcel, such as Cargus or Sameday: 25 lei, and nothing from 800 lei.
 _Avoid_: Carrier, shipping
 
+**Parcel** (ro: colet; code: parcel):
+The box a printed order travels in, as the workshop packs it: its weight and its sides, which the courier's price depends on.
+_Avoid_: Package
+
+**Shipment** (ro: expediere; code: shipment):
+The courier booked for an order's parcel, through Colete Online or by the workshop itself, with its AWB, its label and where the parcel is.
+_Avoid_: Delivery (how the couple chose to get their order)
+
+**AWB** (ro: AWB; code: awb):
+The courier's number for a parcel, printed on its label, which the couple follow it by.
+_Avoid_: Waybill, tracking code
+
 **Pickup** (ro: ridicare de la atelier; code: pickup):
 Delivery by the couple picking their order up from the workshop in Iași, for nothing. Stripe's page asks for their address all the same.
 _Avoid_: Collection (a family of designs)
