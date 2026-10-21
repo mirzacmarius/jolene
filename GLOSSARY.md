@@ -220,6 +220,10 @@ _Avoid_: Share, send
 To open a digital invitation to every family on the list, by buying it in the shop, with the event's printed invitations, or by Jolene's team by hand. Before that it is **on trial** (ro: de probă): only the first three families can open it.
 _Avoid_: Activate, upgrade
 
+**Unlock right away** (ro: deblocare imediată; code: unlockNow):
+The couple's agreement, ticked in the cart before they pay for a digital invitation, that their order unlocks it as soon as it's paid, which ends their 14 days to withdraw from it. One that comes free asks for none.
+_Avoid_: Waiver, consent
+
 **Account** (ro: cont):
 What a couple signs in to with a code sent to their email, to keep a guest list and share their event. Designing needs none.
 _Avoid_: Profile, login

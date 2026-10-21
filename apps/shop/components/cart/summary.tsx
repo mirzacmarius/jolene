@@ -4,10 +4,14 @@ import { useActionState } from "react";
 
 import { Price } from "@/components/product/price";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/components/ui/link";
 import { useCart } from "@/lib/cart/client";
 import type { Cart } from "@/lib/cart/types";
 import { checkoutAction } from "@/lib/checkout/action";
+import { LEGAL_PAGES } from "@/lib/legal";
 import { formatPrice } from "@/lib/money";
+
+const LINK_CLASS = "underline underline-offset-4 hover:text-foreground";
 
 export function CartSummary({ cart }: { cart: Cart }) {
   const { isUpdating } = useCart();
@@ -47,6 +51,24 @@ export function CartSummary({ cart }: { cart: Cart }) {
         ) : null}
       </div>
       <form action={checkout} className="grid gap-2.5">
+        {cart.unlockNow ? (
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm">
+            <input
+              className="mt-0.5 size-4 shrink-0 cursor-pointer accent-foreground"
+              name="unlockNow"
+              required
+              type="checkbox"
+            />
+            <span>
+              Vreau ca invitația digitală să fie deblocată imediat după plată și înțeleg că, odată
+              deblocată, nu mai pot renunța la ea în 14 zile (
+              <Link className={LINK_CLASS} href={LEGAL_PAGES.returns.ro.path}>
+                politica de retur
+              </Link>
+              ).
+            </span>
+          </label>
+        ) : null}
         <Button
           className="h-12 w-full justify-center"
           disabled={!cart.checkoutOpen || hasProblems || isUpdating || isOpening}
@@ -56,6 +78,13 @@ export function CartSummary({ cart }: { cart: Cart }) {
         </Button>
         <p className="text-xs text-muted-foreground" role="status">
           {status ?? "Plătești pe pagina securizată a Stripe."}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Plătind, accepți{" "}
+          <Link className={LINK_CLASS} href={LEGAL_PAGES.terms.ro.path}>
+            termenii și condițiile
+          </Link>
+          .
         </p>
       </form>
     </div>

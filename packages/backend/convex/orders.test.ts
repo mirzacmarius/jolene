@@ -55,9 +55,13 @@ describe("a paid digital invitation that unlocked nothing", () => {
       eventId,
     });
 
-  /** Opens Stripe's page for a cart, as its Pay button does. */
+  /** Opens Stripe's page for a cart, as its Pay button does, the couple's tick included. */
   async function open({ t, stripe }: Setup, token: string) {
-    await t.action(api.checkout.start, { token, language: "ro" });
+    await t.action(api.checkout.start, {
+      token,
+      language: "ro",
+      unlockNow: true,
+    });
     return stripe.latest().id;
   }
 
