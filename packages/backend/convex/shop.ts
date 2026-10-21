@@ -15,6 +15,12 @@ import {
 
 const categoryValidator = v.object({ handle: v.string(), title: v.string() });
 
+/** A category as the shop's list of them shows it, with a photo. */
+const shelfValidator = v.object({
+  ...categoryValidator.fields,
+  image: v.union(photoValidator, v.null()),
+});
+
 /** What a list of products shows of each: its first two photos, for hover. */
 const cardValidator = v.object({
   handle: v.string(),
@@ -222,14 +228,36 @@ export const search = query({
   },
 });
 
-/** The shop's categories, in the order its menu lists them. */
+/**
+ * The shop's categories, in the order its menu lists them, each with the
+ * first photo of the first product it shows.
+ */
 export const categories = query({
   args: {},
-  returns: v.array(categoryValidator),
-  handler: async (ctx) =>
-    (await ctx.db.query("categories").withIndex("by_position").take(200)).map(
-      categoryView,
-    ),
+  returns: v.array(shelfValidator),
+  handler: async (ctx) => {
+    const categories = await ctx.db
+      .query("categories")
+      .withIndex("by_position")
+      .take(200);
+    return Promise.all(
+      categories.map(async (category) => {
+        const first = await ctx.db
+          .query("productCategories")
+          .withIndex("by_category_and_published_and_position", (q) =>
+            q.eq("category", category.handle).eq("published", true),
+          )
+          .first();
+        const product =
+          first && (await ctx.db.get("products", first.productId));
+        const image = product?.images[0];
+        return {
+          ...categoryView(category),
+          image: image ? await photoView(ctx, image) : null,
+        };
+      }),
+    );
+  },
 });
 
 /** One category, or null. */

@@ -1,8 +1,9 @@
+import { api } from "@jolene/backend/convex/_generated/api";
+import { fetchQuery } from "convex/nextjs";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { ProductViewedTracker } from "@/components/analytics/trackers";
 import {
   ProductDetailSection,
   ProductDetailSkeleton,
@@ -12,57 +13,18 @@ import { RelatedProductsSection } from "@/components/product/related-products-se
 import { Container } from "@/components/ui/container";
 import { Page } from "@/components/ui/page";
 import { Sections } from "@/components/ui/sections";
-import { shopConfig } from "@/lib/config";
-import { getLineOptions } from "@/lib/line-options/server";
-import { defaultSelectedOptions, parseSelectedOptions, toSelectedOptionList } from "@/lib/product";
-import { getProduct, getSearchIndexProducts } from "@/lib/product/server";
-import { type SelectedOptions } from "@/lib/product/types";
-import type { ProductVariant } from "@/lib/product/types";
+import { summarizeText } from "@/lib/content";
+import { getProduct } from "@/lib/product/server";
+import { getProductProof } from "@/lib/proof/server";
 import { buildAlternates, buildOpenGraph } from "@/lib/seo";
-import { fetchProductVariant } from "@/lib/shopify/operations/products/server";
 import { PLACEHOLDER_HANDLE } from "@/lib/static-params";
-
-async function buildProductMetadata(handle: string, canonicalPath: string): Promise<Metadata> {
-  const product = await getProduct({
-    handle,
-  });
-  if (!product) notFound();
-  const images = product.featuredImage
-    ? [
-        {
-          url: product.featuredImage.url,
-          width: product.featuredImage.width,
-          height: product.featuredImage.height,
-          alt: product.featuredImage.altText,
-        },
-      ]
-    : ["/og-default.png"];
-  return {
-    title: product.seo.title,
-    description: product.seo.description,
-    alternates: buildAlternates({
-      pathname: canonicalPath,
-    }),
-    openGraph: buildOpenGraph({
-      title: product.seo.title,
-      description: product.seo.description,
-      url: canonicalPath,
-      images,
-    }),
-    twitter: {
-      card: "summary_large_image",
-      title: product.seo.title,
-      description: product.seo.description,
-      images,
-    },
-  };
-}
 
 export async function generateStaticParams() {
   try {
-    const { products } = await getSearchIndexProducts({ limit: 1 });
-    const first = products[0];
-    return [{ handle: first ? first.handle : PLACEHOLDER_HANDLE }];
+    const { page } = await fetchQuery(api.shop.products, {
+      paginationOpts: { cursor: null, numItems: 1 },
+    });
+    return [{ handle: page[0]?.handle ?? PLACEHOLDER_HANDLE }];
   } catch {
     return [{ handle: PLACEHOLDER_HANDLE }];
   }
@@ -73,7 +35,21 @@ export async function generateMetadata({
 }: PageProps<"/products/[handle]">): Promise<Metadata> {
   const { handle } = await params;
   if (handle === PLACEHOLDER_HANDLE) return {};
-  return buildProductMetadata(handle, `/products/${handle}`);
+  const product = await getProduct(handle);
+  if (!product) notFound();
+  const path = `/products/${handle}`;
+  const description = summarizeText(product.description);
+  const [image] = product.images;
+  const images = image
+    ? [{ alt: image.altText || product.title, url: image.url }]
+    : ["/og-default.png"];
+  return {
+    alternates: buildAlternates({ pathname: path }),
+    description,
+    openGraph: buildOpenGraph({ description, images, title: product.title, url: path }),
+    title: product.title,
+    twitter: { card: "summary_large_image", description, images, title: product.title },
+  };
 }
 
 export default function ProductPage({ params, searchParams }: PageProps<"/products/[handle]">) {
@@ -96,68 +72,25 @@ async function ProductPageContent({
 }: Pick<PageProps<"/products/[handle]">, "params" | "searchParams">) {
   const { handle } = await params;
   if (handle === PLACEHOLDER_HANDLE) notFound();
-  const [product, lineOptions] = await Promise.all([
-    getProduct({
-      handle,
-    }),
-    getLineOptions({ handle }),
-  ]);
+  const product = await getProduct(handle);
   if (!product) notFound();
-
-  // Keep selection separate from the variant query so the static shell stays coherent and the picker never waits on Shopify.
-  const selectedOptionsPromise: Promise<SelectedOptions> = searchParams.then(
-    (resolvedSearchParams) => ({
-      ...defaultSelectedOptions(product),
-      ...parseSelectedOptions(product.options, resolvedSearchParams ?? {}),
-    }),
+  const proof = searchParams.then(({ proof: id }) =>
+    getProductProof(typeof id === "string" ? id : undefined, handle),
   );
-  const variantPromise: Promise<ProductVariant | undefined> = searchParams.then(
-    async (resolvedSearchParams) => {
-      if (
-        Object.keys(parseSelectedOptions(product.options, resolvedSearchParams ?? {})).length === 0
-      ) {
-        return product.defaultVariant;
-      }
-      // Uncached: the selected variant's price and stock are read live per request, and caching per option combination multiplies entries by variant count.
-      return fetchProductVariant({
-        handle,
-        selectedOptions: toSelectedOptionList({
-          ...defaultSelectedOptions(product),
-          ...parseSelectedOptions(product.options, resolvedSearchParams ?? {}),
-        }),
-      });
-    },
-  );
+  const [category] = product.categories;
   return (
     <>
-      <Suspense fallback={null}>
-        <ProductViewedTracker
-          product={{
-            handle: product.handle,
-            id: product.id,
-            title: product.title,
-            vendor: product.vendor,
-          }}
-          variantPromise={variantPromise}
-        />
-      </Suspense>
       <RecentlyViewedRecorder
         product={{
-          featuredImage: product.featuredImage,
           handle: product.handle,
-          id: product.id,
+          image: product.images[0] ?? null,
           price: product.price,
           title: product.title,
         }}
       />
-      <ProductDetailSection
-        lineOptions={lineOptions}
-        product={product}
-        selectedOptionsPromise={selectedOptionsPromise}
-        variantPromise={variantPromise}
-      />
-      {shopConfig.pdp.relatedProducts.isEnabled ? (
-        <RelatedProductsSection handle={handle} limit={4} />
+      <ProductDetailSection product={product} proof={proof} />
+      {category ? (
+        <RelatedProductsSection category={category.handle} handle={handle} limit={4} />
       ) : null}
     </>
   );

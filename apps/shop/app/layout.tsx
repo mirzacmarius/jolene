@@ -1,21 +1,16 @@
-import { BotIdClient } from "botid/client";
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Geist_Mono, Instrument_Serif } from "next/font/google";
 
 import "./globals.css";
 import { Suspense } from "react";
 
-import { ActionBar } from "@/components/action-bar";
-import { AgentButton } from "@/components/agent/agent-button";
 import { AnalyticsComponents } from "@/components/analytics";
 import { CartUI } from "@/components/cart/cart-ui";
-import { CartProviderWrapper } from "@/components/cart/context";
-import { CartStandardActionsScript } from "@/components/cart/standard-actions";
 import { Footer } from "@/components/footer";
 import { Nav } from "@/components/nav";
 import { SiteSchema } from "@/components/schema/site-schema";
-import { botIdProtectedRoutes } from "@/lib/botid";
-import { seedCartData } from "@/lib/cart/server";
+import { CartProvider } from "@/lib/cart/client";
+import { getCart } from "@/lib/cart/server";
 import { shopConfig } from "@/lib/config";
 import { buildAlternates } from "@/lib/seo";
 
@@ -46,13 +41,9 @@ const geistMono = Geist_Mono({
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   // Un-awaited: the promise streams to the client provider; never block the shell on it.
-  const cartData = seedCartData();
+  const cart = getCart();
   return (
     <html lang={shopConfig.localization.locale}>
-      <head>
-        {shopConfig.botid.isEnabled && <BotIdClient protect={botIdProtectedRoutes} />}
-        <CartStandardActionsScript />
-      </head>
       <body
         className={`${dmSans.variable} ${instrumentSerif.variable} ${geistMono.variable} flex min-h-dvh flex-col font-sans antialiased`}
       >
@@ -64,7 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <SiteSchema />
 
-        <CartProviderWrapper cartData={cartData}>
+        <CartProvider cart={cart}>
           <Nav />
           <main id="main-content" className="flex flex-1 flex-col min-w-0">
             {children}
@@ -72,12 +63,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Footer />
           <CartUI />
           <Suspense>
-            <ActionBar>{shopConfig.agent.isEnabled && <AgentButton />}</ActionBar>
-          </Suspense>
-          <Suspense>
             <AnalyticsComponents />
           </Suspense>
-        </CartProviderWrapper>
+        </CartProvider>
       </body>
     </html>
   );

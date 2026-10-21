@@ -1,9 +1,6 @@
-import {
-  ALL_PRODUCTS_HANDLE,
-  getAllProductsCollection,
-  getCollection,
-} from "@/lib/collections/server";
-import { collectionToMarkdown } from "@/lib/markdown/collection";
+import { getBrowseSource } from "@/lib/categories";
+import { getBrowseResults, getCategory } from "@/lib/categories/server";
+import { categoryToMarkdown } from "@/lib/markdown/category";
 import { notFoundMarkdown } from "@/lib/markdown/not-found";
 import { markdownHeaders } from "@/lib/markdown/representation";
 
@@ -16,20 +13,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
   const { handle } = await params;
   const pathname = `/collections/${handle}`;
   try {
-    const collection =
-      handle === ALL_PRODUCTS_HANDLE
-        ? await getAllProductsCollection()
-        : await getCollection({ handle });
-    if (!collection) {
-      return new Response(notFoundMarkdown({ kind: "Collection", value: handle }), {
-        status: 404,
+    const category = await getCategory(handle);
+    if (!category) {
+      return new Response(notFoundMarkdown({ kind: "Category", value: handle }), {
         headers: markdownHeaders({
           cacheControl: "public, max-age=3600, stale-while-revalidate=604800",
           pathname,
         }),
+        status: 404,
       });
     }
-    return new Response(collectionToMarkdown(collection), {
+    const results = await getBrowseResults({ sort: "manual", source: getBrowseSource(handle) });
+    return new Response(categoryToMarkdown(category, results), {
       headers: markdownHeaders({
         cacheControl: "public, max-age=86400, stale-while-revalidate=604800",
         pathname,
@@ -37,13 +32,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
     });
   } catch {
     return new Response(
-      "# Server Error\n\nAn error occurred while retrieving the collection. Please try again later.",
+      "# Server Error\n\nAn error occurred while retrieving the category. Please try again later.",
       {
-        status: 500,
         headers: markdownHeaders({
           cacheControl: "no-cache, no-store, must-revalidate",
           pathname,
         }),
+        status: 500,
       },
     );
   }

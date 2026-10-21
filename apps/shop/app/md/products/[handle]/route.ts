@@ -1,4 +1,3 @@
-import { shopConfig } from "@/lib/config";
 import { notFoundMarkdown } from "@/lib/markdown/not-found";
 import { productToMarkdown } from "@/lib/markdown/product";
 import { markdownHeaders } from "@/lib/markdown/representation";
@@ -13,19 +12,17 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
   const { handle } = await params;
   const pathname = `/products/${handle}`;
   try {
-    const product = await getProduct({
-      handle,
-    });
+    const product = await getProduct(handle);
     if (!product) {
       return new Response(notFoundMarkdown({ kind: "Product", value: handle }), {
-        status: 404,
         headers: markdownHeaders({
           cacheControl: "public, max-age=3600, stale-while-revalidate=604800",
           pathname,
         }),
+        status: 404,
       });
     }
-    return new Response(productToMarkdown(product, shopConfig.localization.locale), {
+    return new Response(productToMarkdown(product), {
       headers: markdownHeaders({
         cacheControl: "public, max-age=86400, stale-while-revalidate=604800",
         pathname,
@@ -35,11 +32,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
     return new Response(
       "# Server Error\n\nAn error occurred while retrieving the product. Please try again later.",
       {
-        status: 500,
         headers: markdownHeaders({
           cacheControl: "no-cache, no-store, must-revalidate",
           pathname,
         }),
+        status: 500,
       },
     );
   }

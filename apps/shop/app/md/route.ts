@@ -14,15 +14,15 @@ ${escapeMarkdown(description)}
 
 ## Browse
 
-- [All products](${url}/collections/all): Browse the complete catalog.
-- [Search](${url}/search): Search products by keyword.
-- [Collections](${url}/collections): Browse products by collection.
+- [All products](${url}/collections/all): The complete catalog.
+- [Search](${url}/search): Search products by name.
+- [Categories](${url}/collections): Products by category.
+- [Studio](${url}/studio): Design an invitation and see it before it's printed.
 
 ## Agent resources
 
 - [Storefront guide](${url}/llms.txt): When and how to use this storefront.
-- [UCP profile](${url}/.well-known/ucp): Live catalog search, availability, cart, and checkout.
-- [Sitemap](${url}/sitemap.xml): Complete index of storefront content.
+- [Sitemap](${url}/sitemap.xml): Every product and category address.
 
 ---
 

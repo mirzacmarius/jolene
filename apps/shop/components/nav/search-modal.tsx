@@ -1,15 +1,12 @@
 "use client";
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { getSearchResultUrl } from "@shopify/hydrogen";
-import { cn } from "cn";
 import { Search, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -17,9 +14,17 @@ import {
 
 import { Price } from "@/components/product/price";
 import { Dialog, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import type { Image as ImageType } from "@/lib/media/types";
 import { useRecentlyViewedProducts } from "@/lib/product/client";
-import { usePredictiveSearch } from "@/lib/search/client";
-import type { PredictiveSearchProduct, SearchSuggestion } from "@/lib/search/types";
+import { getSearchUrl } from "@/lib/search";
+import { useProductSuggestions } from "@/lib/search/client";
+
+interface ResultProduct {
+  handle: string;
+  image: ImageType | null;
+  price: number;
+  title: string;
+}
 
 export function SearchModal() {
   const [open, setOpen] = useState(false);
@@ -28,7 +33,7 @@ export function SearchModal() {
     function handleShortcut(event: KeyboardEvent) {
       if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
-        setOpen((prev) => !prev);
+        setOpen((current) => !current);
       }
     }
     document.addEventListener("keydown", handleShortcut);
@@ -36,208 +41,170 @@ export function SearchModal() {
   }, []);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <SearchTrigger />
-      <SearchDialogContent open={open} onClose={() => setOpen(false)} />
+    <Dialog onOpenChange={setOpen} open={open}>
+      <DialogTrigger
+        render={
+          <button
+            className="flex items-center justify-center text-foreground transition-colors hover:text-foreground/80"
+            type="button"
+          >
+            <Search className="size-5" />
+            <span className="sr-only">Caută</span>
+          </button>
+        }
+      />
+      {open ? <SearchDialogContent onClose={() => setOpen(false)} /> : null}
     </Dialog>
   );
 }
 
-function SearchTrigger() {
-  return (
-    <DialogTrigger
-      render={
-        <button
-          type="button"
-          className="flex items-center justify-center text-foreground hover:text-foreground/80 transition-colors"
-        >
-          <Search className="size-5" />
-          <span className="sr-only">Search</span>
-        </button>
-      }
-    />
-  );
-}
-
-function SearchDialogContent({ onClose, open }: { onClose: () => void; open: boolean }) {
+function SearchDialogContent({ onClose }: { onClose: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { query, setQuery, results, isLoading, activeIndex, setActiveIndex, reset } =
-    usePredictiveSearch();
-  const recentlyViewed = useRecentlyViewedProducts(open);
+  const [query, setQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const suggestions = useProductSuggestions(query);
+  const recentlyViewed = useRecentlyViewedProducts(true);
   const hasQuery = query.trim().length > 0;
-  // An empty query falls back to recently viewed, so both states drive one keyboard list.
-  const suggestions = hasQuery ? (results?.queries ?? []) : [];
-  const products = hasQuery ? (results?.products ?? []) : recentlyViewed;
-  useEffect(() => {
-    requestAnimationFrame(() => inputRef.current?.focus());
-  }, []);
-  const navigate = useCallback(
-    (href: string) => {
-      router.push(href);
-      requestAnimationFrame(() => onClose());
-    },
-    [router, onClose],
-  );
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const q = inputRef.current?.value?.trim();
-    if (!q) return;
-    navigate(getSearchResultUrl({ baseUrl: "/search", term: q }));
+  // An empty query shows what the visitor looked at last, so both states drive one keyboard list.
+  const products: ResultProduct[] = hasQuery
+    ? (suggestions ?? []).map(({ handle, images, price, title }) => ({
+        handle,
+        image: images[0] ?? null,
+        price,
+        title,
+      }))
+    : recentlyViewed;
+  const isLoading = hasQuery && suggestions === undefined;
+
+  function navigate(href: string) {
+    router.push(href);
+    requestAnimationFrame(onClose);
   }
 
-  const visibleItems = suggestions.length + products.length;
-  function navigateToActiveItem() {
-    if (activeIndex < 0) return;
-
-    if (activeIndex < suggestions.length) {
-      const suggestion = suggestions[activeIndex];
-      if (inputRef.current) inputRef.current.value = suggestion.text;
-      setQuery(suggestion.text);
-      return;
-    }
-
-    const product = products[activeIndex - suggestions.length];
-    if (product) {
-      navigate(`/products/${product.handle}`);
-    }
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    const term = query.trim();
+    if (term) navigate(getSearchUrl(term));
   }
-  function handleKeyDown(e: ReactKeyboardEvent) {
-    if (e.key === "ArrowDown" && visibleItems > 0) {
-      e.preventDefault();
-      setActiveIndex(Math.min(activeIndex + 1, visibleItems - 1));
-      return;
-    }
-    if (e.key === "ArrowUp" && visibleItems > 0) {
-      e.preventDefault();
+
+  function handleKeyDown(event: ReactKeyboardEvent) {
+    if (event.key === "ArrowDown" && products.length > 0) {
+      event.preventDefault();
+      setActiveIndex(Math.min(activeIndex + 1, products.length - 1));
+    } else if (event.key === "ArrowUp" && products.length > 0) {
+      event.preventDefault();
       setActiveIndex(Math.max(activeIndex - 1, -1));
-      return;
-    }
-    if (e.key === "Enter" && activeIndex >= 0) {
-      e.preventDefault();
-      navigateToActiveItem();
+    } else if (event.key === "Enter" && activeIndex >= 0) {
+      event.preventDefault();
+      const product = products[activeIndex];
+      if (product) navigate(`/products/${product.handle}`);
     }
   }
-  const show = hasQuery ? results !== null || isLoading : products.length > 0;
+
+  const show = hasQuery || products.length > 0;
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop className="data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-60 bg-black/30 backdrop-blur-sm" />
       <DialogPrimitive.Popup
         aria-describedby={undefined}
-        className="fixed inset-0 z-60 flex justify-center pt-[15vh] px-4 outline-none"
+        className="fixed inset-0 z-60 flex justify-center px-4 pt-[15vh] outline-none"
         initialFocus={inputRef}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
+        onClick={(event) => {
+          if (event.target === event.currentTarget) onClose();
         }}
       >
-        <div className="w-full max-w-xl h-fit">
-          <DialogTitle className="sr-only">Search</DialogTitle>
-          <div className="bg-background rounded-xl shadow-lg overflow-hidden duration-200">
-            <form onSubmit={handleSubmit} className="flex items-center gap-3 px-4 py-3">
+        <div className="h-fit w-full max-w-xl">
+          <DialogTitle className="sr-only">Caută</DialogTitle>
+          <div className="overflow-hidden rounded-xl bg-background shadow-lg duration-200">
+            <form className="flex items-center gap-3 px-4 py-3" onSubmit={handleSubmit}>
               <Search className="size-4 shrink-0 text-foreground/40" />
               <input
-                ref={inputRef}
-                type="text"
-                name="q"
-                role="combobox"
-                placeholder="Search products"
-                maxLength={100}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                aria-expanded={!!results}
-                aria-controls="search-modal-results"
                 aria-activedescendant={
                   activeIndex >= 0 ? `search-modal-item-${activeIndex}` : undefined
                 }
+                aria-controls="search-modal-results"
+                aria-expanded={show}
                 autoComplete="off"
-                className="flex-1 min-w-0 bg-transparent text-base text-foreground placeholder:text-foreground/40 focus:outline-none"
+                className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-foreground/40 focus:outline-none"
+                maxLength={100}
+                name="q"
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setActiveIndex(-1);
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Caută invitații, mărturii, meniuri…"
+                ref={inputRef}
+                role="combobox"
+                type="text"
+                value={query}
               />
-              {query.trim() && (
+              {hasQuery ? (
                 <button
-                  type="button"
+                  className="shrink-0 text-sm text-foreground/60 transition-colors hover:text-foreground"
                   onClick={() => {
-                    reset();
-                    if (inputRef.current) {
-                      inputRef.current.value = "";
-                      inputRef.current.focus();
-                    }
+                    setQuery("");
+                    setActiveIndex(-1);
+                    inputRef.current?.focus();
                   }}
-                  className="shrink-0 text-sm text-foreground/60 hover:text-foreground transition-colors"
+                  type="button"
                 >
-                  Clear
+                  Șterge
                 </button>
-              )}
-              <DialogPrimitive.Close className="shrink-0 flex items-center justify-center rounded-full text-foreground/40 hover:text-foreground transition-colors">
+              ) : null}
+              <DialogPrimitive.Close className="flex shrink-0 items-center justify-center rounded-full text-foreground/40 transition-colors hover:text-foreground">
                 <X className="size-4" />
-                <span className="sr-only">Close</span>
+                <span className="sr-only">Închide</span>
               </DialogPrimitive.Close>
             </form>
 
-            {show && (
+            {show ? (
               <div
+                className="max-h-[60vh] overflow-y-auto overscroll-contain border-t border-border/30"
                 id="search-modal-results"
                 role="listbox"
-                className="border-t border-border/30 max-h-[60vh] overflow-y-auto overscroll-contain"
               >
-                {hasQuery && isLoading && !results && <LoadingSkeleton />}
-
-                {(!hasQuery || results) && (
+                {isLoading ? (
+                  <LoadingSkeleton />
+                ) : (
                   <>
-                    {suggestions.length > 0 && (
-                      <div className="px-4 pt-3 pb-2 flex flex-wrap gap-2">
-                        {suggestions.map((suggestion, i) => (
-                          <SuggestionChip
-                            key={suggestion.text}
-                            suggestion={suggestion}
-                            active={activeIndex === i}
-                            onClick={() => {
-                              setQuery(suggestion.text);
-                              if (inputRef.current) inputRef.current.value = suggestion.text;
-                            }}
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                    {products.length > 0 && (
+                    {products.length > 0 ? (
                       <div>
-                        <div className="px-4 pt-3 pb-1.5 text-xs font-medium text-foreground/50 uppercase tracking-wider">
-                          {hasQuery ? "Products" : "Recently viewed"}
+                        <div className="px-4 pt-3 pb-1.5 text-xs font-medium tracking-wider text-foreground/50 uppercase">
+                          {hasQuery ? "Produse" : "Văzute recent"}
                         </div>
-                        {products.map((product, i) => (
+                        {products.map((product, index) => (
                           <ProductResult
-                            key={product.id}
-                            product={product}
-                            active={activeIndex === suggestions.length + i}
+                            active={activeIndex === index}
+                            id={`search-modal-item-${index}`}
+                            key={product.handle}
                             onNavigate={navigate}
+                            product={product}
                           />
                         ))}
                       </div>
-                    )}
-
-                    {hasQuery && visibleItems === 0 && (
+                    ) : null}
+                    {hasQuery && products.length === 0 ? (
                       <div className="px-4 py-6 text-center text-sm text-foreground/50">
-                        {`No results for "${query}"`}
+                        Niciun produs pentru „{query.trim()}”
                       </div>
-                    )}
-
-                    {hasQuery && visibleItems > 0 && (
-                      <div className="px-4 py-3 flex justify-center">
+                    ) : null}
+                    {hasQuery && products.length > 0 ? (
+                      <div className="flex justify-center px-4 py-3">
                         <button
+                          className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                          onClick={() => navigate(getSearchUrl(query.trim()))}
                           type="button"
-                          onClick={() =>
-                            navigate(getSearchResultUrl({ baseUrl: "/search", term: query.trim() }))
-                          }
-                          className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-medium h-9 px-5 hover:bg-primary/90 transition-colors"
                         >
-                          View All
+                          Vezi toate rezultatele
                         </button>
                       </div>
-                    )}
+                    ) : null}
                   </>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </DialogPrimitive.Popup>
@@ -245,71 +212,38 @@ function SearchDialogContent({ onClose, open }: { onClose: () => void; open: boo
   );
 }
 
-function SuggestionChip({
-  suggestion,
-  active,
-  onClick,
-}: {
-  suggestion: SearchSuggestion;
+interface ProductResultProps {
   active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="option"
-      aria-selected={active}
-      data-active={active}
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center rounded-full border px-3 py-1 text-sm transition-colors cursor-pointer",
-        active
-          ? "bg-foreground text-background border-foreground"
-          : "bg-transparent text-foreground border-border hover:bg-accent",
-      )}
-    >
-      {suggestion.text}
-    </button>
-  );
+  id: string;
+  onNavigate: (href: string) => void;
+  product: ResultProduct;
 }
 
-function ProductResult({
-  product,
-  active,
-  onNavigate,
-}: {
-  product: PredictiveSearchProduct;
-  active: boolean;
-  onNavigate: (href: string) => void;
-}) {
+function ProductResult({ active, id, onNavigate, product }: ProductResultProps) {
   return (
     <button
-      type="button"
-      role="option"
       aria-selected={active}
+      className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent/50 data-[active=true]:bg-accent/50"
       data-active={active}
+      id={id}
       onClick={() => onNavigate(`/products/${product.handle}`)}
-      className="flex w-full items-center gap-3 px-4 py-2.5 hover:bg-accent/50 data-[active=true]:bg-accent/50 transition-colors text-left cursor-pointer"
+      role="option"
+      type="button"
     >
-      {product.featuredImage ? (
-        <Image
-          src={product.featuredImage.url}
-          alt={product.featuredImage.altText}
-          width={56}
-          height={56}
-          sizes="100vw"
-          className="size-14 object-cover bg-muted shrink-0"
-        />
-      ) : (
-        <div className="size-14 bg-muted shrink-0" />
-      )}
-      <div className="flex-1 min-w-0">
-        <div className="text-sm text-foreground truncate">{product.title}</div>
-        <Price
-          amount={product.price.amount}
-          currencyCode={product.price.currencyCode}
-          className="text-sm text-foreground/70"
-        />
+      <div className="relative size-14 shrink-0 overflow-hidden bg-muted">
+        {product.image ? (
+          <Image
+            alt={product.image.altText || product.title}
+            className="object-cover"
+            fill
+            sizes="100vw"
+            src={product.image.url}
+          />
+        ) : null}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm text-foreground">{product.title}</div>
+        <Price amount={product.price} className="text-sm text-foreground/70" />
       </div>
     </button>
   );
@@ -317,21 +251,18 @@ function ProductResult({
 
 function LoadingSkeleton() {
   return (
-    <div className="px-4 py-3 space-y-3">
-      <div className="pt-1.5 pb-2 h-6 w-40 rounded bg-accent/40 animate-pulse" />
-      <div className="h-3 w-24 rounded bg-accent/40 animate-pulse" />
+    <div className="space-y-3 px-4 py-3" role="status">
+      <span className="sr-only">Se caută…</span>
+      <div className="h-3 w-24 animate-pulse rounded bg-accent/40" />
       {["skeleton-1", "skeleton-2", "skeleton-3"].map((key) => (
-        <div key={key} className="flex items-center gap-3 py-2.5">
-          <div className="size-14 bg-accent animate-pulse shrink-0" />
+        <div className="flex items-center gap-3 py-2.5" key={key}>
+          <div className="size-14 shrink-0 animate-pulse bg-accent" />
           <div className="flex-1 space-y-1.5">
-            <div className="h-3.5 w-3/4 rounded bg-accent animate-pulse" />
-            <div className="h-3 w-1/3 rounded bg-accent animate-pulse" />
+            <div className="h-3.5 w-3/4 animate-pulse rounded bg-accent" />
+            <div className="h-3 w-1/3 animate-pulse rounded bg-accent" />
           </div>
         </div>
       ))}
-      <div className="pt-2 pb-1 flex justify-center">
-        <div className="h-9 w-32 rounded-lg bg-accent/40 animate-pulse" />
-      </div>
     </div>
   );
 }

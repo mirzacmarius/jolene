@@ -14,7 +14,7 @@ export function DiscountBadge({ percent, className, ...props }: DiscountBadgePro
       )}
       {...props}
     >
-      {percent}% OFF
+      −{percent}%
     </span>
   );
 }

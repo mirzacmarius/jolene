@@ -1,57 +1,48 @@
 import type { Metadata } from "next";
 
-import { CollectionCard } from "@/components/collections/collection-card";
+import { CategoryCard } from "@/components/categories/category-card";
 import { Container } from "@/components/ui/container";
 import { Page } from "@/components/ui/page";
 import { Sections } from "@/components/ui/sections";
-import { getCollectionsListing } from "@/lib/collections/server";
+import { getCategories } from "@/lib/categories/server";
 import { buildAlternates, buildOpenGraph } from "@/lib/seo";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const title = "Collections";
-  const description = "Browse products by collection.";
-  return {
-    title,
-    description,
-    alternates: buildAlternates({
-      pathname: "/collections",
-    }),
-    openGraph: buildOpenGraph({
-      title,
-      description,
-      url: "/collections",
-      type: "website",
-    }),
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: ["/og-default.png"],
-    },
-  };
-}
+const TITLE = "Categorii";
+const DESCRIPTION = "Invitații de nuntă și botez, meniuri, place carduri, mărturii și accesorii.";
 
-export default async function CollectionsPage() {
-  const collections = await getCollectionsListing({});
-  const viewCollectionLabel = "View this collection";
+export const metadata: Metadata = {
+  alternates: buildAlternates({ pathname: "/collections" }),
+  description: DESCRIPTION,
+  openGraph: buildOpenGraph({
+    description: DESCRIPTION,
+    title: TITLE,
+    type: "website",
+    url: "/collections",
+  }),
+  title: TITLE,
+  twitter: {
+    card: "summary_large_image",
+    description: DESCRIPTION,
+    images: ["/og-default.png"],
+    title: TITLE,
+  },
+};
+
+export default async function CategoriesPage() {
+  const categories = await getCategories();
   return (
     <Page className="pt-2.5 md:pt-10">
       <Container>
         <Sections className="gap-5">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl">Collections</h1>
-
-          {collections.length > 0 ? (
+          <h1 className="text-3xl sm:text-4xl md:text-5xl">{TITLE}</h1>
+          {categories.length > 0 ? (
             <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-              {collections.map((collection) => (
-                <CollectionCard
-                  key={collection.handle}
-                  collection={collection}
-                  viewCollectionLabel={viewCollectionLabel}
-                />
+              {categories.map((category) => (
+                <CategoryCard category={category} key={category.handle} />
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground">No collections found.</p>
+            <p className="text-muted-foreground">Nicio categorie deocamdată.</p>
           )}
         </Sections>
       </Container>

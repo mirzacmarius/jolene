@@ -1,22 +1,20 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { SearchViewedTracker } from "@/components/analytics/trackers";
-import { Browse } from "@/components/collections/browse";
-import { BrowseFallback } from "@/components/collections/toolbar";
+import { BrowseResultsFallback } from "@/components/categories/browse";
+import { BrowseToolbar } from "@/components/categories/toolbar";
+import { ProductCard } from "@/components/product-card/product-card";
 import { Container } from "@/components/ui/container";
 import { Link } from "@/components/ui/link";
 import { Page } from "@/components/ui/page";
 import { Sections } from "@/components/ui/sections";
-import { Skeleton } from "@/components/ui/skeleton";
-import { SEARCH_SORT_EXCLUDE } from "@/lib/collections";
-import { readBrowseState } from "@/lib/collections/server";
-import type { BrowseResults, BrowseState } from "@/lib/collections/types";
+import { parseSort } from "@/lib/categories";
 import { formatCount } from "@/lib/content";
-import { fetchSearchResults } from "@/lib/search/server";
+import { getSearchResults } from "@/lib/search/server";
+import type { SearchResults } from "@/lib/search/types";
 import { buildAlternates, buildOpenGraph } from "@/lib/seo";
 
-type SearchParams = Record<string, string | string[] | undefined>;
+type SearchParams = Awaited<PageProps<"/search">["searchParams"]>;
 
 function getParam(searchParams: SearchParams, key: string): string | undefined {
   const value = searchParams[key];
@@ -24,66 +22,40 @@ function getParam(searchParams: SearchParams, key: string): string | undefined {
 }
 
 export async function generateMetadata({ searchParams }: PageProps<"/search">): Promise<Metadata> {
-  const resolvedSearchParams = await searchParams;
-  const query = getParam(resolvedSearchParams, "q") ?? "";
-  const hasQuery = query.length > 0;
-  const title = hasQuery ? `Search results for "${query}"` : "Search";
-  const description = hasQuery
-    ? `Find products matching "${query}"`
-    : "Search for products in our store";
+  const resolved = await searchParams;
+  const query = getParam(resolved, "q")?.trim() ?? "";
+  const title = query ? `Căutare: ${query}` : "Căutare";
+  const description = query
+    ? `Produsele Jolene care se potrivesc cu „${query}”.`
+    : "Caută printre produsele Jolene.";
   return {
-    title,
+    alternates: buildAlternates({ pathname: "/search", searchParams: resolved }),
     description,
-    alternates: buildAlternates({
-      pathname: "/search",
-      searchParams: resolvedSearchParams,
-    }),
-    openGraph: buildOpenGraph({
-      title,
-      description,
-      url: "/search",
-      type: "website",
-    }),
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: ["/og-default.png"],
-    },
-    robots: {
-      index: false,
-      follow: false,
-    },
+    openGraph: buildOpenGraph({ description, title, type: "website", url: "/search" }),
+    robots: { follow: false, index: false },
+    title,
+    twitter: { card: "summary_large_image", description, images: ["/og-default.png"], title },
   };
 }
 
 export default function SearchPage({ searchParams }: PageProps<"/search">) {
-  // Don't await searchParams here — it would force the route fully dynamic.
-  const statePromise = readBrowseState(searchParams);
-  const resultsPromise = searchParams.then((resolved) =>
-    fetchSearchResults({ query: getParam(resolved, "q"), statePromise }),
+  // Not awaited here, which would make the whole route wait on the request.
+  const results = searchParams.then((resolved) =>
+    getSearchResults({
+      query: getParam(resolved, "q") ?? "",
+      sort: parseSort(getParam(resolved, "sort_by")),
+    }),
   );
   return (
     <Page className="pt-2.5 md:pt-10">
       <Container>
         <Sections className="gap-5">
-          <Suspense fallback={null}>
-            <SearchAnalyticsTracker searchParamsPromise={searchParams} />
-          </Suspense>
-          <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl">
-              <Link href="/search">Search</Link>
-              <Suspense fallback={null}>
-                <SearchQueryLabel searchParamsPromise={searchParams} />
-              </Suspense>
-            </h1>
-          </div>
-          <Suspense fallback={<BrowseFallback resultCount={<Skeleton className="h-4 w-20" />} />}>
-            <SearchBrowse
-              resultsPromise={resultsPromise}
-              searchParamsPromise={searchParams}
-              statePromise={statePromise}
-            />
+          <h1 className="text-3xl sm:text-4xl md:text-5xl">
+            <Link href="/search">Căutare</Link>
+          </h1>
+          <BrowseToolbar />
+          <Suspense fallback={<BrowseResultsFallback />}>
+            <SearchResultsGrid results={results} />
           </Suspense>
         </Sections>
       </Container>
@@ -91,56 +63,38 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
   );
 }
 
-async function SearchBrowse({
-  resultsPromise,
-  searchParamsPromise,
-  statePromise,
-}: {
-  resultsPromise: Promise<BrowseResults>;
-  searchParamsPromise: PageProps<"/search">["searchParams"];
-  statePromise: Promise<BrowseState>;
-}) {
-  const query = getParam(await searchParamsPromise, "q") ?? "";
-
-  // A new term rebuilds the browse store so stale filters never carry across searches.
+async function SearchResultsGrid({ results }: { results: Promise<SearchResults> }) {
+  const { products, query } = await results;
+  if (!query)
+    return (
+      <p className="py-10 text-center text-muted-foreground">
+        Scrie în căutarea de sus ce produs cauți.
+      </p>
+    );
+  if (products.length === 0)
+    return (
+      <div className="py-10 text-center">
+        <h2 className="mb-2 text-2xl">Niciun produs pentru „{query}”</h2>
+        <p className="text-muted-foreground">
+          Încearcă alt cuvânt sau <Link href="/collections/all">toate produsele</Link>.
+        </p>
+      </div>
+    );
   return (
-    <Browse
-      path="/search"
-      resultCount={
-        <Suspense fallback={<Skeleton className="h-4 w-20" />}>
-          <SearchResultCount resultsPromise={resultsPromise} />
-        </Suspense>
-      }
-      results={resultsPromise}
-      sortExclude={SEARCH_SORT_EXCLUDE}
-      state={statePromise}
-      storeKey={`search:${query}`}
-    />
+    <div className="grid gap-5">
+      <p className="text-sm text-muted-foreground" role="status">
+        {formatCount(products.length, { few: "produse", one: "produs", other: "de produse" })}{" "}
+        pentru „{query}”
+      </p>
+      <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {products.map((product, index) => (
+          <ProductCard
+            key={product.handle}
+            loading={index < 5 ? "eager" : "lazy"}
+            product={product}
+          />
+        ))}
+      </div>
+    </div>
   );
-}
-
-async function SearchAnalyticsTracker({
-  searchParamsPromise,
-}: {
-  searchParamsPromise: PageProps<"/search">["searchParams"];
-}) {
-  const query = getParam(await searchParamsPromise, "q");
-  return <SearchViewedTracker searchTerm={query ?? ""} />;
-}
-
-async function SearchQueryLabel({
-  searchParamsPromise,
-}: {
-  searchParamsPromise: PageProps<"/search">["searchParams"];
-}) {
-  const resolvedSearchParams = await searchParamsPromise;
-  const query = getParam(resolvedSearchParams, "q");
-  if (!query) return null;
-  return ` for "${query}"`;
-}
-
-async function SearchResultCount({ resultsPromise }: { resultsPromise: Promise<BrowseResults> }) {
-  const { total } = await resultsPromise;
-  if (!total) return null;
-  return formatCount(total, "Item");
 }

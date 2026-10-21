@@ -4,15 +4,7 @@
     "correctness": "warn",
     "suspicious": "warn"
   },
-  "ignorePatterns": [
-    ".next/**",
-    "dist/**",
-    "build/**",
-    ".agents/**",
-    ".claude/**",
-    "app/.well-known/**",
-    "components/ai-elements/**"
-  ],
+  "ignorePatterns": [".next/**", "dist/**", "build/**"],
   "plugins": ["typescript", "react", "nextjs"],
   "rules": {
     "no-underscore-dangle": ["warn", { "allow": ["__typename"] }],
