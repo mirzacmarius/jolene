@@ -165,8 +165,14 @@ export function PrivacyEn() {
         </li>
         <li>Your account: until you ask us to delete it.</li>
         <li>
-          Guest lists and replies: until the couple removes the family or asks us to delete their
-          account.
+          Guest lists, replies and the invitations’ emails: until the couple removes the family or
+          asks us to delete their account. Otherwise we delete them automatically between 12 and 24
+          months after the event, as Jolene sets it; for an event without a date, we count from the
+          last change to the invitation or its list.
+        </li>
+        <li>
+          Copies of the emails we send (sign-in codes, order confirmations and invitations): 30
+          days.
         </li>
         <li>
           Your cart: its cookie expires after 90 days, and we delete a checkout you started but did
@@ -381,8 +387,14 @@ export function PrivacyRo() {
         </li>
         <li>Contul: până ne cereți să-l ștergem.</li>
         <li>
-          Lista de invitați și confirmările: până când mirii șterg familia din listă sau ne cer să
-          le ștergem contul.
+          Lista de invitați, confirmările și emailurile invitațiilor: până când mirii șterg familia
+          din listă sau ne cer să le ștergem contul. Altfel le ștergem automat între 12 și 24 de
+          luni după eveniment, după cum stabilește Jolene; pentru un eveniment fără dată, socotim de
+          la ultima schimbare a invitației sau a listei.
+        </li>
+        <li>
+          Copiile emailurilor pe care le trimitem (codurile de conectare, confirmările comenzilor și
+          invitațiile): 30 de zile.
         </li>
         <li>
           Coșul: cookie-ul expiră după 90 de zile, iar o plată începută și neterminată o ștergem

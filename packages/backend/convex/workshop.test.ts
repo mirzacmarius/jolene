@@ -622,3 +622,46 @@ describe("a refund", () => {
       ).toMatchObject({ refunded: 0, refunds: [] });
   });
 });
+
+describe("the workshop's settings", () => {
+  test("keep guest lists 12 months until the team saves another number", async () => {
+    const { t, workshop } = await setUp();
+    expect(await workshop.query(api.workshop.settings.get, {})).toEqual({
+      guestListMonths: 12,
+      minGuestListMonths: 12,
+      maxGuestListMonths: 24,
+      updatedBy: null,
+      updatedAt: null,
+    });
+    await workshop.mutation(api.workshop.settings.setGuestListMonths, {
+      months: 18,
+    });
+    expect(await workshop.query(api.workshop.settings.get, {})).toMatchObject({
+      guestListMonths: 18,
+      updatedBy: "atelier@jolene.ro",
+    });
+    await workshop.mutation(api.workshop.settings.setGuestListMonths, {
+      months: 24,
+    });
+    const saved = await t.run((ctx) => ctx.db.query("settings").collect());
+    expect(saved.map((settings) => settings.guestListMonths)).toEqual([24]);
+    for (const months of [11, 25, 12.5])
+      await expect(
+        workshop.mutation(api.workshop.settings.setGuestListMonths, {
+          months,
+        }),
+      ).rejects.toThrow("invalid-input");
+  });
+
+  test("open to the workshop alone", async () => {
+    const { couple } = await setUp();
+    await expect(couple.query(api.workshop.settings.get, {})).rejects.toThrow(
+      "workshop-only",
+    );
+    await expect(
+      couple.mutation(api.workshop.settings.setGuestListMonths, {
+        months: 18,
+      }),
+    ).rejects.toThrow("workshop-only");
+  });
+});

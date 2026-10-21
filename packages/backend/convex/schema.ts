@@ -692,4 +692,19 @@ export default defineSchema({
   })
     .index("by_emailId", ["emailId"])
     .index("by_householdId", ["householdId"]),
+
+  /**
+   * What Jolene's team sets at /studio/atelier/setari, in one document.
+   * Until the team saves them, each setting is its default.
+   */
+  settings: defineTable({
+    /**
+     * How many months after its event an invitation's guest list is kept
+     * before it's deleted (docs/adr/0017).
+     */
+    guestListMonths: v.number(),
+    /** The workshop's account that saved them last, and when. */
+    updatedBy: v.string(),
+    updatedAt: v.number(),
+  }),
 });

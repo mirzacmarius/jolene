@@ -471,6 +471,18 @@ export default {
       unusualCharacters:
         "{characters} de pe {place} i-a apărut clientului cu alt font decât în fișier.",
     },
+    settings: {
+      title: "Setări",
+      lead: "Ce stabilește atelierul pentru toate cuplurile.",
+      guestLists: "Liste de invitați",
+      guestListsLead:
+        "Lista de invitați a unei invitații digitale, cu confirmările, alergiile și emailurile ei, se șterge la atâtea luni după eveniment, sau după ultima schimbare a cuplului, la un eveniment fără dată. Politica de confidențialitate le spune invitaților între 12 și 24 de luni, cum se stabilește aici.",
+      months: "Luni păstrate după eveniment",
+      changedBy: "Schimbat de {email} pe {time}.",
+      unchanged: "Valoarea implicită, până o schimbă cineva din echipă.",
+      save: "Salvați",
+      saved: "Salvat",
+    },
   },
   expert: {
     mode: {
