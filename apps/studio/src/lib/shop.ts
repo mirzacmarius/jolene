@@ -42,3 +42,22 @@ export function useShopSells(handle: string | null) {
   if (!handle) return false;
   return answer?.handle === handle ? answer.sells : undefined;
 }
+
+/** How long the shop gets to refresh its pages after a change. */
+const REFRESH_WAIT = 8000;
+
+/**
+ * Tells the shop the workshop changed its catalog, which its pages keep for
+ * minutes unless told: whether they show the change now. The shop takes it
+ * from the workshop's accounts alone, by their Convex token.
+ */
+export async function refreshShop(token: string | null) {
+  return await fetch("/api/catalog/refresh", {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    signal: AbortSignal.timeout(REFRESH_WAIT),
+  }).then(
+    (response) => response.ok,
+    () => false,
+  );
+}

@@ -1,3 +1,5 @@
+import { Skeleton } from "@jolene/ui/skeleton";
+import { Suspense } from "react";
 import { SiteHeader } from "@/components/shell/site-header";
 import { ProductList } from "@/components/workshop/product-list";
 import { WorkshopGate } from "@/components/workshop/workshop-gate";
@@ -28,7 +30,10 @@ export default async function Page() {
         </p>
         <div className="mt-8">
           <WorkshopGate>
-            <ProductList />
+            {/* It reads ?categorie=, which only the browser knows. */}
+            <Suspense fallback={<Skeleton className="h-96 rounded-3xl" />}>
+              <ProductList />
+            </Suspense>
           </WorkshopGate>
         </div>
       </main>

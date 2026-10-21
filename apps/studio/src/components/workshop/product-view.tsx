@@ -20,7 +20,6 @@ import {
   X,
 } from "lucide-react";
 import {
-  type ComponentProps,
   type DragEvent,
   type FormEvent,
   type ReactNode,
@@ -30,9 +29,12 @@ import {
 } from "react";
 import { errorCode } from "@/lib/convex-error";
 import { leiField, parseLei } from "@/lib/lei";
+import { moved } from "@/lib/lists";
+import { refreshShop } from "@/lib/shop";
 import { NotAPhoto, webPhoto } from "@/lib/web-photo";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { useFormats } from "./formats";
+import { IconButton } from "./icon-button";
 
 type Product = NonNullable<
   FunctionReturnType<typeof api.workshop.products.product>
@@ -65,9 +67,6 @@ const MOST_LINE_OPTIONS = 20;
 
 /** How much of an order option's choices the list of them to add shows. */
 const ASKS_SHOWN = 90;
-
-/** How long the shop gets to refresh its pages after a change. */
-const REFRESH_WAIT = 8000;
 
 const selectClass =
   "h-10 w-full min-w-0 rounded-lg border border-input bg-card px-3 text-[15px] shadow-xs outline-none transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50";
@@ -229,14 +228,6 @@ const savedPhotos = (photos: Photo[]) =>
       : { upload: photo.upload, alt: photo.alt },
   );
 
-/** `list` with its item at `from` moved to `to`. */
-function moved<T>(list: readonly T[], from: number, to: number) {
-  const next = [...list];
-  const [item] = next.splice(from, 1);
-  if (item !== undefined) next.splice(to, 0, item);
-  return next;
-}
-
 /**
  * One of the shop's products, for the workshop to change: its name, its
  * price and the price before a discount, its minimum order, what each of its
@@ -325,15 +316,7 @@ function ProductEditor({ live }: { live: Product }) {
       setBusy(false);
       return;
     }
-    // The shop's pages keep the catalog for minutes unless it's told.
-    const shown = await fetch("/api/catalog/refresh", {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      signal: AbortSignal.timeout(REFRESH_WAIT),
-    }).then(
-      (response) => response.ok,
-      () => false,
-    );
+    const shown = await refreshShop(token);
     toast.success(
       shown ? t("workshop.catalog.saved") : t("workshop.catalog.savedSoon"),
     );
@@ -688,30 +671,6 @@ function Field({
         </p>
       ) : null}
     </div>
-  );
-}
-
-/** A small button with only an icon, named for those who can't see it. */
-function IconButton({
-  label,
-  children,
-  ...props
-}: { label: string; children: ReactNode } & Omit<
-  ComponentProps<typeof Button>,
-  "type" | "variant" | "size" | "aria-label" | "title"
->) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      className="size-8"
-      aria-label={label}
-      title={label}
-      {...props}
-    >
-      {children}
-    </Button>
   );
 }
 

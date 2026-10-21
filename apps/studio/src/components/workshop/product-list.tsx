@@ -9,6 +9,7 @@ import { Skeleton } from "@jolene/ui/skeleton";
 import { usePaginatedQuery, useQuery } from "convex/react";
 import { Search } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useI18n } from "@/locales/client";
 import { useFormats } from "./formats";
@@ -39,12 +40,14 @@ function useSettled(value: string, delay: number) {
 /**
  * The shop's products, for sale or taken off sale: all of them or a
  * category's, in the shop's order, or those whose names match a search.
- * Each opens on its own page.
+ * Each opens on its own page. A link to it can name the category it opens
+ * on (?categorie=), as the workshop's categories do.
  */
 export function ProductList() {
   const t = useI18n();
+  const linked = useSearchParams().get("categorie");
   const [tab, setTab] = useState<Tab>("forSale");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(linked ?? "");
   const [text, setText] = useState("");
   const search = useSettled(text.trim(), SEARCH_DELAY);
   const categories = useQuery(api.workshop.products.categories, {});

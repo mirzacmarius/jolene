@@ -515,6 +515,7 @@ export default {
       label: "Paginile atelierului",
       orders: "Comenzi",
       products: "Produse",
+      categories: "Categorii",
       settings: "Setări",
     },
     catalog: {
@@ -614,6 +615,36 @@ export default {
         minQuantity: "Un număr întreg de bucăți, de la 1 la 10.000, sau gol.",
         surcharge: "Scrieți suma în lei, de exemplu 2,00, sau 0.",
       },
+    },
+    categories: {
+      title: "Categorii",
+      lead: "Rafturile magazinului, în ordinea în care le arată. Schimbați-le numele sau ordinea, ori adăugați altele. Adresa unei categorii rămâne aceeași, ca linkurile spre ea să meargă în continuare.",
+      name: "Numele categoriei {number}",
+      up: "Mutați categoria {number} mai sus",
+      down: "Mutați categoria {number} mai jos",
+      remove: "Scoateți categoria nouă {number}",
+      forSale: "La vânzare: {count}",
+      forSaleMore: "La vânzare: peste {count}",
+      hidden: "Magazinul n-o arată până nu are un produs la vânzare.",
+      new: "Nouă: primește o adresă din nume când salvați.",
+      add: "Adăugați o categorie",
+      addPlaceholder: "Numele ei",
+      addHint:
+        "Apare în magazin după ce îi puneți un produs, din pagina produsului.",
+      tooMany: "Magazinul are cel mult {count} de categorii.",
+      problems: {
+        empty: "Scrieți numele categoriei.",
+        long: "Cel mult 100 de caractere.",
+        twice: "Două categorii nu pot avea același nume.",
+      },
+      changed:
+        "Altcineva din echipă a schimbat categoriile între timp. Pagina arată acum lista lor.",
+      changedMeanwhile:
+        "Altcineva din echipă a schimbat categoriile cât le editați. Vedeți lista lor, apoi refaceți schimbările de care mai e nevoie.",
+      showTheirs: "Vedeți lista lor",
+      editedBy: "Schimbate ultima dată de {email} pe {time}.",
+      asSeeded:
+        "Așa cum erau pe jolene.ro: nimeni din echipă nu le-a schimbat.",
     },
     print: {
       make: "Fișier de tipar",
