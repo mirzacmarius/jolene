@@ -103,6 +103,8 @@ export async function GuestPage({ params, searchParams }: GuestRoute) {
   const data = preloadedQueryResult(preloaded);
   if (data.kind !== "ready")
     return <Unavailable kind={data.kind} texts={unavailable} />;
+  const calendar = new URLSearchParams({ lang: data.language });
+  if (code) calendar.set("code", code);
   return (
     <GuestProviders
       locale={data.language}
@@ -111,12 +113,7 @@ export async function GuestPage({ params, searchParams }: GuestRoute) {
       <InvitationPage
         preloaded={preloaded}
         code={code}
-        // Relative, so it works on invitatie.jolene.ro and under /invitatie.
-        calendarHref={
-          code
-            ? `calendar.ics?code=${code}&lang=${data.language}`
-            : `${slug}/calendar.ics?lang=${data.language}`
-        }
+        calendarHref={`/invitatie/${slug}/calendar.ics?${calendar}`}
         unavailable={unavailable}
       />
     </GuestProviders>

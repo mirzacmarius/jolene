@@ -9,25 +9,9 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   // Reached on its own, without the shop around it, the studio's root is
-  // outside the studio; send it there rather than to a 404. The guests'
-  // address (invitatie.jolene.ro, src/proxy.ts) has no page at its root, and
-  // sends visitors to Jolene.
+  // outside the studio; send it there rather than to a 404.
   async redirects() {
-    const guests = [{ type: "host" as const, value: "invitatie\\..+" }];
-    return [
-      {
-        source: "/",
-        has: guests,
-        destination: "https://jolene.ro",
-        permanent: false,
-      },
-      {
-        source: "/",
-        missing: guests,
-        destination: "/studio",
-        permanent: false,
-      },
-    ];
+    return [{ source: "/", destination: "/studio", permanent: false }];
   },
   // Jolene's artwork: each file's name carries a hash of its content, so a
   // changed file is a new address and browsers can keep every one for good.
