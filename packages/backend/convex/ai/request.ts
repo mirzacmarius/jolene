@@ -26,6 +26,14 @@ const betas = [
 ];
 
 /**
+ * Haiku has no server-side fallback (a declined request stays declined) and
+ * no progress updates: its notes between tool calls come back as text.
+ */
+function isHaiku(model: string): boolean {
+  return model.startsWith("claude-haiku");
+}
+
+/**
  * The request for the next round of a thread. The system prompt, the tools
  * and every earlier message are byte for byte what the thread's first
  * request sent, so the API serves them from its cache and keeps the model's
@@ -36,14 +44,15 @@ export function buildRequest(
   messages: BetaMessageParam[],
   options: { userId: string; wrapUp: boolean },
 ): BetaMessageStreamParams {
+  const haiku = isHaiku(config.model);
   return {
     model: config.model,
     max_tokens: MAX_TOKENS,
     betas,
-    fallbacks: "default",
+    ...(haiku ? {} : { fallbacks: "default" as const }),
     thinking: {
       type: "adaptive",
-      display: "updates",
+      ...(haiku ? {} : { display: "updates" as const }),
       // The history is append-only, so no block should ever fail its check;
       // if one does, the request goes on without it rather than failing.
       block_binding: { prefix_mismatch_behavior: "drop_block" },

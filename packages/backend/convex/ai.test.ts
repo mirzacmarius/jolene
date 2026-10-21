@@ -153,7 +153,7 @@ function answer(make: Answer | ((request: BetaMessageStreamParams) => Answer)) {
     const message = await play(content, stop, onEvent, signal, 0);
     return {
       ...message,
-      model: "claude-opus-5-5",
+      model: "claude-sonnet-5-5",
       usage: { ...message.usage, ...usage },
     };
   };
@@ -306,7 +306,7 @@ describe("the AI designer", () => {
     // The request, as the API reads it.
     const [first, second] = requests;
     expect(first).toMatchObject({
-      model: "claude-opus-5-5",
+      model: "claude-sonnet-5-5",
       max_tokens: 32000,
       thinking: { type: "adaptive", display: "updates" },
       output_config: { effort: "medium" },
@@ -992,6 +992,24 @@ describe("the AI designer", () => {
     expect(
       await setup.couple.query(api.ai.availability, { since: 0 }),
     ).toMatchObject({ used: 1 });
+  });
+
+  test("answers with the model the deployment names, Sonnet by default", async () => {
+    const setup = await setUp();
+    const requests = fakeModel(
+      answer({ content: [text("Bună!")] }),
+      answer({ content: [text("Gata.")] }),
+    );
+    setEnv({ ANTHROPIC_API_KEY: "test-key", AI_MODEL: " claude-haiku-5-5 " });
+    await talk(setup, "Verde");
+    setEnv({ ANTHROPIC_API_KEY: "test-key" });
+    await talk(setup, "Albastru");
+    expect(requests.map((request) => request.model)).toEqual([
+      "claude-haiku-5-5",
+      "claude-sonnet-5-5",
+    ]);
+    // Each thread runs on one model: the next message starts a new one.
+    expect(requests[1]?.messages).toHaveLength(1);
   });
 
   test("thinks at the effort the deployment sets", async () => {
