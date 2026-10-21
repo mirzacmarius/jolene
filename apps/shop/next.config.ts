@@ -18,9 +18,18 @@ const nextConfig: NextConfig = {
   },
   partialPrefetching: true,
   reactCompiler: true,
+  // Guests' links on invitatie.jolene.ro are short, /<invitation>/<family code>: they go to the studio's /invitatie on the same address, and the address's root to Jolene.
   // jolene.ro's WooCommerce addresses, so links and search results find the products and categories here.
   async redirects() {
+    const guests = [{ type: "host" as const, value: "invitatie\\..+" }];
     return [
+      { destination: "https://jolene.ro", has: guests, permanent: false, source: "/" },
+      {
+        destination: "/invitatie/:invitation/:rest*",
+        has: guests,
+        permanent: false,
+        source: "/:invitation([a-z0-9-]+)/:rest*",
+      },
       {
         destination: "/products/invitatie-nunta-white-roses",
         permanent: true,

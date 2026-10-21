@@ -16,7 +16,7 @@
     "lint:repo": "sherif --fail-on-warnings",
     "lint:repo:fix": "sherif --fix --fail-on-warnings",
     "setup": "bun --filter @jolene/backend setup",
-    "test": "bun test packages",
+    "test": "bun test packages apps/studio/src",
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {

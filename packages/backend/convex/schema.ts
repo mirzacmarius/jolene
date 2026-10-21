@@ -9,6 +9,14 @@ import {
   aiUsageValidator,
 } from "./ai/validators";
 import {
+  channelValidator,
+  emailStatusValidator,
+  questionsValidator,
+  replyValidator,
+  sideValidator,
+  unlockValidator,
+} from "./invites/validators";
+import {
   answerValidator,
   choiceValidator,
   lineOptionKindValidator,
@@ -66,7 +74,9 @@ export default defineSchema({
     name: v.optional(v.string()),
     /** Set on photos: only their owner's designs may use them. */
     ownerId: v.optional(v.id("users")),
-  }).index("by_key", ["key"]),
+  })
+    .index("by_key", ["key"])
+    .index("by_ownerId", ["ownerId"]),
 
   /** A family of designs sharing artwork, palette and type: a collection. */
   suites: defineTable({
@@ -273,7 +283,9 @@ export default defineSchema({
       v.object({ designId: v.id("designs"), replyId: v.id("aiMessages") }),
     ),
     updatedAt: v.number(),
-  }).index("by_eventId_and_suiteId", ["eventId", "suiteId"]),
+  })
+    .index("by_eventId_and_suiteId", ["eventId", "suiteId"])
+    .index("by_ownerId", ["ownerId"]),
 
   /**
    * A design as its couple approved it for print (a proof): the document and
@@ -293,7 +305,9 @@ export default defineSchema({
     /** The studio's picture of the proof, shown with the order. */
     image: v.optional(v.id("_storage")),
     approvedAt: v.number(),
-  }).index("by_designId", ["designId"]),
+  })
+    .index("by_designId", ["designId"])
+    .index("by_ownerId", ["ownerId"]),
 
   /**
    * A product the shop sells, under the name it had on jolene.ro (ADR 0015).
@@ -421,4 +435,117 @@ export default defineSchema({
     price: v.number(),
     editedAt: v.optional(v.number()),
   }).index("by_key", ["key"]),
+
+  /**
+   * Who manages an event with its owner: a partner who joined by the
+   * couple's link sees and changes its digital invitation.
+   */
+  eventPartners: defineTable({
+    eventId: v.id("events"),
+    userId: v.id("users"),
+    joinedAt: v.number(),
+  })
+    .index("by_eventId", ["eventId"])
+    .index("by_userId_and_eventId", ["userId", "eventId"]),
+
+  /**
+   * An event's digital invitation: the page guests open on their phone, with
+   * the couple's invitation design, the day's programme and the reply form.
+   */
+  invites: defineTable({
+    eventId: v.id("events"),
+    /** Its address: INVITE_URL/<slug>. */
+    slug: v.string(),
+    /** The language its page speaks: the invitation design's, at first. */
+    language: languageValidator,
+    /**
+     * The invitation design as guests see it: a copy made when the couple
+     * publishes, so their later changes show once they publish again.
+     * Guests see nothing before the first.
+     */
+    published: v.optional(
+      v.object({
+        designId: v.id("designs"),
+        revision: v.number(),
+        document: documentValidator,
+        /** The studio's picture of it, for link previews and emails. */
+        image: v.optional(v.id("_storage")),
+        at: v.number(),
+      }),
+    ),
+    /** Anyone with the invitation's own address can reply, adding their family. */
+    open: v.boolean(),
+    questions: questionsValidator,
+    /** The couple's words under the invitation, such as where to park. */
+    note: v.optional(v.string()),
+    /** Set once it's paid for, free with printed invitations, or opened by hand. */
+    unlocked: v.optional(unlockValidator),
+    /** The code of the link a partner joins the event by, while there's one. */
+    partnerCode: v.optional(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_eventId", ["eventId"])
+    .index("by_slug", ["slug"])
+    .index("by_partnerCode", ["partnerCode"]),
+
+  /**
+   * The people one invitation goes to, such as a couple, a family with
+   * children or one friend: they open it by their own link and reply
+   * together.
+   */
+  households: defineTable({
+    inviteId: v.id("invites"),
+    /** How the invitation addresses them, as on an envelope. */
+    name: v.string(),
+    /** Their link's code: INVITE_URL/<slug>/<code>. */
+    code: v.string(),
+    /** How many of them are invited, children included. */
+    seats: v.number(),
+    /** They may bring someone of their own. */
+    plusOne: v.boolean(),
+    side: v.optional(sideValidator),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    /** The language their page opens in, when not the invitation's. */
+    language: v.optional(languageValidator),
+    /** The couple added them, or they added themselves by the open link. */
+    source: v.union(v.literal("couple"), v.literal("open")),
+    /** The couple's own note about them, which guests never see. */
+    note: v.optional(v.string()),
+    /** When the couple last sent them their link, and how. */
+    sent: v.optional(v.object({ by: channelValidator, at: v.number() })),
+    /** Where the latest email of their invitation has got to. */
+    emailed: v.optional(
+      v.object({ status: emailStatusValidator, at: v.number() }),
+    ),
+    /** When they first opened their invitation. */
+    openedAt: v.optional(v.number()),
+    /** Their latest reply; every one is also in replies. */
+    reply: v.optional(replyValidator),
+    updatedAt: v.number(),
+  })
+    .index("by_inviteId", ["inviteId"])
+    .index("by_inviteId_and_code", ["inviteId", "code"]),
+
+  /** Every reply a family sent or the couple took, for the couple's history. */
+  replies: defineTable({
+    inviteId: v.id("invites"),
+    householdId: v.id("households"),
+    reply: replyValidator,
+  })
+    .index("by_inviteId", ["inviteId"])
+    .index("by_householdId", ["householdId"]),
+
+  /** The emails of digital invitations, to tell the couple which bounced. */
+  inviteEmails: defineTable({
+    inviteId: v.id("invites"),
+    householdId: v.id("households"),
+    /** The Resend component's id for it. */
+    emailId: v.string(),
+    to: v.string(),
+    status: emailStatusValidator,
+    updatedAt: v.number(),
+  })
+    .index("by_emailId", ["emailId"])
+    .index("by_householdId", ["householdId"]),
 });
