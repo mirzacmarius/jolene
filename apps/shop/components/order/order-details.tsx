@@ -42,7 +42,15 @@ export function OrderDetails({ order }: { order: Order }) {
         </ul>
         <aside className="grid content-start gap-10 lg:col-span-4 xl:col-span-3">
           <OrderTotals order={order} />
-          {order.address ? (
+          {order.pickupAt ? (
+            <div className="grid gap-1 text-sm">
+              <h2 className="font-medium text-foreground">Ridicați comanda de la atelier</h2>
+              <address className="grid text-muted-foreground not-italic">
+                <span>{order.pickupAt}</span>
+              </address>
+              <p className="text-muted-foreground">Vă anunțăm când e gata de ridicat.</p>
+            </div>
+          ) : order.address ? (
             <div className="grid gap-1 text-sm">
               <h2 className="font-medium text-foreground">Livrăm la</h2>
               <address className="grid text-muted-foreground not-italic">
@@ -155,7 +163,11 @@ function OrderTotals({ order }: { order: Order }) {
       {rows.map((row) => (
         <div className="flex items-baseline justify-between gap-2.5 text-sm" key={row.key}>
           <span>{row.label}</span>
-          <Price amount={row.amount} className="text-sm" />
+          {row.key === "delivery" && row.amount === 0 ? (
+            <span className="text-sm text-foreground">Gratuit</span>
+          ) : (
+            <Price amount={row.amount} className="text-sm" />
+          )}
         </div>
       ))}
       <div className="flex items-baseline justify-between text-base text-foreground">

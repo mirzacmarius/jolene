@@ -3,6 +3,8 @@ import { ConvexError, type Infer, v } from "convex/values";
 import Stripe from "stripe";
 import { env } from "../_generated/server";
 import {
+  type DeliveryKey,
+  deliveryKeyValidator,
   type OrderLine,
   orderFeeValidator,
   orderLineValidator,
@@ -67,6 +69,8 @@ export const checkoutForStripeValidator = v.object({
   language: languageValidator,
   lines: v.array(orderLineValidator.extend({ image: v.optional(v.string()) })),
   fees: v.array(orderFeeValidator),
+  /** The lines and the fees together, in bani: what delivery is priced on. */
+  subtotal: v.number(),
 });
 
 export type CheckoutForStripe = Infer<typeof checkoutForStripeValidator>;
@@ -89,11 +93,11 @@ function describe(line: OrderLine, language: Language): string | undefined {
 }
 
 /**
- * The Checkout Session for a checkout: its lines and fees in lei, a courier
- * to an address in Romania with the couple's phone for it, unless nothing in
- * the order travels, and the shop's pages Stripe sends them back to. Prices
- * include VAT, so Stripe Tax, when `vat` turns it on, shows the VAT inside
- * them and never adds to what the couple pays.
+ * The Checkout Session for a checkout: its lines and fees in lei, the ways it
+ * can reach an address in Romania with the couple's phone for them, unless
+ * nothing in the order travels, and the shop's pages Stripe sends them back
+ * to. Prices include VAT, so Stripe Tax, when `vat` turns it on, shows the
+ * VAT inside them and never adds to what the couple pays.
  */
 export function sessionParams(
   checkout: CheckoutForStripe,
@@ -143,12 +147,17 @@ export function sessionParams(
       shipping_address_collection: {
         allowed_countries: [...deliveryCountries],
       },
-      shipping_options: deliveryOptions.map((option) => ({
+      shipping_options: deliveryOptions(
+        checkout.subtotal,
+        checkout.language,
+      ).map((option) => ({
         shipping_rate_data: {
           type: "fixed_amount" as const,
           display_name: option.label,
           fixed_amount: { amount: option.price, currency: "ron" },
           tax_behavior: "inclusive" as const,
+          // Names the way it travels, whatever the language of its label.
+          metadata: { delivery: option.key },
         },
       })),
     }),
@@ -165,6 +174,16 @@ export async function retrieveSession(id: string) {
   return await stripe().checkout.sessions.retrieve(id, {
     expand: ["shipping_cost.shipping_rate"],
   });
+}
+
+/** Which way an order travels, as the shipping rate Convex offered names it. */
+function deliveryKey(
+  rate: Stripe.ShippingRate | string | null | undefined,
+): DeliveryKey | undefined {
+  if (typeof rate !== "object" || !rate) return undefined;
+  const key = rate.metadata?.delivery;
+  return deliveryKeyValidator.members.find((member) => member.value === key)
+    ?.value;
 }
 
 /**
@@ -184,6 +203,7 @@ export function paidSession(
   const shipping = session.collected_information?.shipping_details;
   const address = shipping?.address;
   const rate = session.shipping_cost?.shipping_rate;
+  const key = deliveryKey(rate);
   const paymentIntent =
     typeof session.payment_intent === "string"
       ? session.payment_intent
@@ -212,6 +232,7 @@ export function paidSession(
       }),
     ...(session.shipping_cost && {
       delivery: {
+        ...(key && { key }),
         label: (typeof rate === "object" && rate?.display_name) || "",
         price: session.shipping_cost.amount_total,
       },

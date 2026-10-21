@@ -115,8 +115,16 @@ describe("checkout.start", () => {
       "line_items[1][price_data][product_data][name]": "Diacritice",
       "line_items[1][price_data][tax_behavior]": "inclusive",
       "shipping_address_collection[allowed_countries][0]": "RO",
-      "shipping_options[0][shipping_rate_data][fixed_amount][amount]": "2000",
+      "shipping_options[0][shipping_rate_data][display_name]":
+        "Curier Cargus, la adresă",
+      "shipping_options[0][shipping_rate_data][fixed_amount][amount]": "2500",
       "shipping_options[0][shipping_rate_data][tax_behavior]": "inclusive",
+      "shipping_options[0][shipping_rate_data][metadata][delivery]": "cargus",
+      "shipping_options[1][shipping_rate_data][display_name]":
+        "Ridicare de la atelier, Str. Ion Creangă 41, Iași",
+      "shipping_options[1][shipping_rate_data][fixed_amount][amount]": "0",
+      "shipping_options[1][shipping_rate_data][tax_behavior]": "inclusive",
+      "shipping_options[1][shipping_rate_data][metadata][delivery]": "pickup",
       "automatic_tax[enabled]": "false",
       "phone_number_collection[enabled]": "true",
       allow_promotion_codes: "true",
@@ -147,6 +155,37 @@ describe("checkout.start", () => {
       ],
     });
     expect(session.amount_subtotal).toBe(subtotal);
+    expect(stripe.rates(session.id)).toHaveLength(2);
+  });
+
+  test("brings an order of 800 lei or more by Cargus for nothing", async () => {
+    const { t, stripe } = await withCart();
+    const lineId = (await t.query(api.cart.get, { token }))?.lines[0]?.id;
+    if (!lineId) throw new Error("No line in the cart");
+    // 71 roses and diacritics come to 795,50 lei, 72 to 806 lei.
+    for (const quantity of [71, 72]) {
+      await t.mutation(api.cart.setQuantity, { token, lineId, quantity });
+      await t.action(api.checkout.start, { token, language: "en" });
+    }
+    expect(
+      stripe
+        .opened()
+        .map((request) =>
+          [0, 1].map(
+            (i) =>
+              `${request.fields.get(`shipping_options[${i}][shipping_rate_data][display_name]`)}: ${request.fields.get(`shipping_options[${i}][shipping_rate_data][fixed_amount][amount]`)}`,
+          ),
+        ),
+    ).toEqual([
+      [
+        "Cargus courier, to your door: 2500",
+        "Pick up from the workshop, Str. Ion Creangă 41, Iași: 0",
+      ],
+      [
+        "Cargus courier, to your door: 0",
+        "Pick up from the workshop, Str. Ion Creangă 41, Iași: 0",
+      ],
+    ]);
   });
 
   test("sends the couple back to SHOP_URL's address when it's set", async () => {
@@ -260,9 +299,13 @@ describe("checkout.confirm", () => {
       ],
       fees: [{ key: "diacritice-50", label: "Diacritice", price: 5000 }],
       subtotal,
-      delivery: { label: "Curier, la adresă", price: 2000 },
+      delivery: {
+        key: "cargus",
+        label: "Curier Cargus, la adresă",
+        price: 2500,
+      },
       discount: 0,
-      total: subtotal + 2000,
+      total: subtotal + 2500,
       customer: { name: "ANA POPESCU", email: "ana@example.com" },
       address: {
         name: "Ana Popescu",
@@ -274,6 +317,9 @@ describe("checkout.confirm", () => {
         country: "RO",
       },
     });
+    expect(
+      await t.query(api.orders.byToken, { token: orderToken as string }),
+    ).not.toHaveProperty("pickupAt");
     const cart = await t.query(api.cart.get, { token });
     expect(cart?.lines).toEqual([]);
     expect(await t.run((ctx) => ctx.db.query("checkouts").take(5))).toEqual([]);
@@ -300,10 +346,33 @@ describe("checkout.confirm", () => {
     const orderToken = await t.action(api.checkout.confirm, {
       session: session.id,
     });
-    // 21% inside 385 lei.
+    // 21% inside 390 lei.
     expect(
       await t.query(api.orders.byToken, { token: orderToken as string }),
-    ).toMatchObject({ total: 38_500, vat: 6682 });
+    ).toMatchObject({ total: 39_000, vat: 6769 });
+  });
+
+  test("keeps the couple's choice to pick it up from the workshop", async () => {
+    const { t, stripe } = await withCart();
+    await t.action(api.checkout.start, { token, language: "ro" });
+    const session = stripe.pay(stripe.latest().id, { delivery: 1 });
+    const orderToken = await t.action(api.checkout.confirm, {
+      session: session.id,
+    });
+    expect(
+      await t.query(api.orders.byToken, { token: orderToken as string }),
+    ).toMatchObject({
+      subtotal,
+      delivery: {
+        key: "pickup",
+        label: "Ridicare de la atelier, Str. Ion Creangă 41, Iași",
+        price: 0,
+      },
+      total: subtotal,
+      // Stripe's page asks for an address all the same.
+      address: { city: "Cluj-Napoca" },
+      pickupAt: "Str. Ion Creangă 41, Iași",
+    });
   });
 
   test("numbers orders one after another", async () => {
@@ -334,7 +403,7 @@ describe("checkout.confirm", () => {
     ).toMatchObject({
       subtotal,
       discount: 3650,
-      total: subtotal - 3650 + 2000,
+      total: subtotal - 3650 + 2500,
     });
   });
 
@@ -408,7 +477,11 @@ describe("Stripe's webhook", () => {
       {
         number: 1001,
         session: session.id,
-        delivery: { label: "Curier, la adresă", price: 2000 },
+        delivery: {
+          key: "cargus",
+          label: "Curier Cargus, la adresă",
+          price: 2500,
+        },
       },
     ]);
 
@@ -469,7 +542,11 @@ describe("checkout.reconcile", () => {
     expect(await orders(t)).toMatchObject([
       {
         session: session.id,
-        delivery: { label: "Curier, la adresă", price: 2000 },
+        delivery: {
+          key: "cargus",
+          label: "Curier Cargus, la adresă",
+          price: 2500,
+        },
       },
     ]);
     expect(await t.action(internal.checkout.reconcile, {})).toBe(0);
@@ -586,7 +663,9 @@ describe("the digital invitation", () => {
       "line_items[0][price_data][product_data][description]":
         "For Ana and Mihai",
       "shipping_address_collection[allowed_countries][0]": "RO",
-      "shipping_options[0][shipping_rate_data][fixed_amount][amount]": "2000",
+      "shipping_options[0][shipping_rate_data][display_name]":
+        "Cargus courier, to your door",
+      "shipping_options[0][shipping_rate_data][fixed_amount][amount]": "2500",
       "phone_number_collection[enabled]": "true",
     });
   });
@@ -640,9 +719,12 @@ describe("a paid order", () => {
     expect(email.subject).toBe("[Test] Comanda J1001 · Jolene");
     expect(email.text).toContain("Mulțumim, Ana!");
     expect(email.text).toContain(
-      "Am primit comanda J1001 și plata de 385,00 lei.",
+      "Am primit comanda J1001 și plata de 390,00 lei.",
     );
-    expect(email.text).toContain("Livrare (Curier, la adresă): 20,00 lei");
+    expect(email.text).toContain(
+      "Livrare (Curier Cargus, la adresă): 25,00 lei",
+    );
+    expect(email.text).toContain("Livrăm la:\nAna Popescu\n");
     expect(email.text).toContain("Cluj-Napoca, Cluj, 400000");
     expect(email.html).toContain(`href="${link}"`);
 
@@ -653,29 +735,82 @@ describe("a paid order", () => {
     );
     expect(english.subject).toBe("Order J1001 · Jolene");
     expect(english.text).toContain(
-      "We've received order J1001 and your payment of 385,00 lei.",
+      "We've received order J1001 and your payment of 390,00 lei.",
     );
     expect(english.html).toContain('src="https://example.com/proof.png"');
     expect(email.text).not.toContain("TVA");
 
-    const withVat = { ...order, vat: 6682 };
+    const withVat = { ...order, vat: 6769 };
     expect(confirmationEmail(withVat, link, [null]).text).toContain(
-      "Total: 385,00 lei\nDin care TVA: 66,82 lei",
+      "Total: 390,00 lei\nDin care TVA: 67,69 lei",
     );
     expect(
       confirmationEmail({ ...withVat, language: "en" }, link, [null]).text,
-    ).toContain("Including VAT: 66,82 lei");
+    ).toContain("Including VAT: 67,69 lei");
+  });
+
+  test("tells the couple who pick it up where, and that it's free", async () => {
+    const order = await recorded();
+    const pickup = {
+      ...order,
+      delivery: {
+        key: "pickup" as const,
+        label: "Ridicare de la atelier, Str. Ion Creangă 41, Iași",
+        price: 0,
+      },
+      total: subtotal,
+    };
+    const email = confirmationEmail(pickup, null, [null]);
+    expect(email.text).toContain(
+      "Livrare (Ridicare de la atelier, Str. Ion Creangă 41, Iași): gratuit",
+    );
+    expect(email.text).toContain(
+      "Ridicați comanda de la atelier:\nStr. Ion Creangă 41, Iași\nVă anunțăm când e gata de ridicat.",
+    );
+    expect(email.text).not.toContain("Livrăm la");
+    expect(email.html).toContain(
+      "<strong>Ridicați comanda de la atelier</strong><br>Str. Ion Creangă 41, Iași<br>",
+    );
+    expect(
+      confirmationEmail({ ...pickup, language: "en" }, null, [null]).text,
+    ).toContain(
+      "Pick up your order from the workshop:\nStr. Ion Creangă 41, Iași\nWe'll let you know when it's ready.",
+    );
+
+    // Free by Cargus, from 800 lei: still to their address.
+    const free = confirmationEmail(
+      {
+        ...order,
+        delivery: {
+          key: "cargus",
+          label: "Curier Cargus, la adresă",
+          price: 0,
+        },
+      },
+      null,
+      [null],
+    );
+    expect(free.text).toContain("Livrare (Curier Cargus, la adresă): gratuit");
+    expect(free.text).toContain("Livrăm la:");
+
+    const notice = noticeEmail(pickup, null).text;
+    expect(notice).toContain(
+      "Ridicare de la atelier (Str. Ion Creangă 41, Iași): nu se livrează.\nAdresa clientului:\nAna Popescu",
+    );
+    expect(notice).not.toContain("Adresa:");
   });
 
   test("tells the team everything the workshop needs", async () => {
     const order = await recorded();
     const notice = noticeEmail(order, null);
     expect(notice.subject).toBe(
-      "[Test] Comandă nouă J1001 · 385,00 lei · ANA POPESCU",
+      "[Test] Comandă nouă J1001 · 390,00 lei · ANA POPESCU",
     );
     expect(notice.text).toContain(
       "Client: ANA POPESCU · ana@example.com · +40712345678",
     );
+    expect(notice.text).toContain("Adresa:\nAna Popescu");
+    expect(notice.text).not.toContain("Ridicare");
     expect(notice.text).toContain("  Text personalizat: Ana și Mihai");
     expect(notice.text).toContain(`Plata în Stripe: ${order.paymentIntent}`);
     expect(notice.text).not.toContain("TVA");
@@ -683,8 +818,8 @@ describe("a paid order", () => {
 
   test("tells the team when Stripe Tax put no VAT in it", async () => {
     const order = await recorded();
-    expect(noticeEmail({ ...order, vat: 6682 }, null).text).toContain(
-      "Din care TVA: 66,82 lei",
+    expect(noticeEmail({ ...order, vat: 6769 }, null).text).toContain(
+      "Din care TVA: 67,69 lei",
     );
     expect(noticeEmail({ ...order, vat: 0 }, null).text).toContain(
       "Stripe Tax n-a pus TVA în comandă",
@@ -735,6 +870,34 @@ describe("paidSession", () => {
         automatic_tax: { ...taxed.automatic_tax, enabled: false },
       }),
     ).not.toHaveProperty("vat");
+  });
+
+  test("names the way the order travels by the rate Convex offered", () => {
+    const delivery = (metadata: Record<string, string>) =>
+      paidSession({
+        ...session,
+        shipping_cost: {
+          amount_total: 2500,
+          shipping_rate: {
+            id: "shr_1",
+            object: "shipping_rate",
+            display_name: "Curier Cargus, la adresă",
+            metadata,
+          },
+        },
+      } as unknown as Stripe.Checkout.Session)?.delivery;
+    expect(delivery({ delivery: "cargus" })).toEqual({
+      key: "cargus",
+      label: "Curier Cargus, la adresă",
+      price: 2500,
+    });
+    // A rate Convex didn't make, as one from Stripe's Dashboard.
+    const others: Record<string, string>[] = [{}, { delivery: "drone" }];
+    for (const metadata of others)
+      expect(delivery(metadata)).toEqual({
+        label: "Curier Cargus, la adresă",
+        price: 2500,
+      });
   });
 
   test("is null until Stripe has the money, and for a session no checkout opened", () => {

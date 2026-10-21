@@ -57,7 +57,17 @@ describe("cart.add", () => {
       { key: "diacritice-50", label: "Diacritice", price: 5000 },
     ]);
     expect(cart?.total).toBe(36_500);
+    expect(cart?.delivery).toEqual({ price: 2500, freeFrom: 80_000 });
     expect(cart?.count).toBe(1);
+  });
+
+  test("says Cargus brings it for nothing from 800 lei", async () => {
+    const t = await seeded();
+    await t.mutation(api.cart.add, { ...roses, quantity: 72 });
+    const cart = await t.query(api.cart.get, { token });
+    // 72 at 10,50 lei, and 50 lei for diacritics.
+    expect(cart?.total).toBe(80_600);
+    expect(cart?.delivery).toEqual({ price: 0, freeFrom: 80_000 });
   });
 
   test("adds to the line that asks the same, and starts one for new choices", async () => {
@@ -275,6 +285,8 @@ describe("the digital invitation", () => {
         problems: [],
       },
     ]);
+    // It goes by link: nothing for a courier.
+    expect(cart?.delivery).toBeNull();
 
     const lineId = cart?.lines[0]?.id as Id<"cartLines">;
     await expectError(

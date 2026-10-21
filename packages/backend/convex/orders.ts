@@ -8,6 +8,7 @@ import {
   type QueryCtx,
   query,
 } from "./_generated/server";
+import { WORKSHOP_ADDRESS } from "./checkout/delivery";
 import {
   emailConfigured,
   emailLayout,
@@ -247,6 +248,8 @@ const orderViewValidator = v.object({
   vat: v.optional(v.number()),
   customer: v.object({ name: v.string(), email: v.string() }),
   address: v.optional(addressValidator),
+  /** Where the couple picks it up, when they chose to: the workshop. */
+  pickupAt: v.optional(v.string()),
 });
 
 /**
@@ -282,6 +285,7 @@ export const byToken = query({
       ...(order.vat !== undefined && { vat: order.vat }),
       customer: { name: order.customer.name, email: order.customer.email },
       ...(order.address && { address: order.address }),
+      ...(order.delivery?.key === "pickup" && { pickupAt: WORKSHOP_ADDRESS }),
     };
   },
 });
