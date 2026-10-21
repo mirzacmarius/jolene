@@ -57,7 +57,7 @@ const app = defineApp({
     AUTH_LOG_CODES: v.optional(v.string()),
     /**
      * Where guests open digital invitations, such as
-     * https://invitatie.jolene.ro: a family's link is this, the invitation's
+     * https://invitatie.orvibo.it: a family's link is this, the invitation's
      * address and their code. The studio's own /invitatie when unset.
      */
     INVITE_URL: v.optional(v.string()),
