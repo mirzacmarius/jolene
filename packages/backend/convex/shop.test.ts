@@ -38,7 +38,14 @@ describe("shop.product", () => {
       title: "Invitație botez Luna",
       price: 850,
       minQuantity: 20,
-      fees: [{ key: "diacritice-50", label: "Diacritice", price: 5000 }],
+      fees: [
+        {
+          key: "diacritice-50",
+          label: "Diacritice",
+          description: "Textul tipărit cu diacritice, o dată pe comandă.",
+          price: 5000,
+        },
+      ],
       categories: [
         { handle: "invitatii-botez", title: "Invitații botez" },
         { handle: "invitatii-botez-baieti", title: "Invitații băieți" },

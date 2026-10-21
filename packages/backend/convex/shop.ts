@@ -47,7 +47,12 @@ const productValidator = v.object({
     }),
   ),
   fees: v.array(
-    v.object({ key: v.string(), label: v.string(), price: v.number() }),
+    v.object({
+      key: v.string(),
+      label: v.string(),
+      description: v.optional(v.string()),
+      price: v.number(),
+    }),
   ),
   categories: v.array(categoryValidator),
   tags: v.array(v.string()),
@@ -102,7 +107,12 @@ const lineOptionView = ({
   choices,
 });
 
-const feeView = ({ key, label, price }: Doc<"fees">) => ({ key, label, price });
+const feeView = ({ key, label, description, price }: Doc<"fees">) => ({
+  key,
+  label,
+  description,
+  price,
+});
 
 /**
  * A product on sale, with its photos, its papers, the order options its line

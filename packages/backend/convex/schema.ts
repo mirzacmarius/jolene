@@ -390,6 +390,8 @@ export default defineSchema({
   fees: defineTable({
     key: v.string(),
     label: v.string(),
+    /** A line under the label: what the fee pays for. */
+    description: v.optional(v.string()),
     price: v.number(),
     editedAt: v.optional(v.number()),
   }).index("by_key", ["key"]),

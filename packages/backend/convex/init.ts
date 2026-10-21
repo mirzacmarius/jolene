@@ -68,6 +68,7 @@ export const seed = internalAction({
       fees: Object.entries(fees).map(([key, fee]) => ({
         key,
         label: fee.label,
+        description: fee.description,
         price: bani(fee.price),
       })),
     });

@@ -26,7 +26,12 @@ export const shelves = internalMutation({
       }),
     ),
     fees: v.array(
-      v.object({ key: v.string(), label: v.string(), price: v.number() }),
+      v.object({
+        key: v.string(),
+        label: v.string(),
+        description: v.optional(v.string()),
+        price: v.number(),
+      }),
     ),
   },
   returns: v.null(),

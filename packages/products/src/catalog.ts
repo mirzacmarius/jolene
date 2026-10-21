@@ -84,8 +84,8 @@ export type Catalog = {
 
 /**
  * The one-off charges jolene.ro's descriptions mention, each a variant of a
- * product of its own that the shop adds at quantity one, and what an order
- * calls it.
+ * product of its own that the shop adds at quantity one, and what a couple
+ * reads of it when they order.
  */
 export const fees = {
   "diacritice-50": {
@@ -93,18 +93,21 @@ export const fees = {
     variant: "50 lei",
     price: 50,
     label: "Diacritice",
+    description: "Textul tipărit cu diacritice, o dată pe comandă.",
   },
   "diacritice-10": {
     product: "diacritice",
     variant: "10 lei",
     price: 10,
     label: "Diacritice",
+    description: "Textul tipărit cu diacritice, o dată pe comandă.",
   },
   "comanda-urgenta": {
     product: "comanda-urgenta",
     variant: "200 lei",
     price: 200,
     label: "Comandă urgentă",
+    description: "Comanda lucrată în regim de urgență.",
   },
 } as const;
 
