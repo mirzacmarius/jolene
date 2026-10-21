@@ -128,7 +128,8 @@ export function TermsEn() {
         you are inviting and whose contact details you may use for that.
       </p>
       <p>
-        You can cancel a digital invitation you bought within 14 days, as{" "}
+        Before you pay for it, you agree in the cart that we unlock it right away. Once it is
+        unlocked, you can no longer withdraw from it, as{" "}
         <LegalLink language="en" page="returns">
           our returns policy
         </LegalLink>{" "}
@@ -311,8 +312,8 @@ export function TermsRo() {
         aveți dreptul să le folosiți pentru asta.
       </p>
       <p>
-        Puteți renunța la invitația digitală cumpărată în 14 zile, cum arată{" "}
-        <LegalLink language="ro" page="returns" />.
+        Înainte s-o plătiți, sunteți de acord în coș s-o deblocăm imediat. Odată deblocată, nu vă
+        mai puteți retrage de la ea, cum arată <LegalLink language="ro" page="returns" />.
       </p>
 
       <h2>Proprietate intelectuală</h2>

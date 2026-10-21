@@ -15,16 +15,22 @@ function describeError(error: unknown): string {
   if (code === errors.cartEmpty) return "Coșul e gol.";
   if (code === errors.cartNotReady) return "Rezolvă mai întâi produsele marcate în coș.";
   if (code === errors.tooMany) return "Prea multe încercări. Mai încearcă peste câteva minute.";
+  if (code === errors.unlockNowNeeded)
+    return "Bifează că vrei invitația digitală deblocată imediat după plată.";
   return "Nu am putut deschide plata. Încearcă din nou.";
 }
 
 // Sends the couple to Stripe's page for their cart as Convex prices it now, or says why not.
-export async function checkoutAction(_previous: string | undefined): Promise<string | undefined> {
+export async function checkoutAction(
+  _previous: string | undefined,
+  form: FormData,
+): Promise<string | undefined> {
   const token = (await cookies()).get(CART_COOKIE)?.value;
   if (!token) return describeError(new ConvexError(errors.cartEmpty));
+  const unlockNow = form.get("unlockNow") === "on";
   let url: string;
   try {
-    url = await fetchAction(api.checkout.start, { language: "ro", token });
+    url = await fetchAction(api.checkout.start, { language: "ro", token, unlockNow });
   } catch (error) {
     return describeError(error);
   }

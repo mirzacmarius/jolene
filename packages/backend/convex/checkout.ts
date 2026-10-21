@@ -49,12 +49,18 @@ const KEEP_UNPAID = 30 * 24 * 60 * 60 * 1000;
 /**
  * Prices a cart for Stripe and keeps it as a checkout: what the couple pays
  * for, and what their order holds once they have. Refuses a cart with
- * nothing in it, or with a line that can't be ordered as it is.
+ * nothing in it, with a line that can't be ordered as it is, or with a
+ * digital invitation to pay for that the couple hasn't agreed to unlock
+ * right away.
  */
 export const prepare = internalMutation({
-  args: { token: v.string(), language: languageValidator },
+  args: {
+    token: v.string(),
+    language: languageValidator,
+    unlockNow: v.optional(v.boolean()),
+  },
   returns: checkoutForStripeValidator,
-  handler: async (ctx, { token, language }) => {
+  handler: async (ctx, { token, language, unlockNow }) => {
     const cart = await findCart(ctx, token);
     if (!cart) throw new ConvexError(errors.cartEmpty);
     const limit = await rateLimiter.limit(ctx, "checkout", { key: cart._id });
@@ -65,6 +71,8 @@ export const prepare = internalMutation({
     if (priced.lines.length === 0) throw new ConvexError(errors.cartEmpty);
     if (priced.lines.some((line) => line.problems.length > 0))
       throw new ConvexError(errors.cartNotReady);
+    if (priced.unlockNow && !unlockNow)
+      throw new ConvexError(errors.unlockNowNeeded);
     const lines = priced.lines.map((line) => ({
       product: line.handle,
       title: line.title,
@@ -85,6 +93,7 @@ export const prepare = internalMutation({
       fees: priced.fees,
       subtotal: priced.total,
       language,
+      ...(priced.unlockNow && { unlockNowAt: Date.now() }),
     });
     return {
       id,
@@ -106,18 +115,24 @@ export const prepare = internalMutation({
 /**
  * Opens Stripe's checkout page for a cart, priced as it is now, and returns
  * its address: the shop's server sends the couple there. Stripe Tax works
- * out the VAT in it once it's set up in Jolene's Stripe account.
+ * out the VAT in it once it's set up in Jolene's Stripe account. `unlockNow`
+ * is the couple's tick in the cart, agreeing to unlock right away the
+ * digital invitation they pay for.
  */
 export const start = action({
-  args: { token: v.string(), language: languageValidator },
+  args: {
+    token: v.string(),
+    language: languageValidator,
+    unlockNow: v.optional(v.boolean()),
+  },
   returns: v.string(),
-  handler: async (ctx, { token, language }): Promise<string> => {
+  handler: async (ctx, { token, language, unlockNow }): Promise<string> => {
     const shop = shopUrl();
     if (!checkoutOpen() || !shop)
       throw new ConvexError(errors.checkoutUnavailable);
     const checkout: CheckoutForStripe = await ctx.runMutation(
       internal.checkout.prepare,
-      { token, language },
+      { token, language, unlockNow },
     );
     const client = stripe();
     const vat = await stripeTaxReady(client);

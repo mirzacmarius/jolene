@@ -17,7 +17,10 @@ export function ReturnsEn() {
           your money back, at our cost.
         </li>
         <li>You can return products that are not personalised within 14 days, without a reason.</li>
-        <li>You can cancel a digital invitation you bought within 14 days.</li>
+        <li>
+          A digital invitation you buy is unlocked right after payment, as you agree before paying,
+          and can no longer be cancelled after that.
+        </li>
       </ul>
 
       <h2>The right of withdrawal</h2>
@@ -64,10 +67,17 @@ export function ReturnsEn() {
 
       <h3>The digital invitation</h3>
       <p>
-        We unlock the digital invitation as soon as your payment is confirmed. You can cancel one
-        you bought within 14 days of buying it, without giving a reason: email us at <EmailLink />{" "}
-        with your order number and we refund you in full, by the same means of payment, within 14
-        days. Once refunded, the invitation may close again to every family after the first three.
+        Before you pay for a digital invitation, you tick in the cart that you want it unlocked
+        right after payment and that you understand you then lose the right to withdraw from it. We
+        unlock it as soon as your payment is confirmed, so from then on you can no longer withdraw
+        (Article 16(a) and (m) of Ordinance no. 34/2014). The email confirming your order also
+        confirms your agreement. One that comes free with printed invitations costs nothing, so you
+        are asked for no agreement.
+      </p>
+      <p>
+        If it does not work as it should, email us: we put it right, and if we cannot, we refund you
+        in full or in part, under Government Emergency Ordinance no. 141/2021 on digital content and
+        digital services.
       </p>
 
       <h2>Faulty or damaged products</h2>
@@ -133,7 +143,10 @@ export function ReturnsRo() {
           banii înapoi, pe cheltuiala noastră.
         </li>
         <li>Produsele nepersonalizate le puteți returna în 14 zile, fără să ne spuneți motivul.</li>
-        <li>La invitația digitală cumpărată puteți renunța în 14 zile.</li>
+        <li>
+          Invitația digitală cumpărată o deblocăm imediat după plată, cum vă dați acordul înainte să
+          plătiți, iar după aceea nu mai puteți renunța la ea.
+        </li>
       </ul>
 
       <h2>Dreptul de retragere</h2>
@@ -180,11 +193,16 @@ export function ReturnsRo() {
 
       <h3>Invitația digitală</h3>
       <p>
-        Invitația digitală o deblocăm imediat ce plata este confirmată. La cea cumpărată puteți
-        renunța în 14 zile de la cumpărare, fără să vă motivați decizia: scrieți-ne la <EmailLink />{" "}
-        cu numărul comenzii și vă rambursăm integral, prin aceeași metodă de plată, în cel mult 14
-        zile. După rambursare, invitația se poate închide din nou pentru familiile de după primele
-        trei.
+        Înainte să plătiți invitația digitală, bifați în coș că vreți s-o deblocăm imediat după
+        plată și că înțelegeți că astfel pierdeți dreptul de retragere. O deblocăm imediat ce plata
+        este confirmată, așa că de atunci nu vă mai puteți retrage (art. 16 lit. a și m din OUG nr.
+        34/2014). Emailul care vă confirmă comanda vă confirmă și acordul. Cea primită gratuit cu
+        invitațiile tipărite nu costă nimic, așa că nu vă cerem acordul.
+      </p>
+      <p>
+        Dacă nu funcționează cum trebuie, scrieți-ne: o reparăm, iar dacă nu putem, vă rambursăm
+        integral sau parțial, conform OUG nr. 141/2021 privind conținutul digital și serviciile
+        digitale.
       </p>
 
       <h2>Produse neconforme sau deteriorate</h2>

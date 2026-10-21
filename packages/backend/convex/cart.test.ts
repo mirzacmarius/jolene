@@ -408,6 +408,7 @@ describe("the digital invitation", () => {
     await t.mutation(api.cart.add, forEvent(design.eventId));
     expect(await invitationLine()).toMatchObject({ price, total: price });
     expect(await invitationLine()).not.toHaveProperty("freeWithPrinted");
+    expect((await t.query(api.cart.get, { token }))?.unlockNow).toBe(true);
 
     // The invitations they print open it to every guest once paid for.
     await t.mutation(api.cart.add, { ...roses, proofId });
@@ -421,6 +422,8 @@ describe("the digital invitation", () => {
     const cart = await t.query(api.cart.get, { token });
     const prints = cart?.lines.find((line) => line.handle === roses.handle);
     expect(cart?.total).toBe((prints?.total ?? 0) + 5_000);
+    // Free, it leaves nothing to withdraw from: no agreement to ask for.
+    expect(cart?.unlockNow).toBe(false);
     const checkout = await t.mutation(internal.checkout.prepare, {
       token,
       language: "ro",

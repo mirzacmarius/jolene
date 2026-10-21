@@ -95,6 +95,9 @@ export const record = internalMutation({
       ...(session.vat !== undefined && { vat: session.vat }),
       customer: session.customer,
       ...(session.address && { address: session.address }),
+      ...(checkout.unlockNowAt !== undefined && {
+        unlockNowAt: checkout.unlockNowAt,
+      }),
       paidAt: Date.now(),
       status: firstStatus(session.delivery !== undefined),
     });

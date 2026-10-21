@@ -474,6 +474,11 @@ export default defineSchema({
     /** The lines and the fees together, in bani, before delivery and discounts. */
     subtotal: v.number(),
     language: languageValidator,
+    /**
+     * When the couple agreed to unlock right away the digital invitation it
+     * charges for, which ends their 14 days to withdraw from it.
+     */
+    unlockNowAt: v.optional(v.number()),
   }),
 
   /**
@@ -509,6 +514,8 @@ export default defineSchema({
     vat: v.optional(v.number()),
     customer: customerValidator,
     address: v.optional(addressValidator),
+    /** When the couple agreed, before paying, to unlock its digital invitation right away. */
+    unlockNowAt: v.optional(v.number()),
     paidAt: v.number(),
     /**
      * Where it is between paid and in the couple's hands. Orders paid before
