@@ -10,6 +10,7 @@ This storefront is jolene.ro, imported from the Vercel Shop template (its versio
 - The shop keeps the template's oxlint, oxfmt and TypeScript 7; Biome skips this folder.
 - Environment variables are declared in the root `turbo.json`, under the build task's `env`.
 - `/studio` belongs to the designer (`apps/studio`), another app on this domain: `microfrontends.json` routes it there before this app sees the request. Link to it with a plain `<a>`, never `Link`, so the browser loads the other app.
+- Order options, extras, fees and minimum orders (ADR 0008) come from the `jolene` metafields that `packages/products` writes, read in `lib/line-options/`. The product page puts the answers on the cart line as attributes; `useLineOptionsKeeper` keeps each product's extras line and the order's fee lines in step with it through Standard Actions, and the cart's checkout button refuses a cart under a product's minimum or with stale options. Quick shop stays off because almost every product asks for options.
 
 ## Three owners
 

@@ -70,7 +70,6 @@ async function ProductsGridContent({
           loading={index < eagerCount ? "eager" : "lazy"}
           product={product}
           outOfStockText={outOfStockText}
-          quickShopText="Choose"
         />
       ))}
     </div>

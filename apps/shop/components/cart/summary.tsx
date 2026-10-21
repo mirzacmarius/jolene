@@ -20,7 +20,7 @@ export function CartSummary({ cart }: CartSummaryProps) {
         <DiscountForm cart={cart} />
         <CartTotal cart={cart} />
       </div>
-      <CartCheckout label="Go to Checkout" />
+      <CartCheckout label="Mergi la plată" />
     </div>
   );
 }
@@ -37,19 +37,19 @@ export function CartTotal({ cart }: CartTotalProps) {
   return (
     <div
       aria-busy={isCostPending || undefined}
-      aria-label="Estimated total"
+      aria-label="Total estimat"
       className="grid gap-1"
       role="group"
     >
       <div className="flex items-baseline justify-between text-base text-foreground">
-        <span>Estimated total</span>
+        <span>Total estimat</span>
         {isCostPending || !currencyCode ? (
-          <span className="font-medium text-muted-foreground text-xl">Updating…</span>
+          <span className="font-medium text-muted-foreground text-xl">Se actualizează…</span>
         ) : (
           <Price amount={amount} className="font-medium text-xl" currencyCode={currencyCode} />
         )}
       </div>
-      <p className="text-muted-foreground text-xs">Taxes and shipping calculated at checkout.</p>
+      <p className="text-muted-foreground text-xs">Livrarea se calculează la plată.</p>
     </div>
   );
 }
@@ -58,7 +58,7 @@ interface CartCheckoutProps {
   label?: string;
 }
 
-export function CartCheckout({ label = "Checkout" }: CartCheckoutProps) {
+export function CartCheckout({ label = "Plătește" }: CartCheckoutProps) {
   const {
     checkoutError,
     checkoutErrorId,
@@ -80,7 +80,7 @@ export function CartCheckout({ label = "Checkout" }: CartCheckoutProps) {
         {isCheckingOut || isUpdatingCart ? (
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
         ) : null}
-        {isCheckingOut ? "Redirecting..." : isUpdatingCart ? "Updating cart..." : label}
+        {isCheckingOut ? "Te ducem la plată…" : isUpdatingCart ? "Se actualizează coșul…" : label}
       </Button>
       {checkoutError ? (
         <p className="text-xs text-destructive" id={checkoutErrorId} role="alert">

@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { CartProvider } from "@/lib/cart/client";
+import { useLineOptionsKeeper } from "@/lib/cart/line-options/client";
 
 interface CartDrawerContextValue {
   isOverlayOpen: boolean;
@@ -44,7 +45,13 @@ interface CartProviderWrapperProps {
 export function CartProviderWrapper({ cartData, children }: CartProviderWrapperProps) {
   return (
     <CartProvider initialData={cartData}>
+      <LineOptionsKeeper />
       <CartDrawerProvider>{children}</CartDrawerProvider>
     </CartProvider>
   );
+}
+
+function LineOptionsKeeper() {
+  useLineOptionsKeeper();
+  return null;
 }

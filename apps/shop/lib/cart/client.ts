@@ -37,9 +37,7 @@ export function useCheckout() {
     if (attempt.current && isUpdatingCart) {
       attempt.current = null;
       setIsCheckingOut(false);
-      setCheckoutError(
-        "Your cart changed. Wait for it to finish updating, then try checkout again.",
-      );
+      setCheckoutError("Coșul s-a schimbat. Așteaptă să se actualizeze, apoi încearcă din nou.");
     }
   }, [cartState, isUpdatingCart]);
 
@@ -64,19 +62,21 @@ export function useCheckout() {
     setIsCheckingOut(true);
 
     try {
-      const { checkoutUrl } = await prepareCheckoutAction();
+      const { checkoutUrl, problem } = await prepareCheckoutAction();
       if (attempt.current !== currentAttempt) return;
       if (latestCartState.current.data !== cart) {
-        setCheckoutError("Your cart changed. Please try checkout again.");
+        setCheckoutError("Coșul s-a schimbat. Încearcă din nou.");
+      } else if (problem) {
+        setCheckoutError(problem);
       } else if (!checkoutUrl) {
-        setCheckoutError("Checkout is unavailable. Refresh your cart and try again.");
+        setCheckoutError("Plata nu e disponibilă acum. Reîncarcă pagina și încearcă din nou.");
       } else {
         window.location.href = checkoutUrl;
         return;
       }
     } catch {
       if (attempt.current !== currentAttempt) return;
-      setCheckoutError("We couldn't start checkout. Please try again.");
+      setCheckoutError("Nu am putut porni plata. Încearcă din nou.");
     }
 
     attempt.current = null;

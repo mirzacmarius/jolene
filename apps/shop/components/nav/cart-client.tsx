@@ -4,18 +4,18 @@ import { HandbagIcon } from "lucide-react";
 
 import { useCartDrawer } from "@/components/cart/context";
 import { useCart } from "@/lib/cart/client";
+import { countProductLines } from "@/lib/line-options";
 
 interface CartIconClientProps {
   cartLabel: string;
-  initialCart: { totalQuantity: number } | null;
+  initialCount: number;
 }
 
-export function CartIconClient({ cartLabel, initialCart }: CartIconClientProps) {
-  const quantity = useCart((state) =>
-    state.loading
-      ? (initialCart?.totalQuantity ?? state.data.totalQuantity)
-      : state.data.totalQuantity,
-  );
+// Pieces run into the hundreds, so the badge counts products ordered, without their extras and fees.
+export function CartIconClient({ cartLabel, initialCount }: CartIconClientProps) {
+  const lines = useCart((state) => state.data.lines.nodes);
+  const loading = useCart((state) => state.loading);
+  const quantity = loading ? initialCount : countProductLines(lines);
   const { openOverlay } = useCartDrawer();
 
   return (

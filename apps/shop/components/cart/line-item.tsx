@@ -9,6 +9,13 @@ import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import { Link } from "@/components/ui/link";
 import { useCart } from "@/lib/cart/client";
 import type { CartLine } from "@/lib/cart/types";
+import {
+  EXTRAS_FOR_ATTRIBUTE,
+  getLineAttribute,
+  getLineRole,
+  LINE_ATTRIBUTE,
+  MAX_QUANTITY,
+} from "@/lib/line-options";
 import { formatPrice } from "@/lib/money";
 import { getLineProofId } from "@/lib/proof";
 import { useProof } from "@/lib/proof/client";
@@ -22,13 +29,36 @@ interface CartLineItemsProps {
 
 export function CartLineItems({ lines }: CartLineItemsProps) {
   const keys = getLineRowKeys(lines);
+  const extrasLines = getExtrasLines(lines);
+  const nested = new Set(extrasLines.values());
   return (
-    <ul className="grid gap-5" aria-label="Cart items">
-      {lines.map((line, index) => (
-        <CartLineItem key={keys[index]} item={line} />
-      ))}
+    <ul className="grid gap-5" aria-label="Produse în coș">
+      {lines.map((line, index) =>
+        nested.has(line) ? null : (
+          <CartLineItem
+            extras={extrasLines.get(getLineAttribute(line, LINE_ATTRIBUTE) ?? "")}
+            item={line}
+            key={keys[index]}
+          />
+        ),
+      )}
     </ul>
   );
+}
+
+// An extras line shows under its product line; one whose product line is gone shows alone until the cart removes it.
+function getExtrasLines(lines: CartLine[]) {
+  const products = new Set(
+    lines
+      .filter((line) => getLineRole(line) === "product")
+      .map((line) => getLineAttribute(line, LINE_ATTRIBUTE)),
+  );
+  const extrasLines = new Map<string, CartLine>();
+  for (const line of lines) {
+    const lineId = getLineAttribute(line, EXTRAS_FOR_ATTRIBUTE);
+    if (lineId && products.has(lineId) && !extrasLines.has(lineId)) extrasLines.set(lineId, line);
+  }
+  return extrasLines;
 }
 
 // Shopify replaces a new line's `optimistic:` ID on confirmation, so rows key by the identity Hydrogen matches lines on.
@@ -46,28 +76,36 @@ function getLineRowKeys(lines: CartLine[]) {
 }
 
 interface CartLineItemProps {
+  extras?: CartLine;
   item: CartLine;
 }
 
-function CartLineItem({ item }: CartLineItemProps) {
+function CartLineItem({ extras, item }: CartLineItemProps) {
   const isPending = useCart((state) => state.pending.lines.has(item.id));
   const isCostPending = useCart((state) =>
     Boolean(state.pending.cost || state.revalidating || state.pending.lines.has(item.id)),
   );
   const { cost, merchandise, quantity } = item;
   const instructions = "instructions" in item ? item.instructions : undefined;
-  const canUpdateQuantity = !(
-    instructions &&
-    typeof instructions === "object" &&
-    "canUpdateQuantity" in instructions &&
-    instructions.canUpdateQuantity === false
-  );
-  const canRemove = !(
-    instructions &&
-    typeof instructions === "object" &&
-    "canRemove" in instructions &&
-    instructions.canRemove === false
-  );
+  // The cart keeps extras and fee lines in step with their products, so only product lines take changes.
+  const role = getLineRole(item);
+  const canUpdateQuantity =
+    role === "product" &&
+    !(
+      instructions &&
+      typeof instructions === "object" &&
+      "canUpdateQuantity" in instructions &&
+      instructions.canUpdateQuantity === false
+    );
+  const canRemove =
+    role === "product" &&
+    !(
+      instructions &&
+      typeof instructions === "object" &&
+      "canRemove" in instructions &&
+      instructions.canRemove === false
+    );
+  const minQuantity = Math.max(1, Number(merchandise?.product.minQuantity?.value) || 1);
   const components = (item as HydrogenCartLine).lineComponents ?? [];
   const isOptimistic = item.id.startsWith("optimistic:");
   const currencyCode = cost.totalAmount.currencyCode;
@@ -76,8 +114,15 @@ function CartLineItem({ item }: CartLineItemProps) {
   const compareAtUnitPrice = Number(cost.compareAtAmountPerQuantity?.amount ?? 0);
   const originalUnitPrice =
     finalUnitPrice < sellingUnitPrice ? sellingUnitPrice : compareAtUnitPrice;
-  const title = merchandise?.product.title || "Cart item";
-  const href = merchandise?.product.handle ? `/products/${merchandise.product.handle}` : undefined;
+  const title = merchandise?.product.title || "Produs";
+  // Shopify gives a product without variants one synthetic Title/Default Title option.
+  const variantOptions = (merchandise?.selectedOptions ?? []).filter(
+    (option) => !(option.name === "Title" && option.value === "Default Title"),
+  );
+  const href =
+    role === "product" && merchandise?.product.handle
+      ? `/products/${merchandise.product.handle}`
+      : undefined;
   const attributes = item.attributes ?? [];
   const proof = useProof(getLineProofId(attributes));
   const image = merchandise?.image;
@@ -118,9 +163,9 @@ function CartLineItem({ item }: CartLineItemProps) {
             ) : (
               <h3 className="line-clamp-1 text-sm font-medium text-foreground">{title}</h3>
             )}
-            {merchandise?.selectedOptions?.length ? (
+            {variantOptions.length ? (
               <p className="text-xs text-muted-foreground">
-                {merchandise.selectedOptions.map((option) => option.value).join(" / ")}
+                {variantOptions.map((option) => option.value).join(" / ")}
               </p>
             ) : null}
             {attributes
@@ -132,13 +177,14 @@ function CartLineItem({ item }: CartLineItemProps) {
               ))}
             {item.sellingPlanAllocation ? (
               <p className="text-xs text-muted-foreground">
-                {item.sellingPlanAllocation.sellingPlan.name || "Subscription"}
+                {item.sellingPlanAllocation.sellingPlan.name || "Abonament"}
               </p>
             ) : null}
+            {extras ? <CartLineExtras line={extras} /> : null}
           </div>
           {components.length ? (
             <div className="grid gap-1">
-              <p className="text-xs font-medium text-muted-foreground">Bundle Includes</p>
+              <p className="text-xs font-medium text-muted-foreground">Pachetul conține</p>
               <ul className="grid gap-0.5">
                 {components.map((component) => (
                   <li
@@ -146,7 +192,7 @@ function CartLineItem({ item }: CartLineItemProps) {
                     className="flex items-center gap-1.5 text-xs text-muted-foreground"
                   >
                     <span className="truncate">
-                      {component.merchandise?.product.title || "Bundle item"}
+                      {component.merchandise?.product.title || "Produs din pachet"}
                     </span>
                     {component.quantity > 1 ? <span>×{component.quantity}</span> : null}
                   </li>
@@ -155,58 +201,65 @@ function CartLineItem({ item }: CartLineItemProps) {
             </div>
           ) : null}
         </div>
-        <CartLineForm
-          className="flex items-center gap-1.5 self-end"
-          lineId={item.id}
-          minQuantity={canRemove ? 0 : 1}
-        >
-          {(register) => (
-            <>
-              <div
-                aria-label="Item quantity"
-                className="grid h-6 grid-cols-[1.75rem_1.5rem_1.75rem] rounded-full ring-1 ring-border ring-inset"
-                role="group"
-              >
-                <button
-                  {...register("decrease")}
-                  type="submit"
-                  aria-label="Decrease quantity"
-                  className="flex h-6 cursor-pointer items-center justify-center p-0 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={isOptimistic || !canUpdateQuantity || quantity <= 1}
+        {role === "product" ? (
+          <CartLineForm
+            className="flex items-center gap-1.5 self-end"
+            lineId={item.id}
+            minQuantity={minQuantity}
+            removable={canRemove}
+          >
+            {(register) => (
+              <>
+                <div
+                  aria-label="Cantitate"
+                  className="grid h-6 grid-cols-[1.75rem_2.25rem_1.75rem] rounded-full ring-1 ring-border ring-inset"
+                  role="group"
                 >
-                  <MinusIcon className="size-3 shrink-0" />
-                </button>
-                <input
-                  key={quantity}
-                  {...register("quantity", { interactive: true, value: quantity })}
-                  aria-label="Item quantity"
-                  className="h-6 w-6 rounded-full bg-transparent text-center text-xs font-medium tabular-nums outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed"
-                  disabled={isOptimistic || !canUpdateQuantity}
-                  max={99}
-                  min={canRemove ? 0 : 1}
-                />
+                  <button
+                    {...register("decrease")}
+                    type="submit"
+                    aria-label="Scade cantitatea"
+                    className="flex h-6 cursor-pointer items-center justify-center p-0 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={isOptimistic || !canUpdateQuantity || quantity <= minQuantity}
+                  >
+                    <MinusIcon className="size-3 shrink-0" />
+                  </button>
+                  <input
+                    key={quantity}
+                    {...register("quantity", { interactive: true, value: quantity })}
+                    aria-label="Cantitate"
+                    className="h-6 w-9 rounded-full bg-transparent text-center text-xs font-medium tabular-nums outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed"
+                    disabled={isOptimistic || !canUpdateQuantity}
+                    max={MAX_QUANTITY}
+                    min={canRemove ? 0 : minQuantity}
+                  />
+                  <button
+                    {...register("increase")}
+                    type="submit"
+                    aria-label="Crește cantitatea"
+                    className="flex h-6 cursor-pointer items-center justify-center p-0 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={isOptimistic || !canUpdateQuantity || quantity >= MAX_QUANTITY}
+                  >
+                    <PlusIcon className="size-3 shrink-0" />
+                  </button>
+                </div>
                 <button
-                  {...register("increase")}
+                  {...register("remove")}
                   type="submit"
-                  aria-label="Increase quantity"
-                  className="flex h-6 cursor-pointer items-center justify-center p-0 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={isOptimistic || !canUpdateQuantity || quantity >= 99}
+                  className="flex cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={isOptimistic || !canRemove}
+                  aria-label="Scoate din coș"
                 >
-                  <PlusIcon className="size-3 shrink-0" />
+                  <Trash2Icon className="size-4" />
                 </button>
-              </div>
-              <button
-                {...register("remove")}
-                type="submit"
-                className="flex cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-                disabled={isOptimistic || !canRemove}
-                aria-label="Remove item"
-              >
-                <Trash2Icon className="size-4" />
-              </button>
-            </>
-          )}
-        </CartLineForm>
+              </>
+            )}
+          </CartLineForm>
+        ) : (
+          <p className="self-end text-xs text-muted-foreground">
+            {role === "fee" ? "O dată pe comandă" : `${quantity} buc.`}
+          </p>
+        )}
         <CartWarnings lineId={item.id} />
       </div>
       <div className="grid gap-0.5 self-start py-0.5 text-right font-mono text-sm tabular-nums tracking-tight">
@@ -214,7 +267,7 @@ function CartLineItem({ item }: CartLineItemProps) {
           className="font-medium text-foreground data-[pending=true]:text-muted-foreground"
           data-pending={isCostPending || !currencyCode}
         >
-          {isCostPending || !currencyCode ? "Updating…" : price(finalUnitPrice)}
+          {isCostPending || !currencyCode ? "Se actualizează…" : price(finalUnitPrice)}
         </span>
         {!isCostPending && currencyCode && originalUnitPrice > finalUnitPrice ? (
           <span className="text-xs text-muted-foreground line-through">
@@ -223,5 +276,19 @@ function CartLineItem({ item }: CartLineItemProps) {
         ) : null}
       </div>
     </li>
+  );
+}
+
+function CartLineExtras({ line }: { line: CartLine }) {
+  const isPending = useCart((state) =>
+    Boolean(state.pending.cost || state.revalidating || state.pending.lines.has(line.id)),
+  );
+  return (
+    <p
+      className="text-xs text-muted-foreground data-[pending=true]:opacity-50"
+      data-pending={isPending}
+    >
+      Opțiuni suplimentare: +{formatPrice(line.cost.amountPerQuantity)}/buc.
+    </p>
   );
 }

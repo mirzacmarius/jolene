@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useCart } from "@/lib/cart/client";
+import { countProductLines } from "@/lib/line-options";
 
 import { useCartDrawer } from "./context";
 import { CartLineItems } from "./line-item";
@@ -19,7 +20,8 @@ import { CartSummary } from "./summary";
 import { CartWarnings } from "./warnings";
 
 function CartCountBadge() {
-  const count = useCart((state) => state.data.totalQuantity);
+  const lines = useCart((state) => state.data.lines.nodes);
+  const count = countProductLines(lines);
   if (count === 0) return null;
   return (
     <span className="flex size-5 items-center justify-center rounded-full bg-foreground text-xs text-background">
@@ -45,7 +47,7 @@ export function CartOverlay({ description, title }: CartOverlayProps) {
             <CartCountBadge />
           </div>
           <SheetClose
-            aria-label="Close cart"
+            aria-label="Închide coșul"
             className="flex cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
           >
             <XIcon className="size-5" />
@@ -67,7 +69,7 @@ function OverlayContent() {
     return (
       <div className="flex h-full items-center justify-center gap-2.5" role="status">
         <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-        Loading cart…
+        Se încarcă coșul…
       </div>
     );
   }
@@ -76,7 +78,7 @@ function OverlayContent() {
       <div className="flex h-full flex-col gap-5 px-2.5">
         <CartWarnings />
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <h3 className="mb-6 text-2xl">Your cart is empty</h3>
+          <h3 className="mb-6 text-2xl">Coșul e gol</h3>
           <Button
             onClick={() => {
               setOverlayOpen(false);
@@ -84,7 +86,7 @@ function OverlayContent() {
             }}
             className="h-12 px-8"
           >
-            Continue Shopping
+            Înapoi la magazin
           </Button>
         </div>
       </div>
