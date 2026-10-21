@@ -569,10 +569,10 @@ describe("checkout.confirm", () => {
 });
 
 describe("Stripe's webhook", () => {
-  /** A webhook event of a session, signed with `secret`. */
+  /** A webhook event about a session or a refund, signed with `secret`. */
   async function event(
     type: string,
-    session: Record<string, unknown>,
+    object: Record<string, unknown>,
     secret = webhookSecret,
   ) {
     const payload = JSON.stringify({
@@ -584,7 +584,7 @@ describe("Stripe's webhook", () => {
       livemode: false,
       pending_webhooks: 1,
       request: { id: null, idempotency_key: null },
-      data: { object: session },
+      data: { object },
     });
     const signature = await Stripe.webhooks.generateTestHeaderStringAsync({
       payload,
@@ -647,6 +647,95 @@ describe("Stripe's webhook", () => {
       await event("checkout.session.async_payment_succeeded", session),
     );
     expect(await orders(t)).toHaveLength(1);
+  });
+
+  test("keeps a refund made in Stripe's dashboard on its order, as Stripe has it", async () => {
+    const setup = await withCart();
+    const { t, stripe } = setup;
+    const session = await paid(setup);
+    await t.fetch(
+      "/stripe-webhook",
+      await event("checkout.session.completed", session),
+    );
+    const refund = stripe.refundFromDashboard(
+      String(session.payment_intent),
+      10_000,
+    );
+    const refunds = () => t.run((ctx) => ctx.db.query("refunds").take(10));
+    // The event's copy is older than what Stripe says now.
+    const response = await t.fetch(
+      "/stripe-webhook",
+      await event("refund.created", { ...refund, status: "pending" }),
+    );
+    expect(response.status).toBe(200);
+    const [recorded] = await orders(t);
+    expect(recorded?.refunded).toBe(10_000);
+    expect(await refunds()).toEqual([
+      expect.objectContaining({
+        orderId: recorded?._id,
+        stripeId: refund.id,
+        amount: 10_000,
+        status: "succeeded",
+        createdAt: refund.created * 1000,
+      }),
+    ]);
+    expect((await refunds())[0]).not.toHaveProperty("by");
+    expect(
+      await t.query(api.orders.byToken, { token: recorded?.token ?? "" }),
+    ).toMatchObject({ refunded: 10_000 });
+
+    // The card's bank sent it back: nothing was given back after all.
+    stripe.settle(refund.id, "failed");
+    await t.fetch(
+      "/stripe-webhook",
+      await event("refund.failed", { ...refund }),
+    );
+    expect((await orders(t))[0]?.refunded).toBe(0);
+    expect(await refunds()).toMatchObject([{ status: "failed" }]);
+    expect(
+      await t.query(api.orders.byToken, { token: recorded?.token ?? "" }),
+    ).not.toHaveProperty("refunded");
+  });
+
+  test("leaves a refund of a payment that isn't one of its orders alone", async () => {
+    const { t, stripe } = await withCart();
+    stripe.charge("pi_elsewhere", 5000);
+    const refund = stripe.refundFromDashboard("pi_elsewhere", 5000);
+    const asked = stripe.requests.length;
+    const response = await t.fetch(
+      "/stripe-webhook",
+      await event("refund.created", { ...refund }),
+    );
+    expect(response.status).toBe(200);
+    expect(stripe.requests).toHaveLength(asked);
+    expect(await t.run((ctx) => ctx.db.query("refunds").take(10))).toEqual([]);
+  });
+
+  test("says once when Stripe's key may not read a refund", async () => {
+    const setup = await withCart();
+    const { t, stripe } = setup;
+    const session = await paid(setup);
+    await t.fetch(
+      "/stripe-webhook",
+      await event("checkout.session.completed", session),
+    );
+    const refund = stripe.refundFromDashboard(
+      String(session.payment_intent),
+      10_000,
+    );
+    stripe.forbidRefunds();
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    // Answered, so Stripe doesn't send it again for days.
+    const response = await t.fetch(
+      "/stripe-webhook",
+      await event("refund.created", { ...refund }),
+    );
+    expect(response.status).toBe(200);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("Refunds' permission"),
+    );
+    warn.mockRestore();
+    expect((await orders(t))[0]).not.toHaveProperty("refunded");
   });
 
   test("refuses an event Stripe didn't sign", async () => {

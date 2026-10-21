@@ -74,6 +74,18 @@ export const errors = {
   workshopOnly: "workshop-only",
   /** Someone else changed the order's status first: the page shows theirs. */
   orderMoved: "order-moved",
+  /**
+   * Stripe's key on the deployment may not refund: it needs Refunds' write
+   * permission. Refunds can still be made in Stripe's dashboard.
+   */
+  refundNotAllowed: "refund-not-allowed",
+  /** Stripe refused the refund, such as for more than is left to give back. */
+  refundRefused: "refund-refused",
+  /**
+   * Someone else asked for the same refund of the order a moment before:
+   * Stripe makes it once, and the order's page shows it.
+   */
+  sameRefund: "same-refund",
   /** Booking couriers isn't set up on this deployment yet (no Colete Online keys). */
   courierUnavailable: "courier-unavailable",
   /** The order's courier is booked already, or being booked. */

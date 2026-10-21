@@ -292,6 +292,8 @@ const orderViewValidator = v.object({
   pickupAt: v.optional(v.string()),
   /** Where it is, as the workshop last marked it. */
   status: orderStatusValidator,
+  /** What Stripe has given back of the total, in bani, once it has. */
+  refunded: v.optional(v.number()),
   /** The invoice's PDF, once SmartBill issued it, as JOL 0042. */
   invoice: v.optional(v.object({ name: v.string(), url: v.string() })),
   /** The credit note's, once a refund reversed the invoice. */
@@ -362,6 +364,7 @@ export const byToken = query({
       ...(order.address && { address: order.address }),
       ...(order.delivery?.key === "pickup" && { pickupAt: WORKSHOP_ADDRESS }),
       status: statusOf(order),
+      ...(order.refunded ? { refunded: order.refunded } : {}),
       ...(invoice && { invoice }),
       ...(creditNote && { creditNote }),
       ...(shipment?.status === "booked" &&
