@@ -343,7 +343,7 @@ export default defineSchema({
     questions: questionsValidator,
     /** The couple's words under the invitation, such as where to park. */
     note: v.optional(v.string()),
-    /** Set once it's paid for, or free with printed invitations. */
+    /** Set once it's paid for, free with printed invitations, or opened by hand. */
     unlocked: v.optional(unlockValidator),
     /** The code of the link a partner joins the event by, while there's one. */
     partnerCode: v.optional(v.string()),

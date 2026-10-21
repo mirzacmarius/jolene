@@ -60,15 +60,17 @@ export const questionsValidator = v.object({
 export type Questions = Infer<typeof questionsValidator>;
 
 /**
- * How a digital invitation opens to guests: paid for, or free with printed
- * invitations, by the order that did it.
+ * How a digital invitation opened to guests: paid for, free with printed
+ * invitations, or by Jolene's team by hand.
  */
 export const unlockValidator = v.object({
-  by: v.union(v.literal("order"), v.literal("print")),
-  /** The Shopify order's name, such as #1042. */
+  by: v.union(v.literal("order"), v.literal("print"), v.literal("hand")),
+  /** The order's number, or Jolene's note on an unlock by hand. */
   order: v.string(),
   at: v.number(),
 });
+
+export type Unlock = Infer<typeof unlockValidator>;
 
 /** Where an email to a family has got to, as Resend tells it. */
 export const emailStatusValidator = v.union(

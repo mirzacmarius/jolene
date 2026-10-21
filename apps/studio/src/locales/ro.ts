@@ -615,6 +615,7 @@ export default {
     unlocked: "Deschisă tuturor invitaților",
     unlockedOrder: "Deblocată cu comanda {order}.",
     unlockedPrint: "Gratuită cu invitațiile tipărite, comanda {order}.",
+    unlockedHand: "Deblocată de echipa Jolene.",
     unlock: "Deblocați-o",
     notOnline:
       "Magazinul nu vinde încă invitația digitală online. Scrieți-ne și o deblocăm noi.",

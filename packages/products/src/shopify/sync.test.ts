@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import type { Catalog } from "../catalog";
 import { readCatalog } from "../files";
 import type { Document } from "./documents";
-import { digitalInvitation } from "../digital-invitation";
 import { extras, feeHandles, keys, types } from "./inputs";
 import { type Mode, type Store, type SyncOptions, sync } from "./sync";
 
@@ -352,11 +351,7 @@ describe("sync", () => {
     expect(metafields.find((m) => m.key === keys.minQuantity)?.value).toBe(
       "30",
     );
-    for (const handle of [
-      ...feeHandles,
-      extras.handle,
-      digitalInvitation.handle,
-    ])
+    for (const handle of [...feeHandles, extras.handle])
       expect(store.products.get(handle)?.status).toBe("DRAFT");
 
     // Products wait in the sales channel; the categories wait for the sale.
@@ -398,11 +393,7 @@ describe("sync", () => {
     expect(outcome.problems).toEqual([]);
     expect(store.products.get("18216")?.status).toBe("ACTIVE");
     expect(archived?.status).toBe("ARCHIVED");
-    for (const handle of [
-      ...feeHandles,
-      extras.handle,
-      digitalInvitation.handle,
-    ])
+    for (const handle of [...feeHandles, extras.handle])
       expect(store.products.get(handle)?.status).toBe("UNLISTED");
     for (const id of store.collections.values())
       expect(store.published.get(id)).toBe("gid://shopify/Publication/2");

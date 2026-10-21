@@ -231,9 +231,15 @@ export function InvitationPanel({
               <span className="font-medium">{t("invite.unlocked")}</span>
               <br />
               <span className="text-muted-foreground">
-                {invite.unlocked.by === "print"
-                  ? t("invite.unlockedPrint", { order: invite.unlocked.order })
-                  : t("invite.unlockedOrder", { order: invite.unlocked.order })}
+                {invite.unlocked.by === "hand"
+                  ? t("invite.unlockedHand")
+                  : invite.unlocked.by === "print"
+                    ? t("invite.unlockedPrint", {
+                        order: invite.unlocked.order,
+                      })
+                    : t("invite.unlockedOrder", {
+                        order: invite.unlocked.order,
+                      })}
               </span>
             </span>
           </p>

@@ -7,7 +7,6 @@ import { PurchaseOptions } from "@/components/product-detail/buy-buttons";
 import { BuyWithShopLogo } from "@/components/product-detail/buy-with-shop-logo";
 import { ComplementaryProducts } from "@/components/product-detail/complementary-products";
 import { GiftCardPurchaseForm } from "@/components/product-detail/gift-card-purchase-form";
-import { InvitationBuyButtons } from "@/components/product-detail/invitation-buy-buttons";
 import { LineOptionsFields, LineOptionsProvider } from "@/components/product-detail/line-options";
 import { ProductOpenGraph } from "@/components/product-detail/open-graph";
 import {
@@ -33,7 +32,6 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { shopConfig } from "@/lib/config";
-import { isDigitalInvitation } from "@/lib/digital-invitation";
 import type { ProductLineOptions } from "@/lib/line-options/types";
 import {
   getProductPurchaseOptions,
@@ -308,11 +306,6 @@ function ProductInfoContent({
           {hasOptions ? <ProductFormOptions handle={product.handle} /> : null}
           {product.isGiftCard ? (
             <GiftCardPurchaseForm />
-          ) : isDigitalInvitation(product.handle) ? (
-            <InvitationBuyButtons
-              availableForSale={product.availableForSale}
-              fallbackVariant={fallbackVariant}
-            />
           ) : (
             <>
               <LineOptionsFields />

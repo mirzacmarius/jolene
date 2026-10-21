@@ -613,6 +613,7 @@ export default {
     unlocked: "Open to every guest",
     unlockedOrder: "Unlocked with order {order}.",
     unlockedPrint: "Free with your printed invitations, order {order}.",
+    unlockedHand: "Unlocked by the Jolene team.",
     unlock: "Unlock it",
     notOnline:
       "The shop doesn't sell the digital invitation online yet. Write to us and we'll unlock it for you.",

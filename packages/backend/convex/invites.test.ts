@@ -8,17 +8,14 @@ import {
   test,
 } from "bun:test";
 import { eucaliptInvitation, eucalyptusArtwork } from "@jolene/design";
+import { digitalInvitation } from "@jolene/products/digital-invitation";
 import { exportJWK, exportPKCS8, generateKeyPair } from "jose";
 import { testConvex } from "../test/convex";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { isSlug, romanianDate, slugify, suggestedSlug } from "./invites/codes";
+import { type PaidLine, unlockPaid } from "./invites/unlock";
 import type { HouseholdInput, ReplyInput } from "./invites/validators";
-import {
-  DIGITAL_INVITE_SKU,
-  paidOrder,
-  signedByShopify,
-} from "./orders/shopify";
 
 const sample = {
   suite: {
@@ -356,17 +353,8 @@ describe("digital invitations", () => {
     expect((await open()).kind).toBe("locked");
     expect((await open("nothing1")).kind).toBe("not-found");
 
-    await t.mutation(internal.orders.paid, {
-      order: "#1001",
-      lines: [
-        {
-          sku: DIGITAL_INVITE_SKU,
-          quantity: 1,
-          event: (await eventOf(t, codes[0] as string)) as string,
-          proof: null,
-        },
-      ],
-    });
+    const event = await eventOf(t, codes[0] as string);
+    await paid(t, "1001", [{ ...bought, event: event ?? undefined }]);
     expect((await open(codes[3])).kind).toBe("ready");
     const general = await open();
     expect(general.kind).toBe("ready");
@@ -375,10 +363,9 @@ describe("digital invitations", () => {
 
   test("unlock only for the digital invitation's own product", async () => {
     const { t, eventId, codes } = await withInvite(4);
-    const unlocked = await t.mutation(internal.orders.paid, {
-      order: "#1002",
-      lines: [{ sku: "SOMETHING", quantity: 1, event: eventId, proof: null }],
-    });
+    const unlocked = await paid(t, "1002", [
+      { product: "invitatie-eucalipt", quantity: 1, event: eventId },
+    ]);
     expect(unlocked).toBe(0);
     const opened = await t.query(api.guests.open, {
       slug: "ana-si-mihai",
@@ -395,28 +382,40 @@ describe("digital invitations", () => {
       fields: names,
     });
     if (!approved.ok) throw new Error("not approved");
-    const line = { sku: null, event: null, proof: approved.proofId };
+    const line = { product: "invitatie-eucalipt", proof: approved.proofId };
     // A few cards are a sample, not the wedding's invitations.
-    expect(
-      await t.mutation(internal.orders.paid, {
-        order: "#1003",
-        lines: [{ ...line, quantity: 2 }],
-      }),
-    ).toBe(0);
-    expect(
-      await t.mutation(internal.orders.paid, {
-        order: "#1004",
-        lines: [{ ...line, quantity: 60 }],
-      }),
-    ).toBe(1);
+    expect(await paid(t, "1003", [{ ...line, quantity: 2 }])).toBe(0);
+    expect(await paid(t, "1004", [{ ...line, quantity: 60 }])).toBe(1);
+    // The same order again changes nothing.
+    expect(await paid(t, "1004", [{ ...line, quantity: 60 }])).toBe(0);
     const dashboard = await owner.as.query(api.invites.dashboard, { eventId });
     if (dashboard.kind !== "ready") throw new Error(dashboard.kind);
     expect(dashboard.invite?.unlocked).toMatchObject({
       by: "print",
-      order: "#1004",
+      order: "1004",
     });
     // Before the couple published a design, guests see nothing yet.
     expect(dashboard.invite?.published).toBeNull();
+  });
+
+  test("unlock by hand, for a couple who paid another way", async () => {
+    const { t, owner, eventId, codes } = await withInvite(4);
+    const byHand = (event: string, note: string) =>
+      t.mutation(internal.invites.unlock.byHand, { event, note });
+    expect(await byHand(` ${eventId} `, " Transfer 21.10 ")).toBe(true);
+    expect(await byHand(eventId, "Again")).toBe(false);
+    const opened = await t.query(api.guests.open, {
+      slug: "ana-si-mihai",
+      code: codes[3],
+    });
+    expect(opened.kind).toBe("ready");
+    const dashboard = await owner.as.query(api.invites.dashboard, { eventId });
+    if (dashboard.kind !== "ready") throw new Error(dashboard.kind);
+    expect(dashboard.invite?.unlocked).toMatchObject({
+      by: "hand",
+      order: "Transfer 21.10",
+    });
+    await expect(byHand("nothing", "")).rejects.toThrow("No event");
   });
 
   test("take a family's reply through their link, keeping each in the history", async () => {
@@ -491,12 +490,7 @@ describe("digital invitations", () => {
 
   test("add a family that replies through the open link", async () => {
     const { t, owner, eventId } = await withInvite();
-    await t.mutation(internal.orders.paid, {
-      order: "#1005",
-      lines: [
-        { sku: DIGITAL_INVITE_SKU, quantity: 1, event: eventId, proof: null },
-      ],
-    });
+    await paid(t, "1005", [{ ...bought, event: eventId }]);
     const code = await t.mutation(api.guests.join, {
       slug: "ana-si-mihai",
       name: "Familia Ionescu",
@@ -522,12 +516,7 @@ describe("digital invitations", () => {
 
   test("keep to personal links when the couple closes the open one", async () => {
     const { t, owner, inviteId, eventId } = await withInvite();
-    await t.mutation(internal.orders.paid, {
-      order: "#1006",
-      lines: [
-        { sku: DIGITAL_INVITE_SKU, quantity: 1, event: eventId, proof: null },
-      ],
-    });
+    await paid(t, "1006", [{ ...bought, event: eventId }]);
     await owner.as.mutation(api.invites.update, { inviteId, open: false });
     expect(
       (await t.query(api.guests.open, { slug: "ana-si-mihai" })).kind,
@@ -757,63 +746,17 @@ describe("links", () => {
   });
 });
 
-describe("Shopify's webhook", () => {
-  const secret = "shpss_test";
+/** The digital invitation, as a paid order's line carries it. */
+const bought = { product: digitalInvitation.handle, quantity: 1 };
 
-  async function sign(body: string) {
-    const key = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"],
-    );
-    const mac = await crypto.subtle.sign(
-      "HMAC",
-      key,
-      new TextEncoder().encode(body),
-    );
-    return Buffer.from(mac).toString("base64");
-  }
-
-  test("take only what the store signed", async () => {
-    const body = JSON.stringify({ name: "#1001", line_items: [] });
-    const signature = await sign(body);
-    expect(await signedByShopify(body, signature, secret)).toBe(true);
-    expect(await signedByShopify(`${body} `, signature, secret)).toBe(false);
-    expect(await signedByShopify(body, null, secret)).toBe(false);
-    expect(await signedByShopify(body, signature, "")).toBe(false);
-  });
-
-  test("read the lines that carry an event or a proof", () => {
-    expect(
-      paidOrder({
-        name: "#1001",
-        line_items: [
-          {
-            sku: DIGITAL_INVITE_SKU,
-            quantity: 1,
-            properties: [{ name: "_event", value: "event-1" }],
-          },
-          {
-            sku: "",
-            quantity: 60,
-            properties: [{ name: "_proof", value: "proof-1" }],
-          },
-          { sku: "OTHER", quantity: 1, properties: [] },
-        ],
-      }),
-    ).toEqual({
-      order: "#1001",
-      lines: [
-        { sku: DIGITAL_INVITE_SKU, quantity: 1, event: "event-1", proof: null },
-        { sku: "", quantity: 60, event: null, proof: "proof-1" },
-      ],
-    });
-    expect(paidOrder({ name: "#1" })).toBeNull();
-    expect(paidOrder("nothing")).toBeNull();
-  });
-});
+/** An order the checkout records as paid. */
+async function paid(
+  t: ReturnType<typeof testConvex>,
+  order: string,
+  lines: PaidLine[],
+) {
+  return await t.run((ctx) => unlockPaid(ctx, order, lines));
+}
 
 async function eventOf(t: ReturnType<typeof testConvex>, code: string) {
   return await t.run(async (ctx) => {

@@ -61,12 +61,6 @@ const app = defineApp({
      * address and their code. The studio's own /invitatie when unset.
      */
     INVITE_URL: v.optional(v.string()),
-    /**
-     * The signing secret of the store's webhooks (Shopify admin > Settings >
-     * Notifications > Webhooks), which proves an order came from Shopify: a
-     * paid order unlocks the digital invitation it was for (http.ts).
-     */
-    SHOPIFY_WEBHOOK_SECRET: v.optional(v.string()),
   },
 });
 

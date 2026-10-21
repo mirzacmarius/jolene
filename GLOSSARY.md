@@ -173,7 +173,7 @@ To make one of the event's invitation designs the one guests see. Later changes 
 _Avoid_: Share, send
 
 **Unlock** (ro: deblocați; code: unlocked):
-To open a digital invitation to every family on the list, by buying it in the shop or with the event's printed invitations. Before that it is **on trial** (ro: de probă): only the first three families can open it.
+To open a digital invitation to every family on the list, by buying it in the shop, with the event's printed invitations, or by Jolene's team by hand. Before that it is **on trial** (ro: de probă): only the first three families can open it.
 _Avoid_: Activate, upgrade
 
 **Account** (ro: cont):
