@@ -432,6 +432,36 @@ describe("checkout.confirm", () => {
     expect(stripe.requests).toHaveLength(asked);
     expect(await orders(t)).toEqual([]);
   });
+
+  test("records nothing for a session whose buyer named the checkout, as on a Payment Link", async () => {
+    const { t, stripe } = await withCart();
+    await t.action(api.checkout.start, { token, language: "ro" });
+    const opened = stripe.latest();
+    expect(opened.metadata).toEqual({ checkout: opened.client_reference_id });
+
+    // A Payment Link of the same Stripe account, 1 leu and nothing to send,
+    // opened with the checkout's id in its address: Stripe keeps that as
+    // the session's reference.
+    const link = {
+      ...opened,
+      id: "cs_test_paymentlink",
+      metadata: {},
+      amount_subtotal: 100,
+      shipping_address_collection: null,
+    };
+    stripe.sessions.set(link.id, link);
+    stripe.pay(link.id);
+    expect(
+      await t.action(api.checkout.confirm, { session: link.id }),
+    ).toBeNull();
+    expect(await orders(t)).toEqual([]);
+
+    stripe.pay(opened.id);
+    expect(
+      await t.action(api.checkout.confirm, { session: opened.id }),
+    ).toEqual(expect.any(String));
+    expect(await orders(t)).toHaveLength(1);
+  });
 });
 
 describe("Stripe's webhook", () => {
@@ -834,6 +864,7 @@ describe("paidSession", () => {
     status: "complete",
     payment_status: "paid",
     client_reference_id: "checkout",
+    metadata: { checkout: "checkout" },
     livemode: true,
     amount_subtotal: 1000,
     amount_total: 1000,
@@ -904,6 +935,11 @@ describe("paidSession", () => {
     expect(paidSession({ ...session, payment_status: "unpaid" })).toBeNull();
     expect(paidSession({ ...session, status: "open" })).toBeNull();
     expect(paidSession({ ...session, client_reference_id: null })).toBeNull();
+    // A reference the buyer set, as a Payment Link's address can.
+    expect(paidSession({ ...session, metadata: {} })).toBeNull();
+    expect(
+      paidSession({ ...session, metadata: { checkout: "another" } }),
+    ).toBeNull();
   });
 });
 

@@ -198,7 +198,12 @@ export function paidSession(
     session.status === "complete" &&
     (session.payment_status === "paid" ||
       session.payment_status === "no_payment_required");
-  if (!paid || !session.client_reference_id) return null;
+  // Convex names its checkout in both the reference and the metadata. The
+  // buyer of a Payment Link can set the reference in its address, never the
+  // metadata, so a session that lacks either isn't a checkout's.
+  const checkout = session.client_reference_id;
+  if (!paid || !checkout || session.metadata?.checkout !== checkout)
+    return null;
   const details = session.customer_details;
   const shipping = session.collected_information?.shipping_details;
   const address = shipping?.address;
@@ -210,7 +215,7 @@ export function paidSession(
       : session.payment_intent?.id;
   return {
     id: session.id,
-    checkout: session.client_reference_id,
+    checkout,
     ...(paymentIntent && { paymentIntent }),
     test: !session.livemode,
     customer: {
