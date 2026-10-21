@@ -104,6 +104,21 @@ const app = defineApp({
      * comma-separated. They open to no one while unset.
      */
     WORKSHOP_EMAILS: v.optional(v.string()),
+    /**
+     * The email address Jolene's SmartBill account signs in with. Paid
+     * orders get their invoice from SmartBill once it, SMARTBILL_TOKEN and
+     * SMARTBILL_SERIES are set; until then the team issues them by hand.
+     */
+    SMARTBILL_USERNAME: v.optional(v.string()),
+    /** SmartBill's API token, from Contul Meu > Integrări > API in SmartBill. */
+    SMARTBILL_TOKEN: v.optional(v.string()),
+    /** The SmartBill series the shop's invoices are numbered in, such as JOL. */
+    SMARTBILL_SERIES: v.optional(v.string()),
+    /**
+     * The tax code of the company issuing the invoices, as SmartBill has it:
+     * Jolene Design SRL's, RO49475720, when unset.
+     */
+    SMARTBILL_CIF: v.optional(v.string()),
   },
 });
 

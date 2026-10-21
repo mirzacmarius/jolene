@@ -23,6 +23,7 @@ import {
   billingValidator,
   customerValidator,
   deliveryValidator,
+  invoiceValidator,
   orderFeeValidator,
   orderLineValidator,
 } from "./orders/validators";
@@ -531,6 +532,10 @@ export default defineSchema({
      * haven't failed or been canceled. None before the first.
      */
     refunded: v.optional(v.number()),
+    /** Its invoice in SmartBill. None until SmartBill is set up. */
+    invoice: v.optional(invoiceValidator),
+    /** The invoice reversing it, once the order is refunded. */
+    creditNote: v.optional(invoiceValidator),
   })
     .index("by_number", ["number"])
     .index("by_token", ["token"])

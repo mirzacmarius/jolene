@@ -41,6 +41,11 @@ const words = {
     pickupNote: "Vă anunțăm când e gata de ridicat.",
     unlockNow:
       "Înainte de plată ați cerut să deblocăm invitația digitală imediat și ați luat la cunoștință că, odată deblocată, nu mai puteți renunța la ea în 14 zile.",
+    invoiceSubject: (name: string) => `Factura comenzii ${name} · Jolene`,
+    invoiceReady: (name: string, invoice: string) =>
+      `Factura comenzii ${name} e gata: ${invoice}.`,
+    invoiceButton: "Descărcați factura",
+    invoicePage: "O găsiți oricând și pe pagina comenzii",
     footer: "Jolene · jolene.ro",
   },
   en: {
@@ -64,6 +69,11 @@ const words = {
     pickupNote: "We'll let you know when it's ready.",
     unlockNow:
       "Before paying, you asked us to unlock the digital invitation right away, and acknowledged that once it's unlocked you can no longer withdraw from it within 14 days.",
+    invoiceSubject: (name: string) => `Invoice for order ${name} · Jolene`,
+    invoiceReady: (name: string, invoice: string) =>
+      `The invoice for order ${name} is ready: ${invoice}.`,
+    invoiceButton: "Download the invoice",
+    invoicePage: "You'll also find it on your order's page",
     footer: "Jolene · jolene.ro",
   },
 } as const;
@@ -381,6 +391,84 @@ export function noticeEmail(
   ];
   return {
     subject: `${testMark(order)}Comandă nouă ${name} · ${lei(order.total)} · ${customer.name}`,
+    text: lines.join("\n"),
+    html: lines
+      .map((line) =>
+        line
+          ? `<tr><td style="${sans}font-size:14px;line-height:22px;white-space:pre-wrap;">${escapeHtml(line)}</td></tr>`
+          : `<tr><td style="height:12px;"></td></tr>`,
+      )
+      .join("\n"),
+    footer: "Jolene · comenzi",
+  };
+}
+
+/**
+ * The couple's invoice, once SmartBill has issued it, in the language they
+ * paid in: its series and number, and the link that downloads its PDF.
+ */
+export function invoiceEmail(
+  order: Order,
+  invoice: string,
+  download: string,
+  link: string,
+) {
+  const w = words[order.language];
+  const name = orderName(order.number);
+  const ready = w.invoiceReady(name, invoice);
+  return {
+    subject: `${testMark(order)}${w.invoiceSubject(name)}`,
+    text: [
+      ready,
+      "",
+      `${w.invoiceButton}: ${download}`,
+      `${w.invoicePage}: ${link}`,
+      "",
+      w.footer,
+    ].join("\n"),
+    html: [
+      paragraph(ready),
+      button(download, w.invoiceButton),
+      `<tr><td style="padding-top:20px;${sans}font-size:14px;line-height:22px;${muted}"><a href="${escapeHtml(link)}" style="color:#5c544d;">${escapeHtml(w.invoicePage)}</a>.</td></tr>`,
+    ].join("\n"),
+    footer: escapeHtml(w.footer),
+  };
+}
+
+/**
+ * The team's notice, in Romanian, that SmartBill refused an order's invoice
+ * or credit note, or issued it with something to look at.
+ */
+export function invoiceNotice(
+  order: Order,
+  {
+    document,
+    issued,
+    problem,
+  }: {
+    document: "invoice" | "creditNote";
+    /** Its series and number, when SmartBill issued it. */
+    issued?: string;
+    problem: string;
+  },
+  link: string | null,
+) {
+  const name = orderName(order.number);
+  const what = document === "invoice" ? "Factura" : "Factura de stornare";
+  const lines = [
+    issued
+      ? `${what} comenzii ${name} e emisă în SmartBill (${issued}), dar: ${problem}`
+      : `SmartBill n-a emis ${what.toLowerCase()} comenzii ${name}: ${problem}`,
+    ...(issued
+      ? []
+      : ["", "Emiteți-o de mână în SmartBill, sau din nou din atelier."]),
+    "",
+    `Client: ${[order.customer.name, order.customer.email].filter(Boolean).join(" · ")}`,
+    `Total: ${lei(order.total)}`,
+    ...(link ? [`Pagina comenzii: ${link}`] : []),
+  ];
+  return {
+    subject: `${testMark(order)}${what} comenzii ${name} · de verificat`,
     text: lines.join("\n"),
     html: lines
       .map((line) =>

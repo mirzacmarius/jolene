@@ -17,6 +17,8 @@ import {
   sendEmail,
   sender,
 } from "./emails";
+import { invoiceName } from "./invoices";
+import { smartBill } from "./invoices/smartbill";
 import { inviteOf } from "./invites/access";
 import { randomCode } from "./invites/codes";
 import { eventForShop } from "./invites/shop";
@@ -117,6 +119,12 @@ export const record = internalMutation({
       );
     }
     await ctx.scheduler.runAfter(0, internal.orders.sendEmails, { orderId });
+    if (smartBill())
+      await ctx.scheduler.runAfter(0, internal.invoices.issue, { orderId });
+    else
+      console.log(
+        `Order ${orderName(number)} gets no invoice from SmartBill: SMARTBILL_USERNAME, SMARTBILL_TOKEN or SMARTBILL_SERIES isn't set`,
+      );
     console.log(
       `Order ${orderName(number)} paid${session.test ? " in Stripe's test mode" : ""}`,
     );
@@ -286,7 +294,26 @@ const orderViewValidator = v.object({
   status: orderStatusValidator,
   /** What Stripe has given back of the total, in bani, once it has. */
   refunded: v.optional(v.number()),
+  /** The invoice's PDF, once SmartBill issued it, as JOL 0042. */
+  invoice: v.optional(v.object({ name: v.string(), url: v.string() })),
+  /** The credit note's, once a refund reversed the invoice. */
+  creditNote: v.optional(v.object({ name: v.string(), url: v.string() })),
 });
+
+/** An issued invoice's name and the address its PDF downloads from. */
+async function invoiceLink(ctx: QueryCtx, invoice: Doc<"orders">["invoice"]) {
+  if (invoice?.status !== "issued" || !invoice.file) return null;
+  const url = await ctx.storage.getUrl(invoice.file);
+  return url
+    ? {
+        name: invoiceName({
+          series: invoice.series ?? "",
+          number: invoice.number ?? "",
+        }),
+        url,
+      }
+    : null;
+}
 
 /**
  * An order as its page shows it, to anyone with its link: what was paid
@@ -303,6 +330,8 @@ export const byToken = query({
       .unique();
     if (!order) return null;
     const pictures = await linePictures(ctx, order);
+    const invoice = await invoiceLink(ctx, order.invoice);
+    const creditNote = await invoiceLink(ctx, order.creditNote);
     return {
       name: orderName(order.number),
       test: order.test,
@@ -324,6 +353,8 @@ export const byToken = query({
       ...(order.delivery?.key === "pickup" && { pickupAt: WORKSHOP_ADDRESS }),
       status: statusOf(order),
       ...(order.refunded ? { refunded: order.refunded } : {}),
+      ...(invoice && { invoice }),
+      ...(creditNote && { creditNote }),
     };
   },
 });
