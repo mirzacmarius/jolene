@@ -24,7 +24,9 @@ import { Check, ChevronDown, ExternalLink, X } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { errorCode } from "@/lib/convex-error";
 import { useCurrentLocale, useI18n } from "@/locales/client";
+import { CourierPanel } from "./courier";
 import { useFormats } from "./formats";
+import { InvoicePanel } from "./invoice";
 import { PrintFile } from "./print-file";
 import { RefundPanel } from "./refund";
 import { StatusBadge } from "./status-badge";
@@ -37,9 +39,10 @@ const NOTE_LENGTH = 2000;
 
 /**
  * One order, for the workshop to make and send: where it is and the step
- * that moves it on, each line with its proof and print file, what the
- * customer chose and wrote, who paid and where it goes, what it cost and
- * what was given back, and its history with the team's notes.
+ * that moves it on, the courier taking it, each line with its proof and
+ * print file, what the customer chose and wrote, who paid and where it
+ * goes, its invoice, what it cost and what was given back, and its history
+ * with the team's notes.
  */
 export function OrderView({ name }: { name: string }) {
   const t = useI18n();
@@ -81,6 +84,9 @@ export function OrderView({ name }: { name: string }) {
         </div>
       </div>
       <StatusPanel order={order} number={number} />
+      {order.delivery?.key === "courier" ? (
+        <CourierPanel order={order} number={number} />
+      ) : null}
       <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-10">
           <ul className="flex flex-col divide-y rounded-3xl border bg-card">
@@ -99,6 +105,7 @@ export function OrderView({ name }: { name: string }) {
         </div>
         <aside className="flex flex-col gap-8">
           <Customer order={order} />
+          <InvoicePanel order={order} number={number} />
           <div className="flex flex-col gap-3">
             <Totals order={order} />
             <RefundPanel order={order} number={number} />
@@ -111,11 +118,15 @@ export function OrderView({ name }: { name: string }) {
 
 /**
  * The status an order moves on to from its own, if the workshop has one to
- * give it: none once it's done or cancelled.
+ * give it: none once it's done or cancelled, and none to send a courier's
+ * order, which booking its courier does (CourierPanel).
  */
 function nextStatus(order: Order) {
   const next = order.statuses[order.statuses.indexOf(order.status) + 1];
-  return next === undefined || next === "paid" || next === "cancelled"
+  return next === undefined ||
+    next === "paid" ||
+    next === "cancelled" ||
+    (next === "sent" && order.delivery?.key === "courier")
     ? undefined
     : next;
 }
