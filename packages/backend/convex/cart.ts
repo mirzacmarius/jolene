@@ -35,7 +35,9 @@ const lineValidator = v.object({
   quantity: v.number(),
   minQuantity: v.optional(v.number()),
   options: v.array(pickedValidator),
-  answers: v.array(v.object({ label: v.string(), value: v.string() })),
+  answers: v.array(
+    v.object({ key: v.string(), label: v.string(), value: v.string() }),
+  ),
   fees: v.array(v.string()),
   proof: v.optional(
     v.object({ id: v.id("proofs"), ...proofSummaryValidator.fields }),
@@ -60,7 +62,7 @@ const cartValidator = v.object({
   count: v.number(),
 });
 
-async function findCart(ctx: QueryCtx, token: string) {
+export async function findCart(ctx: QueryCtx, token: string) {
   if (token.length < MIN_TOKEN_LENGTH) return null;
   return await ctx.db
     .query("carts")
@@ -102,9 +104,64 @@ function sameLine(
 }
 
 /**
- * A cart as the shop shows it, priced from the catalog as it is now: each
- * line with what stops it being ordered, if anything, and the fees the order
- * pays once. Null for a token that has no cart.
+ * A cart's lines and fees, priced from the catalog as it is now: each line
+ * with what stops it being ordered, if anything, and the fees the order pays
+ * once. A line whose product is gone from the catalog is left out.
+ */
+export async function priceCart(ctx: QueryCtx, cartId: Id<"carts">) {
+  const lines = (
+    await Promise.all(
+      (
+        await linesOf(ctx, cartId)
+      ).map(async (line) => {
+        const product = await ctx.db.get("products", line.productId);
+        return product && { line, product: await loadProduct(ctx, product) };
+      }),
+    )
+  ).flatMap((found) => (found ? [found] : []));
+
+  const fees = orderFees(
+    lines.map(({ line, product }) => ({ product, choices: line })),
+  ).map(({ key, label, price }) => ({ key, label, price }));
+  const priced = await Promise.all(
+    lines.map(async ({ line, product }) => {
+      const { price, compareAtPrice } = unitPrice(product, line);
+      const proof = line.proofId && (await summarize(ctx, line.proofId));
+      const image = product.product.images[0];
+      return {
+        id: line._id,
+        handle: product.product.handle,
+        title: product.product.title,
+        image: image ? await photoView(ctx, image) : null,
+        quantity: line.quantity,
+        minQuantity: product.product.minQuantity,
+        options: line.options,
+        answers: line.answers.flatMap(({ key, value }) => {
+          const option = product.lineOptions.find((o) => o.key === key);
+          return option ? [{ key, label: option.label, value }] : [];
+        }),
+        fees: line.fees,
+        proof:
+          line.proofId && proof ? { id: line.proofId, ...proof } : undefined,
+        price,
+        compareAtPrice,
+        total: price * line.quantity,
+        problems: problems(product, line),
+      };
+    }),
+  );
+  return {
+    lines: priced,
+    fees,
+    total:
+      priced.reduce((sum, line) => sum + line.total, 0) +
+      fees.reduce((sum, fee) => sum + fee.price, 0),
+  };
+}
+
+/**
+ * A cart as the shop shows it, priced from the catalog as it is now. Null
+ * for a token that has no cart.
  */
 export const get = query({
   args: { token: v.string() },
@@ -112,55 +169,8 @@ export const get = query({
   handler: async (ctx, { token }) => {
     const cart = await findCart(ctx, token);
     if (!cart) return null;
-    const lines = (
-      await Promise.all(
-        (
-          await linesOf(ctx, cart._id)
-        ).map(async (line) => {
-          const product = await ctx.db.get("products", line.productId);
-          return product && { line, product: await loadProduct(ctx, product) };
-        }),
-      )
-    ).flatMap((found) => (found ? [found] : []));
-
-    const fees = orderFees(
-      lines.map(({ line, product }) => ({ product, choices: line })),
-    ).map(({ key, label, price }) => ({ key, label, price }));
-    const priced = await Promise.all(
-      lines.map(async ({ line, product }) => {
-        const { price, compareAtPrice } = unitPrice(product, line);
-        const proof = line.proofId && (await summarize(ctx, line.proofId));
-        const image = product.product.images[0];
-        return {
-          id: line._id,
-          handle: product.product.handle,
-          title: product.product.title,
-          image: image ? await photoView(ctx, image) : null,
-          quantity: line.quantity,
-          minQuantity: product.product.minQuantity,
-          options: line.options,
-          answers: line.answers.flatMap(({ key, value }) => {
-            const option = product.lineOptions.find((o) => o.key === key);
-            return option ? [{ label: option.label, value }] : [];
-          }),
-          fees: line.fees,
-          proof:
-            line.proofId && proof ? { id: line.proofId, ...proof } : undefined,
-          price,
-          compareAtPrice,
-          total: price * line.quantity,
-          problems: problems(product, line),
-        };
-      }),
-    );
-    return {
-      lines: priced,
-      fees,
-      total:
-        priced.reduce((sum, line) => sum + line.total, 0) +
-        fees.reduce((sum, fee) => sum + fee.price, 0),
-      count: priced.length,
-    };
+    const priced = await priceCart(ctx, cart._id);
+    return { ...priced, count: priced.lines.length };
   },
 });
 

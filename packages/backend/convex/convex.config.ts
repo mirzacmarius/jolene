@@ -61,6 +61,25 @@ const app = defineApp({
      * address and their code. The studio's own /invitatie when unset.
      */
     INVITE_URL: v.optional(v.string()),
+    /**
+     * Stripe's secret key, sk_test_… in test mode: the shop's checkout opens
+     * with it. Without it the shop says paying online opens soon.
+     */
+    STRIPE_SECRET_KEY: v.optional(v.string()),
+    /**
+     * The signing secret of Stripe's webhook (http.ts), which records a paid
+     * order even when the couple never comes back from Stripe's page. Without
+     * it orders are still recorded, when the couple comes back and by the
+     * hourly check (crons.ts).
+     */
+    STRIPE_WEBHOOK_SECRET: v.optional(v.string()),
+    /**
+     * Local development only: where a stand-in for Stripe's API answers, such
+     * as http://127.0.0.1:12111. Never set on a real deployment.
+     */
+    STRIPE_API_URL: v.optional(v.string()),
+    /** Where Jolene's team hears of each new order; EMAIL_FROM's address when unset. */
+    ORDERS_EMAIL: v.optional(v.string()),
   },
 });
 

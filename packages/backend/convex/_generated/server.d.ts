@@ -39,9 +39,13 @@ type Env = {
   readonly AUTH_LOG_CODES: string | undefined;
   readonly EMAIL_FROM: string | undefined;
   readonly INVITE_URL: string | undefined;
+  readonly ORDERS_EMAIL: string | undefined;
   readonly RESEND_API_KEY: string | undefined;
   readonly RESEND_WEBHOOK_SECRET: string | undefined;
   readonly SITE_URL: string | undefined;
+  readonly STRIPE_API_URL: string | undefined;
+  readonly STRIPE_SECRET_KEY: string | undefined;
+  readonly STRIPE_WEBHOOK_SECRET: string | undefined;
 };
 
 /**

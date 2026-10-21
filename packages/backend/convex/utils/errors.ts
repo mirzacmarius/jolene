@@ -52,4 +52,10 @@ export const errors = {
   inviteLocked: "invite-locked",
   /** The reply date has passed; the couple takes replies themselves now. */
   replyClosed: "reply-closed",
+  /** Paying online isn't set up on this deployment yet (no Stripe key). */
+  checkoutUnavailable: "checkout-unavailable",
+  /** A cart with nothing in it to pay for. */
+  cartEmpty: "cart-empty",
+  /** A cart line can't be ordered as it is: the cart says why. */
+  cartNotReady: "cart-not-ready",
 } as const;
