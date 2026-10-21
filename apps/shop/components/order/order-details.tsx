@@ -84,6 +84,37 @@ export function OrderDetails({ order }: { order: Order }) {
                     .join(", ")}
                 </span>
               </address>
+              {order.shipment ? (
+                <p className="text-muted-foreground">
+                  Cu {order.shipment.courier || "curierul"}, AWB{" "}
+                  <span className="text-foreground tabular-nums">{order.shipment.awb}</span>
+                  {order.shipment.tracking ? (
+                    <>
+                      <br />
+                      Ultima veste de la curier: {order.shipment.tracking.text}
+                    </>
+                  ) : null}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {order.invoice ? (
+            <div className="grid gap-1 text-sm">
+              <h2 className="font-medium text-foreground">Factura</h2>
+              <a
+                className="justify-self-start text-foreground underline underline-offset-4"
+                href={order.invoice.url}
+              >
+                {order.invoice.name}, PDF
+              </a>
+              {order.creditNote ? (
+                <a
+                  className="justify-self-start text-foreground underline underline-offset-4"
+                  href={order.creditNote.url}
+                >
+                  Stornată de {order.creditNote.name}, PDF
+                </a>
+              ) : null}
             </div>
           ) : null}
           <p className="text-sm text-muted-foreground">
@@ -245,6 +276,17 @@ function OrderTotals({ order }: { order: Order }) {
         <div className="flex items-baseline justify-between gap-2.5 text-xs text-muted-foreground">
           <span>Din care TVA</span>
           <Price amount={order.vat} className="text-xs text-muted-foreground" />
+        </div>
+      ) : null}
+      {order.refunded ? (
+        <div className="grid gap-1 border-t pt-2.5 text-sm">
+          <div className="flex items-baseline justify-between gap-2.5">
+            <span>Rambursat pe card</span>
+            <Price amount={-order.refunded} className="text-sm" />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Banii ajung pe card în 5–10 zile lucrătoare de la rambursare.
+          </p>
         </div>
       ) : null}
     </div>

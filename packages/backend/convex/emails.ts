@@ -1,5 +1,5 @@
 import { Resend, vOnEmailEventArgs } from "@convex-dev/resend";
-import { ConvexError } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { components, internal } from "./_generated/api";
 import { env, internalMutation, type MutationCtx } from "./_generated/server";
 import { errors } from "./utils/errors";
@@ -185,5 +185,30 @@ export const onEvent = internalMutation({
       await ctx.db.patch("households", household._id, {
         emailed: { status, at: now },
       });
+  },
+});
+
+/** How long Resend's component keeps its copy of an email it sent. */
+const KEEP_SENT = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Deletes the component's copies of sent emails 30 days on, as the privacy
+ * policy says: by then what Resend said of an invitation's email is on its
+ * family. Runs daily.
+ */
+export const forget = internalMutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    await ctx.scheduler.runAfter(0, components.resend.lib.cleanupOldEmails, {
+      olderThan: KEEP_SENT,
+    });
+    // And those Resend never told the fate of.
+    await ctx.scheduler.runAfter(
+      0,
+      components.resend.lib.cleanupAbandonedEmails,
+      { olderThan: KEEP_SENT },
+    );
+    return null;
   },
 });

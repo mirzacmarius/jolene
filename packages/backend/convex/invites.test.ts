@@ -14,6 +14,7 @@ import { testConvex } from "../test/convex";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { isSlug, romanianDate, slugify, suggestedSlug } from "./invites/codes";
+import { monthsAfter } from "./invites/forget";
 import { type PaidLine, unlockPaid } from "./invites/unlock";
 import type { HouseholdInput, ReplyInput } from "./invites/validators";
 
@@ -450,6 +451,34 @@ describe("digital invitations", () => {
     expect(history[1]?.household).toBe("Familia 1");
   });
 
+  test("take allergies out of a family's history when a reply comes without them", async () => {
+    const { t, owner, inviteId, codes } = await withInvite();
+    const reply = (code: string, value: ReplyInput) =>
+      t.mutation(api.guests.reply, {
+        slug: "ana-si-mihai",
+        code,
+        reply: value,
+      });
+    const allergiesOf = async (family: string) =>
+      (await owner.as.query(api.invites.history, { inviteId }))
+        .filter((entry) => entry.household === family)
+        .map((entry) => entry.reply.allergies);
+    await reply(codes[0] as string, coming);
+    await reply(codes[0] as string, { ...coming, allergies: "Nuci, lactoză" });
+    await reply(codes[1] as string, coming);
+    // A reply with allergies keeps the earlier ones.
+    expect(await allergiesOf("Familia 1")).toEqual(["Nuci, lactoză", "Nuci"]);
+    const { allergies: _, ...without } = coming;
+    await reply(codes[0] as string, without);
+    expect(await allergiesOf("Familia 1")).toEqual([
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    // Another family's stay theirs.
+    expect(await allergiesOf("Familia 2")).toEqual(["Nuci"]);
+  });
+
   test("refuse more people than invited, or meals not offered", async () => {
     const { t, codes } = await withInvite();
     const reply = (value: ReplyInput) =>
@@ -724,6 +753,160 @@ describe("partners", () => {
   });
 });
 
+describe("guest lists", () => {
+  test("go the day after the months they're kept, in Romania's day", async () => {
+    const { t, owner, eventId, inviteId, householdIds, codes } =
+      await withInvite();
+    await owner.as.mutation(api.events.setFields, {
+      eventId,
+      fields: { date: "2027-06-12" },
+    });
+    await t.mutation(api.guests.reply, {
+      slug: "ana-si-mihai",
+      code: codes[0] as string,
+      reply: coming,
+    });
+    await t.run((ctx) =>
+      ctx.db.insert("inviteEmails", {
+        inviteId,
+        householdId: householdIds[0] as Id<"households">,
+        emailId: "email-1",
+        to: "ioana@example.com",
+        status: "delivered",
+        updatedAt: Date.now(),
+      }),
+    );
+    // 23:00 in Bucharest on 12 June 2028, a year on: still kept.
+    setSystemTime(new Date("2028-06-12T20:00:00Z"));
+    await forget(t);
+    expect(await guestList(t, inviteId)).toEqual({
+      families: 2,
+      replies: 1,
+      emails: 1,
+    });
+    // 01:30 on the 13th.
+    setSystemTime(new Date("2028-06-12T22:30:00Z"));
+    await forget(t);
+    expect(await guestList(t, inviteId)).toEqual({
+      families: 0,
+      replies: 0,
+      emails: 0,
+    });
+    // The invitation stays the couple's, with its open link closed.
+    const invite = await t.run((ctx) => ctx.db.get("invites", inviteId));
+    expect(invite).toMatchObject({ slug: "ana-si-mihai", open: false });
+    const dashboard = await owner.as.query(api.invites.dashboard, { eventId });
+    if (dashboard.kind !== "ready") throw new Error(dashboard.kind);
+    expect(dashboard.households).toEqual([]);
+  });
+
+  test("keep them as long as the workshop set", async () => {
+    const { t, owner, eventId, inviteId } = await withInvite();
+    await owner.as.mutation(api.events.setFields, {
+      eventId,
+      fields: { date: "2027-06-12" },
+    });
+    await t.run((ctx) =>
+      ctx.db.insert("settings", {
+        guestListMonths: 18,
+        updatedBy: "atelier@jolene.ro",
+        updatedAt: Date.now(),
+      }),
+    );
+    setSystemTime(new Date("2028-12-12T10:00:00Z"));
+    await forget(t);
+    expect((await guestList(t, inviteId)).families).toBe(2);
+    setSystemTime(new Date("2028-12-13T10:00:00Z"));
+    await forget(t);
+    expect((await guestList(t, inviteId)).families).toBe(0);
+  });
+
+  test("count from the couple's last change without a date, or with one from before the invitation", async () => {
+    const { t, owner, eventId, inviteId, householdIds } = await withInvite();
+    // A year typed wrong costs no one the list they're still writing.
+    await owner.as.mutation(api.events.setFields, {
+      eventId,
+      fields: { date: "2025-06-12" },
+    });
+    await forget(t);
+    expect((await guestList(t, inviteId)).families).toBe(2);
+    // A reply the couple took on the phone in September.
+    setSystemTime(new Date("2027-09-01T10:00:00Z"));
+    await owner.as.mutation(api.households.takeReply, {
+      householdId: householdIds[1] as Id<"households">,
+      reply: coming,
+    });
+    setSystemTime(new Date("2028-09-01T10:00:00Z"));
+    await forget(t);
+    expect((await guestList(t, inviteId)).families).toBe(2);
+    setSystemTime(new Date("2028-09-02T10:00:00Z"));
+    await forget(t);
+    expect((await guestList(t, inviteId)).families).toBe(0);
+  });
+
+  test("delete a long list a batch at a time", async () => {
+    const { t, owner, eventId, inviteId, householdIds } = await withInvite(1);
+    await owner.as.mutation(api.events.setFields, {
+      eventId,
+      fields: { date: "2027-06-12" },
+    });
+    const householdId = householdIds[0] as Id<"households">;
+    await t.run(async (ctx) => {
+      for (let i = 0; i < 1500; i++)
+        await ctx.db.insert("replies", {
+          inviteId,
+          householdId,
+          reply: { coming: false, guests: [], by: "guest", at: Date.now() },
+        });
+      for (let i = 0; i < 10; i++)
+        await ctx.db.insert("inviteEmails", {
+          inviteId,
+          householdId,
+          emailId: `email-${i}`,
+          to: "ioana@example.com",
+          status: "delivered",
+          updatedAt: Date.now(),
+        });
+    });
+    setSystemTime(new Date("2028-06-13T10:00:00Z"));
+    await forget(t);
+    expect(await guestList(t, inviteId)).toEqual({
+      families: 0,
+      replies: 0,
+      emails: 0,
+    });
+    expect(await runsOf(t, "invites/forget:list")).toBe(2);
+  });
+
+  test("close the open link of an invitation past its time, though no one's on it", async () => {
+    const { t, owner, eventId, designId } = await setUp();
+    const inviteId = await owner.as.mutation(api.invites.create, {
+      eventId,
+      designId,
+    });
+    await owner.as.mutation(api.events.setFields, {
+      eventId,
+      fields: { date: "2027-06-12" },
+    });
+    setSystemTime(new Date("2028-06-13T10:00:00Z"));
+    await forget(t);
+    const invite = await t.run((ctx) => ctx.db.get("invites", inviteId));
+    expect(invite?.open).toBe(false);
+    // Closed and empty, it's left alone after.
+    setSystemTime(new Date("2028-06-14T10:00:00Z"));
+    await forget(t);
+    expect(await runsOf(t, "invites/forget:list")).toBe(1);
+  });
+
+  test("count months on the calendar", () => {
+    expect(monthsAfter("2027-06-12", 12)).toBe("2028-06-12");
+    expect(monthsAfter("2027-11-15", 18)).toBe("2029-05-15");
+    // A day the later month doesn't have runs into the next.
+    expect(monthsAfter("2027-01-31", 1)).toBe("2027-03-03");
+    expect(monthsAfter("2028-02-29", 12)).toBe("2029-03-01");
+  });
+});
+
 describe("links", () => {
   test("make addresses from the names, without diacritics", () => {
     expect(slugify("Ștefan Ionuț-Bogdan")).toBe("stefan-ionut-bogdan");
@@ -747,6 +930,41 @@ describe("links", () => {
     expect(romanianDate(Date.parse("2027-07-10T21:00:00Z"))).toBe("2027-07-11");
   });
 });
+
+/** The daily run that deletes guest lists, and every run it schedules. */
+async function forget(t: ReturnType<typeof testConvex>) {
+  await t.mutation(internal.invites.forget.lists, {});
+  await t.finishAllScheduledFunctions(() => {});
+}
+
+/** How much of an invitation's guest list is left. */
+async function guestList(
+  t: ReturnType<typeof testConvex>,
+  inviteId: Id<"invites">,
+) {
+  return await t.run(async (ctx) => {
+    const ofInvite = (docs: { inviteId: Id<"invites"> }[]) =>
+      docs.filter((doc) => doc.inviteId === inviteId).length;
+    return {
+      families: ofInvite(await ctx.db.query("households").collect()),
+      replies: ofInvite(await ctx.db.query("replies").collect()),
+      emails: ofInvite(await ctx.db.query("inviteEmails").collect()),
+    };
+  });
+}
+
+/** How many times the scheduler ran a function, by its name. */
+async function runsOf(t: ReturnType<typeof testConvex>, name: string) {
+  return await t.run(
+    async (ctx) =>
+      (
+        await ctx.db.system
+          .query("_scheduled_functions")
+          .filter((q) => q.eq(q.field("name"), name))
+          .collect()
+      ).length,
+  );
+}
 
 /** The digital invitation, as a paid order's line carries it. */
 const bought = { product: digitalInvitation.handle, quantity: 1 };

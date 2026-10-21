@@ -21,3 +21,8 @@ export function shopUrl(): string | null {
 export function orderUrl(shop: string, token: string): string {
   return `${shop}/orders/${token}`;
 }
+
+/** Where an order's invoice downloads from: the shop sends on to its PDF. */
+export function invoiceUrl(shop: string, token: string): string {
+  return `${orderUrl(shop, token)}/invoice`;
+}

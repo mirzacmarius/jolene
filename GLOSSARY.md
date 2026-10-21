@@ -178,6 +178,18 @@ _Avoid_: Shipping (in copy)
 Delivery to the couple's door by the courier Colete Online books cheapest for the parcel, such as Cargus or Sameday: 25 lei, and nothing from 800 lei.
 _Avoid_: Carrier, shipping
 
+**Parcel** (ro: colet; code: parcel):
+The box a printed order travels in, as the workshop packs it: its weight and its sides, which the courier's price depends on.
+_Avoid_: Package
+
+**Shipment** (ro: expediere; code: shipment):
+The courier booked for an order's parcel, through Colete Online or by the workshop itself, with its AWB, its label and where the parcel is.
+_Avoid_: Delivery (how the couple chose to get their order)
+
+**AWB** (ro: AWB; code: awb):
+The courier's number for a parcel, printed on its label, which the couple follow it by.
+_Avoid_: Waybill, tracking code
+
 **Pickup** (ro: ridicare de la atelier; code: pickup):
 Delivery by the couple picking their order up from the workshop in Iași, for nothing. Stripe's page asks for their address all the same.
 _Avoid_: Collection (a family of designs)
@@ -186,9 +198,13 @@ _Avoid_: Collection (a family of designs)
 The value added tax inside the shop's prices. Jolene's prices include it, so Stripe Tax shows how much of what the couple paid is VAT, and never adds to it.
 _Avoid_: Tax (in Romanian, taxă is a fee)
 
-**Invoice** (ro: factură):
-The fiscal document of a paid order, made out to whoever paid or the company they bought as, which Jolene's invoicing tool sends to e-Factura.
+**Invoice** (ro: factură; code: invoice):
+The fiscal document of a paid order, made out to whoever paid or the company they bought as, which SmartBill issues as soon as the order is paid and sends to e-Factura. A test order's is a draft.
 _Avoid_: Receipt (a fiscal receipt, bon fiscal, is another document)
+
+**Credit note** (ro: factură de stornare; code: creditNote):
+The invoice that reverses a refunded order's invoice in full, which SmartBill issues in the same series.
+_Avoid_: Storno (in English), refund invoice
 
 **Billing details** (ro: date de facturare; code: billing):
 Who an order's invoice is for, as Stripe's page took them: the payer's name and billing address and, for a company, its name and tax code (CUI).
@@ -214,12 +230,16 @@ _Avoid_: State, stage, fulfilment, shipped (in copy)
 What the workshop writes on an order for the rest of the team, such as what the couple said on the phone. The couple never sees it. It sits in the order's history (ro: istoric; code: orderHistory) beside each change of status, with who wrote it and when.
 _Avoid_: Comment, memo
 
+**Refund** (ro: rambursare; code: refund):
+Money Stripe gives back from an order's payment to the card that paid, all of it or a part: from the order's page in the workshop, or from Stripe's dashboard. It's pending (în curs) until it reaches the card's bank, and can fail (eșuată). It changes nothing else about the order.
+_Avoid_: Reimbursement, return (sending products back), chargeback (a dispute the bank opens)
+
 **Test order** (ro: comandă de test; code: test):
 An order paid in Stripe's test mode, with a test card: a trial, not a sale.
 _Avoid_: Sandbox order
 
 **Workshop** (ro: atelier):
-Jolene's team, who print, assemble and send what couples order, and their pages in the studio, where they see every paid order, make its print files and move it on.
+Jolene's team, who print, assemble and send what couples order, and their pages in the studio, where they see every paid order, make its print files, move it on and refund it, and set how long guest lists are kept.
 _Avoid_: Admin, back office, staff
 
 ### Digital invitations
@@ -263,6 +283,10 @@ _Avoid_: Guest of a guest
 **Whose guests** (ro: invitații cui; code: side):
 Which of the couple invited a family, or both.
 _Avoid_: Side (in copy)
+
+**Guest list** (ro: lista de invitați):
+An invitation's families, with every reply they sent and the emails of their invitations. It is deleted as many months after the event as the workshop sets (code: guestListMonths), from 12 to 24.
+_Avoid_: RSVP list, guests (each guest is one person)
 
 **Personal link** (ro: link personal) / **Open link**:
 A family's own link, the invitation's address and their code, knows who they are. The address alone is the open link, which anyone can reply by, adding their family to the list; the couple can turn it off.

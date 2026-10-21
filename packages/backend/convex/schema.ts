@@ -16,14 +16,17 @@ import {
   sideValidator,
   unlockValidator,
 } from "./invites/validators";
+import { refundStatusValidator } from "./orders/refunds";
 import { orderStatusValidator } from "./orders/status";
 import {
   addressValidator,
   billingValidator,
   customerValidator,
   deliveryValidator,
+  invoiceValidator,
   orderFeeValidator,
   orderLineValidator,
+  shipmentValidator,
 } from "./orders/validators";
 import {
   answerValidator,
@@ -527,11 +530,42 @@ export default defineSchema({
      * statuses get theirs from the seed (workshop/statuses.ts).
      */
     status: v.optional(orderStatusValidator),
+    /**
+     * What Stripe has given back of the total, in bani: its refunds that
+     * haven't failed or been canceled. None before the first.
+     */
+    refunded: v.optional(v.number()),
+    /** Its invoice in SmartBill. None until SmartBill is set up. */
+    invoice: v.optional(invoiceValidator),
+    /** The invoice reversing it, once the order is refunded. */
+    creditNote: v.optional(invoiceValidator),
+    /** The courier taking it to the couple, once the workshop booked one. */
+    shipment: v.optional(shipmentValidator),
   })
     .index("by_number", ["number"])
     .index("by_token", ["token"])
     .index("by_session", ["session"])
+    .index("by_paymentIntent", ["paymentIntent"])
     .index("by_status_and_number", ["status", "number"]),
+
+  /**
+   * Money Stripe gave back for an order, each refund as Stripe last said it
+   * was: from the workshop's refund button, or from Stripe's dashboard.
+   */
+  refunds: defineTable({
+    orderId: v.id("orders"),
+    /** Stripe's id for it, re_…: one each. */
+    stripeId: v.string(),
+    /** In bani. */
+    amount: v.number(),
+    status: refundStatusValidator,
+    /** The workshop account that asked for it; none from Stripe's dashboard. */
+    by: v.optional(v.string()),
+    /** When Stripe made it. */
+    createdAt: v.number(),
+  })
+    .index("by_orderId", ["orderId"])
+    .index("by_stripeId", ["stripeId"]),
 
   /**
    * What happened to an order since it was paid, oldest first: each change
@@ -668,4 +702,19 @@ export default defineSchema({
   })
     .index("by_emailId", ["emailId"])
     .index("by_householdId", ["householdId"]),
+
+  /**
+   * What Jolene's team sets at /studio/atelier/setari, in one document.
+   * Until the team saves them, each setting is its default.
+   */
+  settings: defineTable({
+    /**
+     * How many months after its event an invitation's guest list is kept
+     * before it's deleted (docs/adr/0017).
+     */
+    guestListMonths: v.number(),
+    /** The workshop's account that saved them last, and when. */
+    updatedBy: v.string(),
+    updatedAt: v.number(),
+  }),
 });

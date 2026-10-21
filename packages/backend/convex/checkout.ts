@@ -26,6 +26,7 @@ import type { PaidSession } from "./orders/validators";
 import { errors } from "./utils/errors";
 import { rateLimiter } from "./utils/limits";
 import { languageValidator } from "./utils/validators";
+import { syncRefunds } from "./workshop/refunds";
 
 /**
  * The shop's checkout (ADR 0015). The couple pays on Stripe's page for their
@@ -233,9 +234,11 @@ async function recordIfPaid(
 
 /**
  * For Stripe's webhook in http.ts: records the order of a Checkout Session
- * Stripe says is complete, or paid after it was. Answers 400 to a request
- * Stripe didn't sign; when Stripe can't be asked, the error answers 500 and
- * Stripe sends the event again later.
+ * Stripe says is complete, or paid after it was, and keeps an order's
+ * refunds as Stripe has them when one is made or changes, from the
+ * workshop or Stripe's dashboard. Answers 400 to a request Stripe didn't
+ * sign; when Stripe can't be asked, the error answers 500 and Stripe sends
+ * the event again later.
  */
 export async function handleStripeWebhook(ctx: ActionCtx, request: Request) {
   const event = await verifiedEvent(
@@ -248,6 +251,15 @@ export async function handleStripeWebhook(ctx: ActionCtx, request: Request) {
     event.type === "checkout.session.async_payment_succeeded"
   )
     await recordIfPaid(ctx, event.data.object, { reread: true });
+  if (
+    event.type === "refund.created" ||
+    event.type === "refund.updated" ||
+    event.type === "refund.failed"
+  ) {
+    const payment = event.data.object.payment_intent;
+    const paymentIntent = typeof payment === "string" ? payment : payment?.id;
+    if (paymentIntent) await syncRefunds(ctx, paymentIntent);
+  }
   return new Response(null, { status: 200 });
 }
 

@@ -26,6 +26,7 @@ import { errorCode } from "@/lib/convex-error";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { useFormats } from "./formats";
 import { PrintFile } from "./print-file";
+import { RefundPanel } from "./refund";
 import { StatusBadge } from "./status-badge";
 
 type Order = NonNullable<FunctionReturnType<typeof api.workshop.order>>;
@@ -37,8 +38,8 @@ const NOTE_LENGTH = 2000;
 /**
  * One order, for the workshop to make and send: where it is and the step
  * that moves it on, each line with its proof and print file, what the
- * customer chose and wrote, who paid and where it goes, what it cost, and
- * its history with the team's notes.
+ * customer chose and wrote, who paid and where it goes, what it cost and
+ * what was given back, and its history with the team's notes.
  */
 export function OrderView({ name }: { name: string }) {
   const t = useI18n();
@@ -98,7 +99,10 @@ export function OrderView({ name }: { name: string }) {
         </div>
         <aside className="flex flex-col gap-8">
           <Customer order={order} />
-          <Totals order={order} />
+          <div className="flex flex-col gap-3">
+            <Totals order={order} />
+            <RefundPanel order={order} number={number} />
+          </div>
         </aside>
       </div>
     </div>
@@ -201,36 +205,56 @@ function StatusPanel({ order, number }: { order: Order; number: number }) {
 }
 
 /**
- * What happened to the order, newest first: each change of status and each
- * note, with who did it and when, down to the payment; and a note to add.
+ * What happened to the order, newest first: each change of status, each
+ * note and each refund, with who did it and when, down to the payment; and
+ * a note to add.
  */
 function History({ order, number }: { order: Order; number: number }) {
   const t = useI18n();
   const format = useFormats();
+  const entries = [
+    ...order.history,
+    ...order.refunds.map((refund) => ({ ...refund, kind: "refund" as const })),
+  ].sort((a, b) => b.at - a.at);
   return (
     <section className="flex flex-col gap-5">
       <h2 className="text-lg font-medium">{t("workshop.history.title")}</h2>
       <NoteForm number={number} />
       <ol className="flex flex-col gap-4 text-sm">
-        {order.history.map((entry) => (
+        {entries.map((entry) => (
           <li key={entry.id} className="flex flex-col gap-0.5">
-            <p
-              className={
-                entry.kind === "note"
-                  ? "whitespace-pre-line break-words"
-                  : undefined
-              }
-            >
-              {entry.kind === "note"
-                ? entry.note
-                : t("workshop.history.status", {
-                    from: t(`workshop.statuses.${entry.from}`),
-                    status: t(`workshop.statuses.${entry.status}`),
-                  })}
-            </p>
+            {entry.kind === "refund" ? (
+              <p
+                className={
+                  entry.status === "failed" || entry.status === "canceled"
+                    ? "text-destructive"
+                    : undefined
+                }
+              >
+                {t("workshop.refunds.entry", {
+                  amount: format.lei(entry.amount),
+                  status: t(`workshop.refunds.statuses.${entry.status}`),
+                })}
+              </p>
+            ) : (
+              <p
+                className={
+                  entry.kind === "note"
+                    ? "whitespace-pre-line break-words"
+                    : undefined
+                }
+              >
+                {entry.kind === "note"
+                  ? entry.note
+                  : t("workshop.history.status", {
+                      from: t(`workshop.statuses.${entry.from}`),
+                      status: t(`workshop.statuses.${entry.status}`),
+                    })}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">
               {t("workshop.history.by", {
-                by: entry.by,
+                by: entry.by ?? t("workshop.refunds.inStripe"),
                 time: format.time(entry.at),
               })}
             </p>
@@ -524,6 +548,16 @@ function Totals({ order }: { order: Order }) {
         <p className="mt-1 text-right text-xs text-muted-foreground">
           {t("workshop.vat", { amount: format.lei(order.vat) })}
         </p>
+      ) : null}
+      {order.refunded > 0 ? (
+        <dl className="mt-3 grid grid-cols-[1fr_auto] border-t pt-3">
+          <dt className="text-muted-foreground">
+            {order.refunded >= order.total
+              ? t("workshop.refunds.all")
+              : t("workshop.refunds.refunded")}
+          </dt>
+          <dd className="pl-4 text-right">{format.lei(-order.refunded)}</dd>
+        </dl>
       ) : null}
     </section>
   );

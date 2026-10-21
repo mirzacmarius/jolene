@@ -111,6 +111,15 @@ function Orders({ tab }: { tab: Tab }) {
                 <span className="block font-medium text-foreground">
                   {format.lei(order.total)}
                 </span>
+                {order.refunded > 0 ? (
+                  <span className="block text-xs">
+                    {order.refunded >= order.total
+                      ? t("workshop.refunds.all")
+                      : t("workshop.refunds.part", {
+                          amount: format.lei(order.refunded),
+                        })}
+                  </span>
+                ) : null}
               </span>
             </Link>
           </li>

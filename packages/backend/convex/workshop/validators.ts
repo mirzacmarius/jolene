@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { refundStatusValidator } from "../orders/refunds";
 import { orderStatusValidator } from "../orders/status";
 import {
   addressValidator,
@@ -46,6 +47,8 @@ export const orderSummaryValidator = v.object({
   /** What Stripe charged, in bani. */
   total: v.number(),
   status: orderStatusValidator,
+  /** What Stripe has given back of it, in bani. */
+  refunded: v.number(),
 });
 
 /** A designed line's proof, as the workshop's order page shows it. */
@@ -76,6 +79,18 @@ export const historyEntryValidator = v.union(
     note: v.string(),
   }),
 );
+
+/** A refund of an order, as the workshop's order page shows it. */
+export const refundEntryValidator = v.object({
+  id: v.id("refunds"),
+  /** When Stripe made it. */
+  at: v.number(),
+  /** In bani. */
+  amount: v.number(),
+  status: refundStatusValidator,
+  /** The workshop account that asked for it; none from Stripe's dashboard. */
+  by: v.optional(v.string()),
+});
 
 /** An order as the workshop's order page shows it: all of it. */
 export const workshopOrderValidator = v.object({
@@ -110,6 +125,10 @@ export const workshopOrderValidator = v.object({
   statuses: v.array(orderStatusValidator),
   /** Its changes of status and the workshop's notes, newest first. */
   history: v.array(historyEntryValidator),
+  /** What Stripe has given back of the total, in bani. */
+  refunded: v.number(),
+  /** Its refunds, newest first, failed ones too. */
+  refunds: v.array(refundEntryValidator),
 });
 
 /** What the print file of an order's designed line is made from. */

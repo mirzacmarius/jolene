@@ -3,14 +3,17 @@ import {
   paginationResultValidator,
 } from "convex/server";
 import { ConvexError, v } from "convex/values";
+import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
-import { mutation, type QueryCtx, query } from "./_generated/server";
+import { action, mutation, type QueryCtx, query } from "./_generated/server";
 import { linePictures } from "./orders";
 import { orderName } from "./orders/format";
 import { orderUrl, shopUrl } from "./orders/links";
+import { refundOf } from "./orders/refunds";
 import { orderStatusValidator, statusesOf, statusOf } from "./orders/status";
 import { errors } from "./utils/errors";
 import { printJobOf } from "./workshop/proofs";
+import { refundPayment } from "./workshop/refunds";
 import { requireWorkshop, workshopAccess } from "./workshop/staff";
 import {
   accessValidator,
@@ -66,6 +69,7 @@ export const orders = query({
         lines: order.lines.map(({ title, quantity }) => ({ title, quantity })),
         total: order.total,
         status: statusOf(order),
+        refunded: order.refunded ?? 0,
       })),
     };
   },
@@ -101,6 +105,11 @@ export const order = query({
     const shop = shopUrl();
     const history = await ctx.db
       .query("orderHistory")
+      .withIndex("by_orderId", (q) => q.eq("orderId", order._id))
+      .order("desc")
+      .take(HISTORY_SHOWN);
+    const refunds = await ctx.db
+      .query("refunds")
       .withIndex("by_orderId", (q) => q.eq("orderId", order._id))
       .order("desc")
       .take(HISTORY_SHOWN);
@@ -146,6 +155,14 @@ export const order = query({
         at: _creationTime,
         ...entry,
       })),
+      refunded: order.refunded ?? 0,
+      refunds: refunds.map(({ _id, createdAt, amount, status, by }) => ({
+        id: _id,
+        at: createdAt,
+        amount,
+        status,
+        ...(by && { by }),
+      })),
     };
   },
 });
@@ -177,6 +194,38 @@ export const setStatus = mutation({
       kind: "status",
       from,
       status,
+    });
+    return null;
+  },
+});
+
+/**
+ * Gives money back to the couple through Stripe, at most what's left of what
+ * they paid, and keeps the refund on the order. Asking twice for the same
+ * refund, as a double click does, refunds once (workshop/refunds.ts).
+ */
+export const refund = action({
+  args: { number: v.number(), amount: v.number() },
+  returns: v.null(),
+  handler: async (ctx, { number, amount }): Promise<null> => {
+    const order = await ctx.runQuery(internal.workshop.refunds.refundable, {
+      number,
+    });
+    if (!order) throw new ConvexError(errors.notFound);
+    if (!Number.isInteger(amount) || amount <= 0 || amount > order.left)
+      throw new ConvexError(errors.invalidInput);
+    if (!order.paymentIntent) throw new ConvexError(errors.refundRefused);
+    const refund = await refundPayment({
+      orderId: order.orderId,
+      name: order.name,
+      paymentIntent: order.paymentIntent,
+      amount,
+      refunds: order.refunds,
+      by: order.by,
+    });
+    await ctx.runMutation(internal.workshop.refunds.record, {
+      paymentIntent: order.paymentIntent,
+      refunds: [refundOf(refund)],
     });
     return null;
   },

@@ -1,3 +1,5 @@
+import { Settings } from "lucide-react";
+import Link from "next/link";
 import { SiteHeader } from "@/components/shell/site-header";
 import { OrderList } from "@/components/workshop/order-list";
 import { WorkshopGate } from "@/components/workshop/workshop-gate";
@@ -17,7 +19,16 @@ export default async function Page() {
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <WorkshopNav current="orders" />
-        <h1 className="mt-6 font-display text-5xl">{t("workshop.title")}</h1>
+        <div className="mt-6 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+          <h1 className="font-display text-5xl">{t("workshop.title")}</h1>
+          <Link
+            href="/studio/atelier/setari"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <Settings className="size-4" aria-hidden />
+            {t("workshop.settings.title")}
+          </Link>
+        </div>
         <p className="mt-3 max-w-2xl text-muted-foreground">
           {t("workshop.lead")}
         </p>

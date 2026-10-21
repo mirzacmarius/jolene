@@ -41,6 +41,24 @@ const words = {
     pickupNote: "Vă anunțăm când e gata de ridicat.",
     unlockNow:
       "Înainte de plată ați cerut să deblocăm invitația digitală imediat și ați luat la cunoștință că, odată deblocată, nu mai puteți renunța la ea în 14 zile.",
+    invoiceSubject: (name: string) => `Factura comenzii ${name} · Jolene`,
+    invoiceReady: (name: string, invoice: string) =>
+      `Factura comenzii ${name} e gata: ${invoice}.`,
+    invoiceButton: "Descărcați factura",
+    invoicePage: "O găsiți oricând și pe pagina comenzii",
+    shipmentSubject: (name: string) =>
+      `Comanda ${name} pleacă spre voi · Jolene`,
+    shipped: (first: string, name: string, courier: string) =>
+      `${first ? `${first}, c` : "C"}omanda ${name} e gata și pleacă spre voi cu ${courier || "curierul"}.`,
+    awb: (awb: string) => `Numărul ei de urmărire (AWB) e ${awb}.`,
+    follow: (courier: string) =>
+      `O urmăriți cu el pe site-ul ${courier || "curierului"} sau pe pagina comenzii.`,
+    readySubject: (name: string) =>
+      `Comanda ${name} e gata de ridicat · Jolene`,
+    ready: (first: string, name: string) =>
+      `${first ? `${first}, c` : "C"}omanda ${name} e gata: o puteți ridica de la atelier, ${WORKSHOP_ADDRESS}.`,
+    readyReply:
+      "Dacă vreți să ne spuneți când veniți, răspundeți la acest email.",
     footer: "Jolene · jolene.ro",
   },
   en: {
@@ -64,6 +82,23 @@ const words = {
     pickupNote: "We'll let you know when it's ready.",
     unlockNow:
       "Before paying, you asked us to unlock the digital invitation right away, and acknowledged that once it's unlocked you can no longer withdraw from it within 14 days.",
+    invoiceSubject: (name: string) => `Invoice for order ${name} · Jolene`,
+    invoiceReady: (name: string, invoice: string) =>
+      `The invoice for order ${name} is ready: ${invoice}.`,
+    invoiceButton: "Download the invoice",
+    invoicePage: "You'll also find it on your order's page",
+    shipmentSubject: (name: string) => `Order ${name} is on its way · Jolene`,
+    shipped: (first: string, name: string, courier: string) =>
+      `${first ? `${first}, o` : "O"}rder ${name} is ready and on its way to you with ${courier || "the courier"}.`,
+    awb: (awb: string) => `Its tracking number (AWB) is ${awb}.`,
+    follow: (courier: string) =>
+      `Follow it with that number on ${courier ? `${courier}'s` : "the courier's"} website, or on your order's page.`,
+    readySubject: (name: string) =>
+      `Order ${name} is ready to pick up · Jolene`,
+    ready: (first: string, name: string) =>
+      `${first ? `${first}, o` : "O"}rder ${name} is ready: you can pick it up from the workshop, ${WORKSHOP_ADDRESS}.`,
+    readyReply:
+      "If you'd like to tell us when you're coming, reply to this email.",
     footer: "Jolene · jolene.ro",
   },
 } as const;
@@ -381,6 +416,176 @@ export function noticeEmail(
   ];
   return {
     subject: `${testMark(order)}Comandă nouă ${name} · ${lei(order.total)} · ${customer.name}`,
+    text: lines.join("\n"),
+    html: lines
+      .map((line) =>
+        line
+          ? `<tr><td style="${sans}font-size:14px;line-height:22px;white-space:pre-wrap;">${escapeHtml(line)}</td></tr>`
+          : `<tr><td style="height:12px;"></td></tr>`,
+      )
+      .join("\n"),
+    footer: "Jolene · comenzi",
+  };
+}
+
+/**
+ * The couple's invoice, once SmartBill has issued it, in the language they
+ * paid in: its series and number, and the link that downloads its PDF.
+ */
+export function invoiceEmail(
+  order: Order,
+  invoice: string,
+  download: string,
+  link: string,
+) {
+  const w = words[order.language];
+  const name = orderName(order.number);
+  const ready = w.invoiceReady(name, invoice);
+  return {
+    subject: `${testMark(order)}${w.invoiceSubject(name)}`,
+    text: [
+      ready,
+      "",
+      `${w.invoiceButton}: ${download}`,
+      `${w.invoicePage}: ${link}`,
+      "",
+      w.footer,
+    ].join("\n"),
+    html: [
+      paragraph(ready),
+      button(download, w.invoiceButton),
+      `<tr><td style="padding-top:20px;${sans}font-size:14px;line-height:22px;${muted}"><a href="${escapeHtml(link)}" style="color:#5c544d;">${escapeHtml(w.invoicePage)}</a>.</td></tr>`,
+    ].join("\n"),
+    footer: escapeHtml(w.footer),
+  };
+}
+
+/**
+ * The team's notice, in Romanian, that SmartBill refused an order's invoice
+ * or credit note, or issued it with something to look at.
+ */
+export function invoiceNotice(
+  order: Order,
+  {
+    document,
+    issued,
+    problem,
+  }: {
+    document: "invoice" | "creditNote";
+    /** Its series and number, when SmartBill issued it. */
+    issued?: string;
+    problem: string;
+  },
+  link: string | null,
+) {
+  const name = orderName(order.number);
+  const what = document === "invoice" ? "Factura" : "Factura de stornare";
+  const lines = [
+    issued
+      ? `${what} comenzii ${name} e emisă în SmartBill (${issued}), dar: ${problem}`
+      : `SmartBill n-a emis ${what.toLowerCase()} comenzii ${name}: ${problem}`,
+    ...(issued
+      ? []
+      : ["", "Emiteți-o de mână în SmartBill, sau din nou din atelier."]),
+    "",
+    `Client: ${[order.customer.name, order.customer.email].filter(Boolean).join(" · ")}`,
+    `Total: ${lei(order.total)}`,
+    ...(link ? [`Pagina comenzii: ${link}`] : []),
+  ];
+  return {
+    subject: `${testMark(order)}${what} comenzii ${name} · de verificat`,
+    text: lines.join("\n"),
+    html: lines
+      .map((line) =>
+        line
+          ? `<tr><td style="${sans}font-size:14px;line-height:22px;white-space:pre-wrap;">${escapeHtml(line)}</td></tr>`
+          : `<tr><td style="height:12px;"></td></tr>`,
+      )
+      .join("\n"),
+    footer: "Jolene · comenzi",
+  };
+}
+
+/**
+ * The couple's word that their parcel is on its way, in the language they
+ * paid in: the courier taking it, its AWB, and the order's page, which
+ * shows where it is.
+ */
+export function shipmentEmail(
+  order: Order,
+  { courier, awb }: { courier: string; awb: string },
+  link: string | null,
+) {
+  const w = words[order.language];
+  const name = orderName(order.number);
+  const lines = [
+    w.shipped(firstName(order), name, courier),
+    ...(awb ? [w.awb(awb), w.follow(courier)] : []),
+  ];
+  return {
+    subject: `${testMark(order)}${w.shipmentSubject(name)}`,
+    text: [
+      ...lines,
+      ...(link ? ["", `${w.button}: ${link}`] : []),
+      "",
+      w.footer,
+    ].join("\n"),
+    html: [
+      ...lines.map(paragraph),
+      ...(link ? [button(link, w.button)] : []),
+    ].join("\n"),
+    footer: escapeHtml(w.footer),
+  };
+}
+
+/**
+ * The couple's word that the order they chose to pick up is ready at the
+ * workshop, in the language they paid in.
+ */
+export function pickupReadyEmail(order: Order, link: string | null) {
+  const w = words[order.language];
+  const name = orderName(order.number);
+  const lines = [w.ready(firstName(order), name), w.readyReply];
+  return {
+    subject: `${testMark(order)}${w.readySubject(name)}`,
+    text: [
+      ...lines,
+      ...(link ? ["", `${w.button}: ${link}`] : []),
+      "",
+      w.footer,
+    ].join("\n"),
+    html: [
+      ...lines.map(paragraph),
+      ...(link ? [button(link, w.button)] : []),
+    ].join("\n"),
+    footer: escapeHtml(w.footer),
+  };
+}
+
+/**
+ * The team's notice, in Romanian, that Colete Online didn't book an
+ * order's courier, or booked it with something to look at.
+ */
+export function shipmentNotice(
+  order: Order,
+  { booked, problem }: { booked?: string; problem: string },
+  link: string | null,
+) {
+  const name = orderName(order.number);
+  const lines = [
+    booked
+      ? `Curierul comenzii ${name} e comandat în Colete Online (${booked}), dar: ${problem}`
+      : `Colete Online n-a comandat curierul comenzii ${name}: ${problem}`,
+    ...(booked
+      ? []
+      : ["", "Comandați-l din nou din atelier sau direct în Colete Online."]),
+    "",
+    ...(order.address ? ["Livrăm la:", ...addressLines(order.address)] : []),
+    `Telefon: ${order.customer.phone || "—"}`,
+    ...(link ? [`Pagina comenzii: ${link}`] : []),
+  ];
+  return {
+    subject: `${testMark(order)}Curierul comenzii ${name} · de verificat`,
     text: lines.join("\n"),
     html: lines
       .map((line) =>

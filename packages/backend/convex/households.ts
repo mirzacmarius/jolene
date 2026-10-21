@@ -48,7 +48,11 @@ async function hasRoom(
   return kept.length + count <= MAX_HOUSEHOLDS;
 }
 
-/** Keeps a reply on its family and in the invitation's history. */
+/**
+ * Keeps a reply on its family and in the invitation's history. One without
+ * allergies takes them out of the family's earlier replies too: that's how
+ * a guest takes back what they wrote, as the privacy policy says.
+ */
 export async function saveReply(
   ctx: MutationCtx,
   household: Doc<"households">,
@@ -58,6 +62,17 @@ export async function saveReply(
     reply,
     updatedAt: reply.at,
   });
+  if (reply.allergies === undefined) {
+    const earlier = await ctx.db
+      .query("replies")
+      .withIndex("by_householdId", (q) => q.eq("householdId", household._id))
+      .take(500);
+    for (const entry of earlier) {
+      if (entry.reply.allergies === undefined) continue;
+      const { allergies: _, ...rest } = entry.reply;
+      await ctx.db.patch("replies", entry._id, { reply: rest });
+    }
+  }
   await ctx.db.insert("replies", {
     inviteId: household.inviteId,
     householdId: household._id,
