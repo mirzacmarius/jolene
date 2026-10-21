@@ -22,7 +22,7 @@ reads jolene.ro's WooCommerce shop as pulled on 19 October 2026 (`products.json`
 
 ## Syncing
 
-The store is reached through a Dev Dashboard app installed on it, with the scopes `write_products`, `write_publications`, `write_metaobjects`, `write_metaobject_definitions` and `read_orders`. Its client ID and secret are the repository's Actions secrets `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET`, and the store's address the variable `SHOPIFY_STORE_DOMAIN`. The app gets a day's access token from them on each run.
+The store is reached through a Dev Dashboard app installed on it, with the scopes `write_products`, `write_publications`, `write_metaobjects`, `write_metaobject_definitions` and `read_orders`. Its client ID and secret are the repository's Actions secrets `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET`, and the store's address the variable `SHOPIFY_STORE_DOMAIN`, unless a run's `store` names another, such as a test store. The app gets a day's access token from them on each run.
 
 The **Products** workflow (`.github/workflows/products.yml`) runs `scripts/sync.ts`:
 
