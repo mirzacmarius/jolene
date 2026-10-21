@@ -39,3 +39,11 @@ bun scripts/sync.ts plan --schema admin_2026-10.json.gz
 ```
 
 with the schema from `npm pack @shopify/dev-mcp@1.17.0` (`package/dist/data/`). Without the three variables, a plan only checks its calls.
+
+## Trying an order
+
+The **Try an order** workflow (`.github/workflows/try-order.yml`) runs `scripts/try-order.ts` against the live shop, as a couple would and without paying: a product with its first paper, a paid order option and the answers it asks for, its fee, and its minimum order, through the cart to Shopify's checkout. It checks that the cart adds the extras and fee lines by itself and that checkout shows them. The run's summary says what each step showed, and its `order` artifact holds a screenshot of each. Start it from the Actions tab with another product or shop address, or locally with Chrome or a Chromium:
+
+```sh
+bun run try-order --product invitatie-nunta-olive-goldy --chrome /path/to/chromium
+```

@@ -153,6 +153,7 @@
         "@jolene/typescript": "workspace:*",
         "@types/bun": "^1.4.3",
         "graphql": "17.0.2",
+        "playwright-core": "1.56.1",
         "typescript": "^5.9.3",
       },
     },
