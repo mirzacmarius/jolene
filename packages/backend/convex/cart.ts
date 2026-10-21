@@ -7,6 +7,7 @@ import {
   type QueryCtx,
   query,
 } from "./_generated/server";
+import { courierPrice, FREE_DELIVERY_FROM } from "./checkout/delivery";
 import { checkoutOpen } from "./checkout/open";
 import { eventForShop, eventForShopValidator } from "./invites/shop";
 import { printedInvitations } from "./invites/unlock";
@@ -69,6 +70,14 @@ const cartValidator = v.object({
   ),
   /** The lines and the fees together, in bani, before delivery. */
   total: v.number(),
+  /**
+   * What Cargus would cost to the door, and from what total it's free; the
+   * couple chooses on Stripe's page. Null when nothing in the cart travels.
+   */
+  delivery: v.union(
+    v.object({ price: v.number(), freeFrom: v.number() }),
+    v.null(),
+  ),
   /** How many lines: each a product, as the couple chose it. */
   count: v.number(),
   /** Paying online is set up on this deployment. */
@@ -215,8 +224,13 @@ export const get = query({
     const cart = await findCart(ctx, token);
     if (!cart) return null;
     const priced = await priceCart(ctx, cart._id);
+    // A line bought for an event, as the digital invitation is, goes by link.
+    const travels = priced.lines.some((line) => !line.event);
     return {
       ...priced,
+      delivery: travels
+        ? { price: courierPrice(priced.total), freeFrom: FREE_DELIVERY_FROM }
+        : null,
       count: priced.lines.length,
       checkoutOpen: checkoutOpen(),
     };
