@@ -227,7 +227,8 @@ export const search = query({
 
 /**
  * The shop's categories, in the order its menu lists them, each with the
- * first photo of the first product it shows.
+ * first photo of the first product it shows. One with nothing for sale, such
+ * as the team's newest before any product is on it, stays out.
  */
 export const categories = query({
   args: {},
@@ -237,7 +238,7 @@ export const categories = query({
       .query("categories")
       .withIndex("by_position")
       .take(200);
-    return Promise.all(
+    const shelves = await Promise.all(
       categories.map(async (category) => {
         const first = await ctx.db
           .query("productCategories")
@@ -245,8 +246,8 @@ export const categories = query({
             q.eq("category", category.handle).eq("published", true),
           )
           .first();
-        const product =
-          first && (await ctx.db.get("products", first.productId));
+        if (!first) return null;
+        const product = await ctx.db.get("products", first.productId);
         const image = product?.images[0];
         return {
           ...categoryView(category),
@@ -254,6 +255,7 @@ export const categories = query({
         };
       }),
     );
+    return shelves.filter((shelf) => shelf !== null);
   },
 });
 

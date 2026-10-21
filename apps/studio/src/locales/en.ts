@@ -514,6 +514,7 @@ export default {
       label: "Workshop pages",
       orders: "Orders",
       products: "Products",
+      categories: "Categories",
       settings: "Settings",
     },
     catalog: {
@@ -612,6 +613,36 @@ export default {
         minQuantity: "A whole number of pieces from 1 to 10,000, or empty.",
         surcharge: "Write the amount in lei, such as 2.00, or 0.",
       },
+    },
+    categories: {
+      title: "Categories",
+      lead: "The shop's shelves, in the order it shows them. Rename or reorder them, or add new ones. A category keeps its address, so links to it keep working.",
+      name: "Name of category {number}",
+      up: "Move category {number} up",
+      down: "Move category {number} down",
+      remove: "Remove new category {number}",
+      forSale: "For sale: {count}",
+      forSaleMore: "For sale: over {count}",
+      hidden: "The shop doesn't show it until a product for sale is on it.",
+      new: "New: it gets an address from its name when you save.",
+      add: "Add a category",
+      addPlaceholder: "Its name",
+      addHint:
+        "It shows in the shop once you put a product on it, from the product's page.",
+      tooMany: "The shop has at most {count} categories.",
+      problems: {
+        empty: "Write the category's name.",
+        long: "At most 100 characters.",
+        twice: "Two categories can't have the same name.",
+      },
+      changed:
+        "Someone else on the team changed the categories meanwhile. The page now shows their list.",
+      changedMeanwhile:
+        "Someone else on the team changed the categories while you were editing them. See their list, then make again the changes still needed.",
+      showTheirs: "See their list",
+      editedBy: "Last changed by {email} on {time}.",
+      asSeeded:
+        "As they were on jolene.ro: no one on the team has changed them.",
     },
     print: {
       make: "Print file",

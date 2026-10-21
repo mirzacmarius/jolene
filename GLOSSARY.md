@@ -155,7 +155,7 @@ A product the shop shows and sells. One taken off sale (ro: scos de la vânzare)
 _Avoid_: Active, live, published (in UI: a couple publishes a digital invitation)
 
 **Category** (ro: categorie):
-A shelf of the shop, such as Invitații nuntă or Mărturii, as jolene.ro had them. Its address in the shop still says `/collections/`, as the template had it. A product's first category is its main one (ro: categoria principală), which its page's path and similar products come from.
+A shelf of the shop, such as Invitații nuntă or Mărturii: jolene.ro's, and those the team adds in the workshop. Its address in the shop still says `/collections/`, as the template had it, and stays the same when the team renames it. The shop lists one once something is for sale on it. A product's first category is its main one (ro: categoria principală), which its page's path and similar products come from.
 _Avoid_: Collection (a family of designs)
 
 **Order option** (ro: opțiune; code: line option):

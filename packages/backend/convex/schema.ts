@@ -412,12 +412,14 @@ export default defineSchema({
     storageId: v.id("_storage"),
   }).index("by_storageId", ["storageId"]),
 
-  /** A shelf of the shop, one of jolene.ro's categories. */
+  /** A shelf of the shop, one of jolene.ro's categories or the team's. */
   categories: defineTable({
     handle: v.string(),
     title: v.string(),
     position: v.number(),
+    /** When the team last saved the list, and who (workshop.categories.save). */
     editedAt: v.optional(v.number()),
+    editedBy: v.optional(v.string()),
   })
     .index("by_handle", ["handle"])
     .index("by_position", ["position"]),
