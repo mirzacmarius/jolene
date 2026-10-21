@@ -634,6 +634,10 @@ export default {
     emailPlaceholder: "nume@exemplu.ro",
     sendCode: "Trimiteți-mi un cod",
     sending: "Se trimite…",
+    legal:
+      "Continuând, acceptați {terms} și confirmați că ați citit {privacy}.",
+    terms: "termenii și condițiile",
+    privacy: "politica de confidențialitate",
     codeSent: "Am trimis un cod la {email}. Este valabil 15 minute.",
     code: "Codul din email",
     signIn: "Conectați-vă",
@@ -871,6 +875,10 @@ export default {
     remove: "Nu vine",
     addPerson: "Adăugați pe cineva",
     allergies: "Alergii sau alimente pe care nu le puteți mânca",
+    allergiesHint:
+      "Opțional. Ce scrieți aici ajunge doar la {hosts}, ca să poată anunța localul, și îl puteți șterge oricând.",
+    allergiesHintUnnamed:
+      "Opțional. Ce scrieți aici ajunge doar la cei care v-au invitat, ca să poată anunța localul, și îl puteți șterge oricând.",
     message: "Un mesaj pentru {hosts}",
     messageUnnamed: "Un mesaj",
     yourName: "Numele dumneavoastră sau al familiei",
@@ -896,6 +904,7 @@ export default {
       "Ați încercat de multe ori. Așteptați câteva minute și încercați din nou.",
     invalid: "Verificați numele și meniurile.",
     madeWith: "Invitație digitală făcută cu Jolene",
+    privacy: "Confidențialitate",
     language: "Limba",
     share: {
       wedding:

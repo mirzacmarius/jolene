@@ -25,6 +25,7 @@ import {
   DesignPreview,
 } from "@/components/design/design-preview";
 import { densityStep, Tablecloth } from "@/components/design/preview-stage";
+import { POLICIES } from "@/lib/shop";
 import { useI18n } from "@/locales/client";
 import { Envelope } from "./envelope";
 import { GuestReply } from "./guest-reply";
@@ -262,6 +263,15 @@ export function InvitationPage({
             <Logo alt="" className="h-5 w-auto" />
             {t("guest.madeWith")}
           </a>
+          {/* The shop's own address: this one sends its paths to invitations. */}
+          {data.shop ? (
+            <a
+              href={`${data.shop}${POLICIES[data.language].privacy}`}
+              className="transition-colors hover:text-foreground"
+            >
+              {t("guest.privacy")}
+            </a>
+          ) : null}
         </footer>
       </main>
     </>
