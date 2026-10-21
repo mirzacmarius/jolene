@@ -41,6 +41,7 @@ const subtotal = 36_500;
 const checkoutEnv = [
   "SITE_URL",
   "SHOP_URL",
+  "SHOP_SECRET",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
 ] as const;
@@ -260,6 +261,68 @@ describe("checkout.start", () => {
       errors.cartEmpty,
     );
     expect(await t.run((ctx) => ctx.db.query("checkouts").take(5))).toEqual([]);
+  });
+
+  test("opens only for the shop's server once it shares SHOP_SECRET", async () => {
+    const { t, stripe } = await withCart();
+    process.env.SHOP_SECRET = "shop-secret";
+    const visitor = "203.0.113.7";
+    for (const server of [undefined, { secret: "a-guess", visitor }])
+      await expectError(
+        t.action(api.checkout.start, {
+          token,
+          language: "ro",
+          ...(server && { server }),
+        }),
+        errors.shopOnly,
+      );
+    expect(stripe.requests).toEqual([]);
+    const url = await t.action(api.checkout.start, {
+      token,
+      language: "ro",
+      server: { secret: "shop-secret", visitor },
+    });
+    expect(url).toBe(stripe.latest().url as string);
+  });
+
+  test("gives each visitor the shop's server names a limit of their own", async () => {
+    const { t } = await withCart();
+    process.env.SHOP_SECRET = "shop-secret";
+    const open = (cart: string, visitor: string) =>
+      t.action(api.checkout.start, {
+        token: cart,
+        language: "ro",
+        server: { secret: "shop-secret", visitor },
+      });
+    // A script filling throwaway carts from one home's addresses.
+    const carts = Array.from({ length: 11 }, (_, i) =>
+      String(i).padStart(40, "e"),
+    );
+    for (const cart of carts)
+      await t.mutation(api.cart.add, { ...roses, token: cart });
+    for (const [i, cart] of carts.slice(0, 10).entries())
+      await open(cart, i % 2 ? "2001:db8:1:2::7" : "2001:db8:1:2:aa::1");
+    await expectError(
+      open(carts[10] as string, "2001:db8:1:2::8"),
+      errors.tooMany,
+    );
+    // Couples elsewhere still pay.
+    await open(token, "198.51.100.4");
+  });
+
+  test("names no visitor until the shop shares SHOP_SECRET", async () => {
+    const { t } = await withCart();
+    const carts = Array.from({ length: 11 }, (_, i) =>
+      String(i).padStart(40, "e"),
+    );
+    for (const cart of carts) {
+      await t.mutation(api.cart.add, { ...roses, token: cart });
+      await t.action(api.checkout.start, {
+        token: cart,
+        language: "ro",
+        server: { secret: "anything", visitor: "203.0.113.7" },
+      });
+    }
   });
 
   test("stays closed on a deployment without Stripe", async () => {
