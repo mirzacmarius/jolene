@@ -22,9 +22,10 @@ function describeError(error: unknown): string {
 
 // Once the shop and Convex share SHOP_SECRET, Convex opens Stripe's page only for the shop's
 // server, which says who the visitor is by the address Vercel saw them at, in x-forwarded-for:
-// each visitor then has a limit of their own, so one can't use up everyone's checkouts.
+// each visitor then has a limit of their own, so one can't use up everyone's checkouts. Trimmed
+// as Convex trims its own, so a pasted newline doesn't keep the two from matching.
 async function fromServer() {
-  const secret = process.env.SHOP_SECRET;
+  const secret = process.env.SHOP_SECRET?.trim();
   if (!secret) return {};
   const visitor = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim();
   return { server: { secret, visitor: visitor || "unknown" } };
