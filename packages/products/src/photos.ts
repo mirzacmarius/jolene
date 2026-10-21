@@ -12,10 +12,12 @@ const uploads = "https://jolene.ro/wp-content/uploads/";
 export const photoFolder = "jolene.ro/";
 
 /**
- * The photo store's address once the catalog's photos are in it: until
- * then, the shop shows them from jolene.ro.
+ * The photo store's address, jolene-photos in Vercel Blob, now that the
+ * catalog's photos are in it. Left undefined, the shop shows them from
+ * jolene.ro.
  */
-export const photoStore: string | undefined = undefined;
+export const photoStore: string | undefined =
+  "https://tnmeb8t2pe4ritq0.public.blob.vercel-storage.com";
 
 /** A jolene.ro photo's path in the photo store: jolene.ro/2021/10/a.jpg. */
 export function photoPath(url: string): string {

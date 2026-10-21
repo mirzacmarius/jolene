@@ -18,7 +18,7 @@ The catalog keeps each photo's address on jolene.ro, and the photo store, a Verc
 bun run photos [--to folder] [--minutes n]
 ```
 
-copies from jolene.ro the photos the store lacks, as the shop's production builds do after building, with the store's token in `BLOB_READ_WRITE_TOKEN`. `--to` writes the copies to a folder instead, to look at them, and `--minutes` stops starting copies after so long. Once every photo is in the store, `photoStore` in `src/photos.ts` holds its address and the seed shows each product's photos from there.
+copies from jolene.ro the photos the store lacks, as the shop's production builds do after building, with the store's token in `BLOB_READ_WRITE_TOKEN`. `--to` writes the copies to a folder instead, to look at them, and `--minutes` stops starting copies after so long. `photoStore` in `src/photos.ts` holds the store's address, so the seed shows each product's photos from there.
 
 ## How the catalog sells
 
