@@ -438,7 +438,9 @@ export default defineSchema({
     required: v.boolean(),
     /** A select's choices, in order. */
     choices: v.array(choiceValidator),
+    /** When the team last changed it, and who (workshop.lineOptions.save). */
     editedAt: v.optional(v.number()),
+    editedBy: v.optional(v.string()),
   }).index("by_handle", ["handle"]),
 
   /**

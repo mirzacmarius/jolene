@@ -163,7 +163,7 @@ A shelf of the shop, such as Invitații nuntă or Mărturii: jolene.ro's, and th
 _Avoid_: Collection (a family of designs)
 
 **Order option** (ro: opțiune; code: line option):
-What a couple chooses or writes when they order a product, apart from its paper: the seal's colour, the ribbon, the envelope, a text. It travels with the line in the cart, and products that ask the same share one.
+What a couple chooses or writes when they order a product, apart from its paper: the seal's colour, the ribbon, the envelope, a text. It travels with the line in the cart, and products that ask the same share one. One that's chosen has choices (ro: alegeri), each with what it adds to each one ordered; the workshop changes them on every product that asks the option at once. Options that ask the same with other choices or prices, such as jolene.ro's eight envelope colour options, share an answer (their key), so a product asks one of them.
 _Avoid_: Add-on, customization, attribute
 
 **Extras** (ro: opțiuni suplimentare):

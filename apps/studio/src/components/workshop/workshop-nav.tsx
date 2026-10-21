@@ -6,6 +6,7 @@ const SECTIONS = [
   { key: "orders", href: "/studio/atelier" },
   { key: "products", href: "/studio/atelier/produse" },
   { key: "categories", href: "/studio/atelier/categorii" },
+  { key: "lineOptions", href: "/studio/atelier/optiuni" },
   { key: "settings", href: "/studio/atelier/setari" },
 ] as const;
 
