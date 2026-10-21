@@ -12,6 +12,7 @@ A couple who pays Jolene another way, such as by bank transfer, has the invitati
 
 - The checkout records paid orders (ADR 0015), so the digital invitation and printed invitations unlock their event as soon as the order is paid.
 - The cart refuses the digital invitation without an event, for an event that doesn't exist or one already unlocked, and keeps its line at one; a line whose invitation was unlocked meanwhile can't be paid for.
+- Two checkouts of the same event's digital invitation opened before either is paid, as when each of a couple pays from their own cart, can both be paid. The second order unlocks nothing, so the team's notice of it asks for its refund; a notice also says when an unlock failed, to be done by hand.
 - Beside at least ten of the event's printed invitations in the same cart, the digital invitation costs nothing, since the order unlocks it with them anyway.
 - Anyone with an event's id can read its names, date and picture on the digital invitation's page, as with a proof; the ids can't be guessed.
 - A refund doesn't lock the invitation again; Jolene decides that case by case.

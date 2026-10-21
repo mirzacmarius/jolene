@@ -1,6 +1,7 @@
-import type { Doc } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import { WORKSHOP_ADDRESS } from "../checkout/delivery";
 import { escapeHtml } from "../emails";
+import type { Unlock } from "../invites/validators";
 import { lei, orderName } from "./format";
 
 /**
@@ -10,6 +11,12 @@ import { lei, orderName } from "./format";
  */
 
 type Order = Doc<"orders">;
+
+/**
+ * A digital invitation an order paid for and didn't unlock: how it was
+ * unlocked before, or null if it still isn't.
+ */
+export type Unopened = { event: Id<"events">; unlocked: Unlock | null };
 
 const words = {
   ro: {
@@ -227,11 +234,52 @@ export function confirmationEmail(
   };
 }
 
+/** Who unlocked a digital invitation before, as the team's notice says it. */
+function unlockedBy({ by, order }: Unlock): string {
+  switch (by) {
+    case "order":
+      return `de comanda ${order}`;
+    case "print":
+      return `de invitațiile tipărite din comanda ${order}`;
+    case "hand":
+      return `de mână (${order})`;
+  }
+}
+
+/**
+ * What the team does about a digital invitation the order paid for and
+ * didn't unlock: refund it, if it was already unlocked, or unlock it by hand.
+ * One that came free with printed invitations has nothing to refund.
+ */
+function unopenedNote(
+  line: Order["lines"][number],
+  unopened: Unopened | undefined,
+): string[] {
+  if (!unopened) return [];
+  const paid = lei(line.total);
+  if (!unopened.unlocked)
+    return [
+      line.total > 0
+        ? `  N-a putut fi deblocată: deblocați-o de mână (invites/unlock:byHand) sau returnați plata de ${paid}.`
+        : "  N-a putut fi deblocată: deblocați-o de mână (invites/unlock:byHand).",
+    ];
+  return line.total > 0
+    ? [
+        `  Era deja deblocată ${unlockedBy(unopened.unlocked)}, deci plata de ${paid} n-a deblocat nimic: returnați-o.`,
+      ]
+    : [];
+}
+
 /**
  * The notice to Jolene's team of a new order, in Romanian: everything the
- * workshop needs to make and send it, and Stripe's payment to find it by.
+ * workshop needs to make and send it, Stripe's payment to find it by, and
+ * what to do about each digital invitation it paid for and didn't unlock.
  */
-export function noticeEmail(order: Order, link: string | null) {
+export function noticeEmail(
+  order: Order,
+  link: string | null,
+  unopened: Unopened[] = [],
+) {
   const w = words.ro;
   const name = orderName(order.number);
   const { customer } = order;
@@ -257,13 +305,21 @@ export function noticeEmail(order: Order, link: string | null) {
       ...choices(line).map((choice) => `  ${choice}`),
       ...(line.proof ? [`  Design aprobat în studio: ${line.proof}`] : []),
       ...(line.event
-        ? [`  Pentru ${line.event.hosts}, evenimentul ${line.event.id}`]
+        ? [
+            `  Pentru ${line.event.hosts}, evenimentul ${line.event.id}`,
+            ...unopenedNote(
+              line,
+              unopened.find(({ event }) => event === line.event?.id),
+            ),
+          ]
         : []),
     ]),
     ...(order.lines.every((line) => line.event)
       ? [
           "",
-          "Nimic de livrat: comanda deschide invitația digitală tuturor invitaților.",
+          unopened.length
+            ? "Nimic de livrat."
+            : "Nimic de livrat: comanda deschide invitația digitală tuturor invitaților.",
         ]
       : []),
     "",
