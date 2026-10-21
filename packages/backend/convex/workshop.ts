@@ -8,9 +8,13 @@ import {
   readOrders,
   readStoreData,
 } from "./workshop/orders";
-import { PROOFS_PER_CALL } from "./workshop/proofs";
+import { PROOFS_PER_CALL, printJobOf } from "./workshop/proofs";
 import { workshopAccess } from "./workshop/staff";
-import { ordersValidator, type proofValidator } from "./workshop/validators";
+import {
+  ordersValidator,
+  printJobValidator,
+  type proofValidator,
+} from "./workshop/validators";
 
 /** Who is signed in, as the workshop's page needs to know. */
 export const access = query({
@@ -87,4 +91,14 @@ export const orders = action({
       readAt: Date.now(),
     };
   },
+});
+
+/**
+ * What the print file of an order's proof is made from, for the studio, which
+ * makes the file (apps/studio/src/app/studio/api/print-files).
+ */
+export const printJob = query({
+  args: { proofId: v.string() },
+  returns: v.union(printJobValidator, v.null()),
+  handler: async (ctx, { proofId }) => await printJobOf(ctx, proofId),
 });

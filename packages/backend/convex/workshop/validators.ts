@@ -1,5 +1,11 @@
 import { v } from "convex/values";
-import { labelsValidator, productKindValidator } from "../utils/validators";
+import { resolvedAssetValidator } from "../utils/assets";
+import {
+  documentValidator,
+  fieldsValidator,
+  labelsValidator,
+  productKindValidator,
+} from "../utils/validators";
 
 /** A designed line's proof, as the workshop's order list shows it. */
 export const proofValidator = v.object({
@@ -9,6 +15,19 @@ export const proofValidator = v.object({
   suite: v.union(labelsValidator, v.null()),
   image: v.union(v.string(), v.null()),
   approvedAt: v.number(),
+});
+
+/** What a proof's print file is made from, for the workshop alone. */
+export const printJobValidator = v.object({
+  kind: productKindValidator,
+  /** The collection's name; null once the catalog no longer has it. */
+  suite: v.union(labelsValidator, v.null()),
+  /** Who it's for, from the couple's details, such as "Ana & Mihai". */
+  names: v.string(),
+  document: documentValidator,
+  fields: fieldsValidator,
+  /** The files it draws: Jolene's artwork, and the couple's own photos. */
+  assets: v.array(resolvedAssetValidator),
 });
 
 /**

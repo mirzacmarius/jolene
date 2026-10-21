@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { eucaliptInvitation } from "@jolene/design";
+import { EUCALYPTUS_ASSET, eucaliptInvitation } from "@jolene/design";
 import { attributes, proofNote } from "@jolene/products/order";
 import { Glob } from "bun";
 import { convexTest } from "convex-test";
@@ -300,6 +300,82 @@ describe("the workshop", () => {
     expect(calls.slice(1).every((call) => call.token === "shpat_test")).toBe(
       true,
     );
+  });
+
+  test("gives a proof's print file what the couple approved", async () => {
+    const { t, couple, workshop } = await setUp();
+    const designId = await couple.mutation(api.designs.start, {
+      template: "sample-invitation",
+    });
+    const approved = await couple.mutation(api.proofs.approve, {
+      designId,
+      revision: 1,
+      fields: {},
+    });
+    if (!approved.ok) throw new Error("not approved");
+    await t.run(async (ctx) => {
+      const proof = await ctx.db.get("proofs", approved.proofId);
+      if (!proof) throw new Error("no proof");
+      await ctx.db.insert("assets", {
+        key: EUCALYPTUS_ASSET,
+        path: "/studio/art/sample/eucalyptus.svg",
+        kind: "artwork",
+        contentType: "image/svg+xml",
+        recolorable: true,
+      });
+      // The couple's photo, on the front of their invitation: theirs alone.
+      await ctx.db.insert("assets", {
+        key: "photo-ana-mihai",
+        storageId: await ctx.storage.store(
+          new Blob(["photo"], { type: "image/jpeg" }),
+        ),
+        kind: "photo",
+        contentType: "image/jpeg",
+        recolorable: false,
+        ownerId: proof.ownerId,
+      });
+      const document = structuredClone(proof.document);
+      const layers = document.pieces[0].front.layers;
+      layers.push({
+        ...layers.find((layer: { type: string }) => layer.type === "image"),
+        id: "photo",
+        asset: "photo-ana-mihai",
+      });
+      await ctx.db.patch("proofs", proof._id, {
+        document,
+        fields: { partner1: "Ana", partner2: "Mihai", date: "2027-06-12" },
+      });
+    });
+
+    const proofId = approved.proofId;
+    await expect(
+      couple.query(api.workshop.printJob, { proofId }),
+    ).rejects.toThrow("workshop-only");
+    expect(
+      await workshop.query(api.workshop.printJob, { proofId: "not-a-proof" }),
+    ).toBeNull();
+    const job = await workshop.query(api.workshop.printJob, { proofId });
+    expect(job).toMatchObject({
+      kind: "invitation",
+      suite: { ro: "Eucalipt", en: "Eucalyptus" },
+      names: "Ana & Mihai",
+      fields: { partner1: "Ana", partner2: "Mihai", date: "2027-06-12" },
+      document: { kind: "invitation", occasion: "wedding" },
+    });
+    expect(job?.assets).toEqual([
+      {
+        key: EUCALYPTUS_ASSET,
+        url: "/studio/art/sample/eucalyptus.svg",
+        contentType: "image/svg+xml",
+        recolorable: true,
+      },
+      {
+        key: "photo-ana-mihai",
+        url: expect.stringMatching(/^https?:\/\//),
+        contentType: "image/jpeg",
+        recolorable: false,
+      },
+    ]);
   });
 
   test("passes on the store's refusal", async () => {

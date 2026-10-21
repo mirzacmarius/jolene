@@ -1,5 +1,7 @@
+import { assetKeys, type DesignDocument, namesOf } from "@jolene/design";
 import { v } from "convex/values";
-import { internalQuery } from "../_generated/server";
+import { internalQuery, type QueryCtx } from "../_generated/server";
+import { resolveAssets } from "../utils/assets";
 import { requireWorkshop } from "./staff";
 import { proofValidator } from "./validators";
 
@@ -33,3 +35,27 @@ export const summaries = internalQuery({
     return found;
   },
 });
+
+/**
+ * What a proof's print file is made from: the design the couple approved,
+ * with their details and the files it draws. Their photos resolve as they did
+ * for the couple, who alone may use them.
+ */
+export async function printJobOf(ctx: QueryCtx, raw: string) {
+  await requireWorkshop(ctx);
+  const id = ctx.db.normalizeId("proofs", raw);
+  const proof = id && (await ctx.db.get("proofs", id));
+  if (!proof) return null;
+  const template = await ctx.db.get("templates", proof.templateId);
+  const suite = template && (await ctx.db.get("suites", template.suiteId));
+  // Stored documents were checked against the design schema when saved.
+  const document = proof.document as DesignDocument;
+  return {
+    kind: proof.kind,
+    suite: suite?.name ?? null,
+    names: namesOf(proof.fields, document.occasion),
+    document: proof.document,
+    fields: proof.fields,
+    assets: await resolveAssets(ctx, assetKeys(document), proof.ownerId),
+  };
+}

@@ -375,6 +375,13 @@ export function monogram(fields: Fields, occasion: Occasion): string {
   return first && second ? `${first} & ${second}` : first || second;
 }
 
+/** Who a design is for, as the workshop knows the job: "Ana & Mihai". */
+export function namesOf(fields: Fields, occasion: Occasion): string {
+  const name = (key: string) => fields[key]?.trim() ?? "";
+  if (occasion === "christening") return name("child");
+  return [name("partner1"), name("partner2")].filter(Boolean).join(" & ");
+}
+
 export interface ResolveOptions {
   fields: Fields;
   occasion: Occasion;
