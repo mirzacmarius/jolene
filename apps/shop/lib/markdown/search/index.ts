@@ -1,12 +1,11 @@
-import { getSearchResultUrl } from "@shopify/hydrogen";
-
 import { shopConfig } from "@/lib/config";
 import { escapeMarkdown, markdownFrontmatter } from "@/lib/markdown";
+import { getSearchUrl } from "@/lib/search";
 
 export function searchToMarkdown(query: string | undefined): string {
   const siteUrl = shopConfig.site.url;
   const term = query?.trim();
-  const shopPath = term ? getSearchResultUrl({ baseUrl: "/search", term }) : "/search";
+  const shopPath = term ? getSearchUrl(term) : "/search";
 
   const title = term ? `Search: ${term}` : "Search";
   const description =
@@ -26,6 +25,5 @@ export function searchToMarkdown(query: string | undefined): string {
     "## Search",
     "",
     `- Shop: ${new URL(shopPath, siteUrl)}`,
-    `- Live products, prices, and availability: UCP catalog search at ${new URL("/.well-known/ucp", siteUrl)}`,
   ].join("\n");
 }

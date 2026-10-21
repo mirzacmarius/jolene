@@ -27,21 +27,18 @@ export function Lightbox({ label, children }: { label: string; children: ReactNo
               if (e.target === e.currentTarget) close();
             }}
           >
-            <DialogPrimitive.Title className="sr-only">{`${label} enlarged`}</DialogPrimitive.Title>
+            <DialogPrimitive.Title className="sr-only">{`${label}, fotografie mărită`}</DialogPrimitive.Title>
 
             <DialogPrimitive.Close className="pointer-events-auto absolute top-4 right-4 z-10 rounded-full bg-black/50 p-2 text-white transition-opacity hover:opacity-80 focus:ring-2 focus:ring-white focus:outline-hidden">
               <XIcon className="size-5" />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">Închide</span>
             </DialogPrimitive.Close>
 
             {activeImage && (
-              <div
-                className="pointer-events-none relative h-full max-w-full bg-background"
-                style={{ aspectRatio: `${activeImage.width} / ${activeImage.height}` }}
-              >
+              <div className="pointer-events-none relative size-full">
                 <Image
                   src={activeImage.url}
-                  alt={activeImage.altText || `${label} enlarged`}
+                  alt={activeImage.altText || `${label}, fotografie mărită`}
                   fill
                   className="object-contain"
                   sizes="100vw"

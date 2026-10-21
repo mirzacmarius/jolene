@@ -1,199 +1,52 @@
-import type { ProductInput } from "@shopify/hydrogen";
-
-import type { Image, Video } from "@/lib/media/types";
-import type { Money } from "@/lib/money/types";
-import type { PageInfo } from "@/lib/pagination/types";
-import type { SEO } from "@/lib/seo/types";
-
-export type SelectedOptions = Record<string, string>;
-
-export type ProductFormVariant = Pick<
-  ProductVariant,
-  | "availableForSale"
-  | "compareAtPrice"
-  | "id"
-  | "image"
-  | "price"
-  | "requiresSellingPlan"
-  | "selectedOptions"
-  | "sellingPlanAllocations"
-  | "title"
-> & {
-  product: { handle: string; title: string };
-  requiresBundleConfiguration: boolean;
-};
-
-// The store only forwards `swatch` per value, so the variant thumbnail rides along with it.
-export interface ProductFormSwatch extends OptionValueSwatch {
-  variantImage?: string;
-}
-
-export type ProductFormInput = ProductInput<ProductFormVariant> & {
-  options: Array<{
-    name: string;
-    optionValues: Array<{
-      firstSelectableVariant: ProductFormVariant | null;
-      name: string;
-      swatch?: ProductFormSwatch;
-    }>;
-  }>;
-};
-
-interface OptionValueState {
-  available: boolean;
-  crossProduct: boolean;
-  exists: boolean;
-  href: string;
-  image?: string;
-  name: string;
-  selected: boolean;
-  swatch?: OptionValueSwatch;
-}
-
-export interface OptionGroupState {
-  name: string;
-  values: OptionValueState[];
-}
+import type { Category } from "@/lib/categories/types";
+import type { Fee, LineOption } from "@/lib/line-options/types";
+import type { Image } from "@/lib/media/types";
 
 export interface ProductCard {
-  availableForSale: boolean;
-  compareAtPrice?: Money;
-  defaultVariantSelectedOptions?: SelectedOption[];
-  featuredImage: Image | null;
+  compareAtPrice?: number;
   handle: string;
-  id: string;
-  isGiftCard: boolean;
-  maxPrice: Money;
-  price: Money;
+  /** On a card, the first two photos: the second shows on hover. */
+  images: Image[];
+  minQuantity?: number;
+  /** Bani, before any paper or paid choice. */
+  price: number;
   title: string;
-  vendor?: string;
-}
-
-export interface QuickShopProduct {
-  availableForSale: boolean;
-  form: ProductFormInput;
-  hasOptions: boolean;
-  image: string | null;
-  title: string;
-}
-
-export interface RecentlyViewedProduct {
-  featuredImage: Image | null;
-  handle: string;
-  id: string;
-  price: Money;
-  title: string;
-}
-
-export interface ProductPage {
-  pageInfo: PageInfo;
-  products: ProductCard[];
 }
 
 export interface ProductDetails extends ProductCard {
-  /** Sparse variant cache around the default variant; feeds Hydrogen's product form store. */
-  adjacentVariants: ProductVariant[];
-  allVariantsInStock: boolean;
-  category?: Category | null;
-  compareAtPriceRange?: {
-    maxVariantPrice: Money;
-    minVariantPrice: Money;
-  };
-  currencyCode: string;
-  defaultVariant?: ProductVariant;
-  defaultVariantSku?: string;
+  categories: Category[];
   description: string;
   descriptionHtml: string;
-  encodedVariantAvailability?: string;
-  encodedVariantExistence?: string;
-  hasUniformPricing: boolean;
-  images: Image[];
+  fees: Fee[];
+  lineOptions: LineOption[];
   options: ProductOption[];
-  priceRange: {
-    maxVariantPrice: Money;
-    minVariantPrice: Money;
-  };
-  seo: SEO;
-  updatedAt: string;
-  /** Only populated by fetchProductWithVariants for Eve; the PDP and Markdown omit it. */
-  variants?: ProductVariant[];
-  variantsCount: number;
-  videos: Video[];
+  tags: string[];
 }
 
-export interface ProductVariant {
-  availableForSale: boolean;
-  bundleParents: ProductVariantReference[];
-  compareAtPrice?: Money;
-  components: ProductVariantComponent[];
-  id: string;
-  image: Image | null;
-  price: Money;
-  /** Differs from the page's handle for combined-listing option values. */
-  productHandle: string;
-  productTitle: string;
-  requiresComponents: boolean;
-  requiresSellingPlan: boolean;
-  selectedOptions: SelectedOption[];
-  // Only the first 100 allocations are loaded.
-  sellingPlanAllocations: SellingPlanAllocation[];
-  title: string;
-}
-
-export interface SellingPlanAllocation {
-  compareAtPrice: Money;
-  price: Money;
-  sellingPlan: {
-    description?: string | null;
-    id: string;
-    name: string;
-    recurringDeliveries: boolean;
-  };
-}
-
-export interface ProductVariantComponent {
-  quantity: number;
-  variant: ProductVariantReference;
-}
-
-export interface ProductVariantReference {
-  id: string;
-  image: Image | null;
-  product: {
-    featuredImage: Image | null;
-    handle: string;
-    id: string;
-    title: string;
-  };
-  title: string;
-}
-
+/** What a product is made of, such as its paper: the couple picks one value. */
 export interface ProductOption {
-  id: string;
   name: string;
-  values: OptionValue[];
+  values: ProductOptionValue[];
 }
 
-export interface OptionValueSwatch {
-  color?: string;
-  image?: string;
+export interface ProductOptionValue {
+  name: string;
+  /** Bani the value adds to each one ordered. */
+  surcharge: number;
 }
 
-export interface OptionValue {
-  firstSelectableVariant?: ProductVariant;
-  id: string;
-  image?: string;
-  name: string;
-  swatch?: OptionValueSwatch;
+export interface ProductPage {
+  /** Where the next page starts, or null after the last. */
+  cursor: string | null;
+  products: ProductCard[];
 }
 
-export interface SelectedOption {
-  name: string;
-  value: string;
+export interface RecentlyViewedProduct {
+  handle: string;
+  image: Image | null;
+  price: number;
+  title: string;
 }
 
-export interface Category {
-  ancestors: Category[];
-  id: string;
-  name: string;
-}
+/** Each option's picked value, by the option's name. */
+export type SelectedOptions = Record<string, string>;

@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import type { Catalog } from "./catalog";
 
-/** Where the lift writes the catalog and the sync reads it. */
+/** Where the lift writes the catalog. */
 export const catalogFolder = join(import.meta.dir, "../catalog");
 
 const files = {

@@ -1,5 +1,4 @@
 import { Link } from "@/components/ui/link";
-import { buildProductUrl } from "@/lib/product";
 import type { ProductCard as ProductCardType } from "@/lib/product/types";
 
 import {
@@ -11,53 +10,24 @@ import {
   ProductCardSkeleton,
   ProductCardTitle,
 } from "./components";
-import { QuickShop } from "./quick-shop";
 
 export interface ProductCardProps {
   loading?: "eager" | "lazy";
-  outOfStockText?: string;
   product: ProductCardType;
-  quickShopText?: string;
 }
 
-export function ProductCard({ loading, outOfStockText, product, quickShopText }: ProductCardProps) {
-  const href = buildProductUrl(product.handle, product.defaultVariantSelectedOptions ?? []);
-  // The link is stretched rather than wrapping the card so Quick Shop isn't a button inside an anchor.
+export function ProductCard({ loading, product }: ProductCardProps) {
   return (
     <ProductCardRoot>
       <ProductCardImageContainer>
-        <ProductCardImage
-          src={product.featuredImage?.url}
-          alt={product.featuredImage?.altText || product.title}
-          height={product.featuredImage?.height}
-          loading={loading}
-          outOfStock={!product.availableForSale}
-          outOfStockText={outOfStockText}
-          width={product.featuredImage?.width}
-        >
-          {quickShopText && product.availableForSale && !product.isGiftCard ? (
-            <QuickShop
-              handle={product.handle}
-              href={href}
-              image={product.featuredImage?.url ?? null}
-              label={quickShopText}
-              title={product.title}
-            />
-          ) : null}
-        </ProductCardImage>
+        <ProductCardImage images={product.images} loading={loading} title={product.title} />
         <ProductCardContent>
           <ProductCardTitle>
-            <Link href={href} className="after:absolute after:inset-0">
+            <Link className="after:absolute after:inset-0" href={`/products/${product.handle}`}>
               {product.title}
             </Link>
           </ProductCardTitle>
-          <ProductCardPrice
-            amount={product.price.amount}
-            currencyCode={product.price.currencyCode}
-            maxAmount={product.maxPrice.amount}
-            compareAtAmount={product.compareAtPrice?.amount}
-            compareAtCurrencyCode={product.compareAtPrice?.currencyCode}
-          />
+          <ProductCardPrice compareAtPrice={product.compareAtPrice} price={product.price} />
         </ProductCardContent>
       </ProductCardImageContainer>
     </ProductCardRoot>

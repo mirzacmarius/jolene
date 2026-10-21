@@ -12,7 +12,7 @@ _Avoid_: Set, line, theme (in code, "theme" is a design's palette and type)
 
 **Template** (ro: șablon):
 One of Jolene's designs for one item of a collection, which a couple starts their own design from. Visitors never see the word; they see the item.
-_Avoid_: Model, product (the product is what Shopify sells)
+_Avoid_: Model, product (the product is what the shop sells)
 
 **Item** (code: product kind):
 What a design makes: an invitation (ro: invitație), save the date, RSVP card (card de confirmare), menu (meniu), place card, table number (număr de masă), welcome sign (tablou de întâmpinare), seating chart (tablou de așezare), money envelope (plic de bani), favour tag (etichetă pentru mărturii), thank-you card (card de mulțumire) or bridesmaid and groomsman card.
@@ -143,15 +143,15 @@ Small keepsakes given to guests, sold in the shop alongside the stationery.
 _Avoid_: Gifts, souvenirs
 
 **Category** (ro: categorie):
-A shelf of the shop, such as Invitații nuntă or Mărturii, as jolene.ro had them. Shopify calls it a collection.
+A shelf of the shop, such as Invitații nuntă or Mărturii, as jolene.ro had them. Its address in the shop still says `/collections/`, as the template had it.
 _Avoid_: Collection (a family of designs)
 
 **Order option** (ro: opțiune; code: line option):
 What a couple chooses or writes when they order a product, apart from its paper: the seal's colour, the ribbon, the envelope, a text. It travels with the line in the cart, and products that ask the same share one.
-_Avoid_: Add-on, customization, attribute (how the cart carries it)
+_Avoid_: Add-on, customization, attribute
 
 **Extras** (ro: opțiuni suplimentare):
-What a line's paid order options add to each one ordered, charged on a line of their own beside it.
+What a line's paid order options add to each one ordered, in the line's price.
 _Avoid_: Add-ons, upsell
 
 **Minimum order** (ro: comandă minimă; code: minQuantity):
@@ -159,8 +159,36 @@ The smallest quantity of a product Jolene takes an order for, such as 30 invitat
 _Avoid_: MOQ
 
 **Fee** (ro: taxă):
-A one-off charge on an order, such as for diacritics or an urgent order, sold as a product of its own.
-_Avoid_: Surcharge (what a paper adds to a variant's price)
+A one-off charge on an order, such as for diacritics or an urgent order, paid once however many lines ask for it.
+_Avoid_: Surcharge (what a paper adds to a product's price)
+
+**Checkout** (ro: plată):
+Paying for the cart on Stripe's page. Convex keeps the cart as it was priced when the couple went to pay, and their order is made from it.
+_Avoid_: Payment page
+
+**Delivery** (ro: livrare):
+How a printed order reaches the couple, and what that costs, chosen on Stripe's page.
+_Avoid_: Shipping (in copy)
+
+**VAT** (ro: TVA; code: vat):
+The value added tax inside the shop's prices. Jolene's prices include it, so Stripe Tax shows how much of what the couple paid is VAT, and never adds to it.
+_Avoid_: Tax (in Romanian, taxă is a fee)
+
+**Order** (ro: comandă):
+What a couple paid for in one checkout: its lines and fees as they were priced, its delivery, where it goes and what Stripe charged.
+_Avoid_: Purchase, sale
+
+**Order number** (ro: numărul comenzii; code: number):
+What the couple and the workshop call an order: J and a number from 1001, such as J1001.
+_Avoid_: Order id (an order's key in Convex)
+
+**Order page** (ro: pagina comenzii):
+The shop's page of one order, at a long random address that the couple's emails link to.
+_Avoid_: Receipt, order status
+
+**Test order** (ro: comandă de test; code: test):
+An order paid in Stripe's test mode, with a test card: a trial, not a sale.
+_Avoid_: Sandbox order
 
 ### Digital invitations
 

@@ -16,6 +16,21 @@ import {
   sideValidator,
   unlockValidator,
 } from "./invites/validators";
+import {
+  addressValidator,
+  customerValidator,
+  deliveryValidator,
+  orderFeeValidator,
+  orderLineValidator,
+} from "./orders/validators";
+import {
+  answerValidator,
+  choiceValidator,
+  lineOptionKindValidator,
+  pickedValidator,
+  productImageValidator,
+  productOptionValidator,
+} from "./shop/validators";
 import { toneValidator } from "./simple/tones";
 import {
   authorValidator,
@@ -92,7 +107,7 @@ export default defineSchema({
     slug: v.string(),
     kind: productKindValidator,
     document: documentValidator,
-    /** The Shopify product a finished design is ordered as. */
+    /** The shop's product a finished design is ordered as, named when Shopify sold it. */
     shopifyProductHandle: v.optional(v.string()),
     sortOrder: v.number(),
     /**
@@ -300,6 +315,187 @@ export default defineSchema({
   })
     .index("by_designId", ["designId"])
     .index("by_ownerId", ["ownerId"]),
+
+  /**
+   * A product the shop sells, under the name it had on jolene.ro (ADR 0015).
+   * Its prices, like every price the shop keeps, are in bani.
+   */
+  products: defineTable({
+    handle: v.string(),
+    title: v.string(),
+    descriptionHtml: v.string(),
+    /** Each one, before its paper's surcharge and its paid choices. */
+    price: v.number(),
+    /** The price before a sale, while the product is on sale. */
+    compareAtPrice: v.optional(v.number()),
+    /** What it's made of, such as its paper. */
+    options: v.array(productOptionValidator),
+    /** The handles of the order options its line asks, in order. */
+    lineOptions: v.array(v.string()),
+    /** The handles of its categories, their parents included. */
+    categories: v.array(v.string()),
+    tags: v.array(v.string()),
+    images: v.array(productImageValidator),
+    /** The smallest quantity Jolene takes an order for. */
+    minQuantity: v.optional(v.number()),
+    /** The keys of the fees an order of it can carry, such as diacritics. */
+    fees: v.array(v.string()),
+    /** Its place in the shop's lists, where jolene.ro had it. */
+    position: v.number(),
+    /** On sale: the shop shows it and sells it. */
+    published: v.boolean(),
+    /**
+     * When Jolene's team last changed it: from then on the seed leaves it
+     * as they made it.
+     */
+    editedAt: v.optional(v.number()),
+  })
+    .index("by_handle", ["handle"])
+    .index("by_published_and_position", ["published", "position"])
+    .index("by_published_and_price", ["published", "price"])
+    .searchIndex("search_title", {
+      searchField: "title",
+      filterFields: ["published"],
+    }),
+
+  /**
+   * A product's place on one of its categories' shelves, so a category lists
+   * its products in order without reading the others.
+   */
+  productCategories: defineTable({
+    category: v.string(),
+    productId: v.id("products"),
+    /** The product's own, kept in step with it by `shelve`. */
+    published: v.boolean(),
+    position: v.number(),
+    price: v.number(),
+  })
+    .index("by_category_and_published_and_position", [
+      "category",
+      "published",
+      "position",
+    ])
+    .index("by_category_and_published_and_price", [
+      "category",
+      "published",
+      "price",
+    ])
+    .index("by_productId", ["productId"]),
+
+  /** A shelf of the shop, one of jolene.ro's categories. */
+  categories: defineTable({
+    handle: v.string(),
+    title: v.string(),
+    position: v.number(),
+    editedAt: v.optional(v.number()),
+  })
+    .index("by_handle", ["handle"])
+    .index("by_position", ["position"]),
+
+  /**
+   * What a couple chooses or writes with a line, apart from its paper (ADR
+   * 0008), shared by the products that ask the same.
+   */
+  lineOptions: defineTable({
+    handle: v.string(),
+    /** What it asks, the same wherever it's asked: the shop fills it in from a design by it. */
+    key: v.string(),
+    label: v.string(),
+    hint: v.optional(v.string()),
+    kind: lineOptionKindValidator,
+    required: v.boolean(),
+    /** A select's choices, in order. */
+    choices: v.array(choiceValidator),
+    editedAt: v.optional(v.number()),
+  }).index("by_handle", ["handle"]),
+
+  /**
+   * A visitor's cart in the shop. The shop's server keeps its token in a
+   * cookie and finds the cart by it; the token is its only key.
+   */
+  carts: defineTable({
+    token: v.string(),
+    updatedAt: v.number(),
+  }).index("by_token", ["token"]),
+
+  /** A product in a cart, with what the couple chose for it. */
+  cartLines: defineTable({
+    cartId: v.id("carts"),
+    productId: v.id("products"),
+    quantity: v.number(),
+    /** A value for each of the product's options, such as its paper. */
+    options: v.array(pickedValidator),
+    /** The order options' answers, by the option's key. */
+    answers: v.array(answerValidator),
+    /** The keys of the fees the couple chose with it: the order pays each once. */
+    fees: v.array(v.string()),
+    /** The design the couple approved for it in the studio. */
+    proofId: v.optional(v.id("proofs")),
+  }).index("by_cartId", ["cartId"]),
+
+  /** A one-off charge on an order, such as for diacritics or an urgent order. */
+  fees: defineTable({
+    key: v.string(),
+    label: v.string(),
+    /** A line under the label: what the fee pays for. */
+    description: v.optional(v.string()),
+    price: v.number(),
+    editedAt: v.optional(v.number()),
+  }).index("by_key", ["key"]),
+
+  /**
+   * A cart as it went to Stripe's checkout, priced from the catalog then:
+   * what the couple pays for, and what their order keeps once they have.
+   */
+  checkouts: defineTable({
+    cartId: v.id("carts"),
+    /** Its cart lines, taken out of the cart once it's paid. */
+    cartLines: v.array(v.id("cartLines")),
+    lines: v.array(orderLineValidator),
+    fees: v.array(orderFeeValidator),
+    /** The lines and the fees together, in bani, before delivery and discounts. */
+    subtotal: v.number(),
+    language: languageValidator,
+  }),
+
+  /**
+   * What a couple paid for in one checkout: its lines and fees as priced
+   * when they went to pay, how it travels and where to.
+   */
+  orders: defineTable({
+    /** What the couple and the workshop call it: J and this, as J1001. */
+    number: v.number(),
+    /** The order page's key, in the link the couple's emails carry. */
+    token: v.string(),
+    /** The Stripe Checkout Session it was paid through: one order each. */
+    session: v.string(),
+    paymentIntent: v.optional(v.string()),
+    /** Paid in Stripe's test mode: a trial, not a sale. */
+    test: v.boolean(),
+    language: languageValidator,
+    lines: v.array(orderLineValidator),
+    fees: v.array(orderFeeValidator),
+    /** The lines and the fees together, in bani. */
+    subtotal: v.number(),
+    /** None when nothing in it travels. */
+    delivery: v.optional(deliveryValidator),
+    /** What a promotion code took off, in bani. */
+    discount: v.number(),
+    /** What Stripe charged, in bani. */
+    total: v.number(),
+    /**
+     * The VAT in the total, in bani, as Stripe Tax worked it out: prices
+     * include it. None when Stripe Tax was off, and 0 when it found no VAT
+     * to charge, as without a registration where the order goes.
+     */
+    vat: v.optional(v.number()),
+    customer: customerValidator,
+    address: v.optional(addressValidator),
+    paidAt: v.number(),
+  })
+    .index("by_number", ["number"])
+    .index("by_token", ["token"])
+    .index("by_session", ["session"]),
 
   /**
    * Who manages an event with its owner: a partner who joined by the

@@ -1,5 +1,7 @@
 # jolene.ro's catalog moves to Shopify with its order options
 
+Its Shopify parts are superseded by [ADR 0015](0015-jolene-sells-through-its-own-checkout.md): the catalog lives in Convex, where a line costs its paper plus its paid choices. Order options, fees and minimum orders keep their meaning.
+
 jolene.ro sells 456 products, and 407 of them ask the couple for more than a quantity: the paper, the seal's colour, the edges, the ribbon, the envelope, preserved flowers, a text. Most of these choices add a price to each one ordered. Shopify allows a product 3 options and 2,048 variants, so only 283 products would fit if every paid choice were an option, and the folded invitations alone would need 29,040 variants. It can price a line's own options only with Functions, which a store runs from its own app on the Plus plan alone.
 
 So the catalog moves in four parts (`packages/products`):
