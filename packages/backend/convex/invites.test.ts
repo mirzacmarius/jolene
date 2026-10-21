@@ -451,6 +451,34 @@ describe("digital invitations", () => {
     expect(history[1]?.household).toBe("Familia 1");
   });
 
+  test("take allergies out of a family's history when a reply comes without them", async () => {
+    const { t, owner, inviteId, codes } = await withInvite();
+    const reply = (code: string, value: ReplyInput) =>
+      t.mutation(api.guests.reply, {
+        slug: "ana-si-mihai",
+        code,
+        reply: value,
+      });
+    const allergiesOf = async (family: string) =>
+      (await owner.as.query(api.invites.history, { inviteId }))
+        .filter((entry) => entry.household === family)
+        .map((entry) => entry.reply.allergies);
+    await reply(codes[0] as string, coming);
+    await reply(codes[0] as string, { ...coming, allergies: "Nuci, lactoză" });
+    await reply(codes[1] as string, coming);
+    // A reply with allergies keeps the earlier ones.
+    expect(await allergiesOf("Familia 1")).toEqual(["Nuci, lactoză", "Nuci"]);
+    const { allergies: _, ...without } = coming;
+    await reply(codes[0] as string, without);
+    expect(await allergiesOf("Familia 1")).toEqual([
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    // Another family's stay theirs.
+    expect(await allergiesOf("Familia 2")).toEqual(["Nuci"]);
+  });
+
   test("refuse more people than invited, or meals not offered", async () => {
     const { t, codes } = await withInvite();
     const reply = (value: ReplyInput) =>

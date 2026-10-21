@@ -10,5 +10,5 @@ Guests never sign in. A family opens the invitation by their own link, the invit
 
 - Only an account manages a guest list (docs/adr/0011): an anonymous session ends with the browser's storage, and the replies with it.
 - Anyone with a family's link can read the invitation and change that family's reply, as with an unlisted link. Rate limits keep a link from being used to flood the list.
-- Guests' names, phone numbers and emails, their replies and allergies (which can reveal health) are personal data the couple collects and Jolene keeps for them in Convex. Allergies are asked only when the couple chooses and are seen only by the couple and the family, and Jolene's privacy policy must cover all of it.
+- Guests' names, phone numbers and emails, their replies and allergies (which can reveal health) are personal data the couple collects and Jolene keeps for them in Convex. Allergies are asked only when the couple chooses and are seen only by the couple and the family, and a reply without them takes them out of the family's earlier replies too, so a guest who deletes them takes them back. Jolene's privacy policy must cover all of it.
 - Families are capped at 600 an invitation and 12 seats a family, menus at six.
