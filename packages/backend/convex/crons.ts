@@ -19,4 +19,15 @@ crons.interval(
   {},
 );
 
+/** Guest lists kept as long as the workshop set, after their event. */
+crons.interval(
+  "forget guest lists",
+  { hours: 24 },
+  internal.invites.forget.lists,
+  {},
+);
+
+/** Resend's copies of the emails it sent, after 30 days. */
+crons.interval("forget sent emails", { hours: 24 }, internal.emails.forget, {});
+
 export default crons;

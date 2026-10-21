@@ -441,6 +441,18 @@ export default {
       unusualCharacters:
         "{characters} on {place} showed the customer a different font from the file's.",
     },
+    settings: {
+      title: "Settings",
+      lead: "What the workshop sets for every couple.",
+      guestLists: "Guest lists",
+      guestListsLead:
+        "A digital invitation's guest list, with its replies, allergies and emails, is deleted this many months after its event, or after the couple's last change for an event without a date. The privacy policy tells guests 12 to 24 months, as set here.",
+      months: "Months kept after the event",
+      changedBy: "Changed by {email} on {time}.",
+      unchanged: "Jolene's default, until someone on the team changes it.",
+      save: "Save",
+      saved: "Saved",
+    },
   },
   expert: {
     mode: {
