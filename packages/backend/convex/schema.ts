@@ -22,6 +22,7 @@ import {
   billingValidator,
   customerValidator,
   deliveryValidator,
+  invoiceValidator,
   orderFeeValidator,
   orderLineValidator,
 } from "./orders/validators";
@@ -525,6 +526,10 @@ export default defineSchema({
      * statuses get theirs from the seed (workshop/statuses.ts).
      */
     status: v.optional(orderStatusValidator),
+    /** Its invoice in SmartBill. None until SmartBill is set up. */
+    invoice: v.optional(invoiceValidator),
+    /** The invoice reversing it, once the order is refunded. */
+    creditNote: v.optional(invoiceValidator),
   })
     .index("by_number", ["number"])
     .index("by_token", ["token"])
