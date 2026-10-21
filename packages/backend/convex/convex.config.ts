@@ -57,10 +57,40 @@ const app = defineApp({
     AUTH_LOG_CODES: v.optional(v.string()),
     /**
      * Where guests open digital invitations, such as
-     * https://invitatie.jolene.ro: a family's link is this, the invitation's
+     * https://invitatie.orvibo.it: a family's link is this, the invitation's
      * address and their code. The studio's own /invitatie when unset.
      */
     INVITE_URL: v.optional(v.string()),
+    /**
+     * The shop's address, such as https://jolene.ro: Stripe sends couples
+     * back to it after paying, and order emails link to it. The shop's build
+     * sets it on a deployment that has none; SITE_URL's address when unset.
+     */
+    SHOP_URL: v.optional(v.string()),
+    /**
+     * Stripe's key for the shop's checkout, …_test_… in test mode: a
+     * restricted key (rk_…), as Stripe advises, or the secret key (sk_…).
+     * The shop's checkout opens with it. Without it the shop says paying
+     * online opens soon.
+     */
+    STRIPE_SECRET_KEY: v.optional(v.string()),
+    /**
+     * The signing secret of Stripe's webhook (http.ts), which records a paid
+     * order even when the couple never comes back from Stripe's page. Without
+     * it orders are still recorded, when the couple comes back and by the
+     * hourly check (crons.ts).
+     */
+    STRIPE_WEBHOOK_SECRET: v.optional(v.string()),
+    /**
+     * Local development only: where a stand-in for Stripe's API answers, such
+     * as http://127.0.0.1:12111. Never set on a real deployment.
+     */
+    STRIPE_API_URL: v.optional(v.string()),
+    /**
+     * Where Jolene's team hears of each new order, and where a couple's reply
+     * to their order's confirmation goes. EMAIL_FROM's address when unset.
+     */
+    ORDERS_EMAIL: v.optional(v.string()),
   },
 });
 

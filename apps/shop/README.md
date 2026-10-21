@@ -1,6 +1,6 @@
 # Jolene's shop
 
-jolene.ro's storefront: the home page, the catalog's categories and products, search and the cart, in Next.js. It sells from Convex (`packages/backend`), where the catalog, prices and carts live; the designer at `/studio` is another app on the same domain (`apps/studio`).
+jolene.ro's storefront: the home page, the catalog's categories and products, search, the cart, checkout through Stripe and each order's page, in Next.js. It sells from Convex (`packages/backend`), where the catalog, prices, carts and orders live; the designer at `/studio` is another app on the same domain (`apps/studio`).
 
 It started from the [Vercel Shop](https://vercel.shop) template, whose Next.js patterns and code style it keeps; `AGENTS.md` says how it's built.
 

@@ -162,6 +162,34 @@ _Avoid_: MOQ
 A one-off charge on an order, such as for diacritics or an urgent order, paid once however many lines ask for it.
 _Avoid_: Surcharge (what a paper adds to a product's price)
 
+**Checkout** (ro: plată):
+Paying for the cart on Stripe's page. Convex keeps the cart as it was priced when the couple went to pay, and their order is made from it.
+_Avoid_: Payment page
+
+**Delivery** (ro: livrare):
+How a printed order reaches the couple, and what that costs, chosen on Stripe's page.
+_Avoid_: Shipping (in copy)
+
+**VAT** (ro: TVA; code: vat):
+The value added tax inside the shop's prices. Jolene's prices include it, so Stripe Tax shows how much of what the couple paid is VAT, and never adds to it.
+_Avoid_: Tax (in Romanian, taxă is a fee)
+
+**Order** (ro: comandă):
+What a couple paid for in one checkout: its lines and fees as they were priced, its delivery, where it goes and what Stripe charged.
+_Avoid_: Purchase, sale
+
+**Order number** (ro: numărul comenzii; code: number):
+What the couple and the workshop call an order: J and a number from 1001, such as J1001.
+_Avoid_: Order id (an order's key in Convex)
+
+**Order page** (ro: pagina comenzii):
+The shop's page of one order, at a long random address that the couple's emails link to.
+_Avoid_: Receipt, order status
+
+**Test order** (ro: comandă de test; code: test):
+An order paid in Stripe's test mode, with a test card: a trial, not a sale.
+_Avoid_: Sandbox order
+
 ### Digital invitations
 
 **Digital invitation** (ro: invitație digitală; code: invite):
