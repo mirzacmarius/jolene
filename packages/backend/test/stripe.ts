@@ -276,17 +276,24 @@ export function fakeStripe() {
     /**
      * Pays for a session as Stripe's page would: the couple's details, an
      * address in Cluj when the session asks for one, with the way to travel
-     * they chose (the first offered unless `delivery` names another), a
-     * promotion code's discount if any and, with Stripe Tax on, Romania's VAT
-     * inside the total unless `vat` says otherwise.
+     * they chose (the first offered unless `delivery` names another), the
+     * billing address (the same, else one in Bucharest), the company they
+     * bought as if any, a promotion code's discount if any and, with Stripe
+     * Tax on, Romania's VAT inside the total unless `vat` says otherwise.
      */
     pay(
       id: string,
       {
         discount = 0,
         delivery: chosen = 0,
+        company,
         vat,
-      }: { discount?: number; delivery?: number; vat?: number } = {},
+      }: {
+        discount?: number;
+        delivery?: number;
+        company?: { name: string; taxId: string };
+        vat?: number;
+      } = {},
     ) {
       const session = sessions.get(id);
       if (!session) throw new Error(`No Checkout Session ${id}`);
@@ -298,6 +305,23 @@ export function fakeStripe() {
       const phone = session.phone_number_collection as { enabled: boolean };
       const total = session.amount_subtotal - discount + delivery;
       const automaticTax = session.automatic_tax as { enabled: boolean };
+      const cluj = {
+        line1: "Strada Florilor 1",
+        line2: "Ap. 2",
+        city: "Cluj-Napoca",
+        state: "Cluj",
+        postal_code: "400000",
+        country: "RO",
+      };
+      // Without its county, as Stripe's page may leave one in Romania.
+      const bucharest = {
+        line1: "Bulevardul Unirii 1",
+        line2: null,
+        city: "București",
+        state: null,
+        postal_code: "030167",
+        country: "RO",
+      };
       Object.assign(session, {
         status: "complete",
         payment_status: "paid",
@@ -305,21 +329,14 @@ export function fakeStripe() {
           name: "ANA POPESCU",
           email: "ana@example.com",
           phone: phone.enabled ? "+40712345678" : null,
+          address: ships ? cluj : bucharest,
+          business_name: company?.name ?? null,
+          individual_name: null,
+          tax_exempt: "none",
+          tax_ids: company ? [{ type: "eu_vat", value: company.taxId }] : [],
         },
         collected_information: ships
-          ? {
-              shipping_details: {
-                name: "Ana Popescu",
-                address: {
-                  line1: "Strada Florilor 1",
-                  line2: "Ap. 2",
-                  city: "Cluj-Napoca",
-                  state: "Cluj",
-                  postal_code: "400000",
-                  country: "RO",
-                },
-              },
-            }
+          ? { shipping_details: { name: "Ana Popescu", address: cluj } }
           : null,
         shipping_cost: rate
           ? { amount_total: delivery, shipping_rate: rate.id }

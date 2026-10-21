@@ -130,6 +130,8 @@ describe("checkout.start", () => {
       "shipping_options[1][shipping_rate_data][fixed_amount][amount]": "0",
       "shipping_options[1][shipping_rate_data][tax_behavior]": "inclusive",
       "shipping_options[1][shipping_rate_data][metadata][delivery]": "pickup",
+      billing_address_collection: "required",
+      "tax_id_collection[enabled]": "true",
       "automatic_tax[enabled]": "false",
       "phone_number_collection[enabled]": "true",
       allow_promotion_codes: "true",
@@ -401,10 +403,41 @@ describe("checkout.confirm", () => {
       session: session.id,
       paymentIntent: session.payment_intent as string,
       customer: { phone: "+40712345678" },
+      // Who the invoice is for: the payer, at the delivery address.
+      billing: {
+        address: {
+          name: "ANA POPESCU",
+          line1: "Strada Florilor 1",
+          city: "Cluj-Napoca",
+          county: "Cluj",
+          postalCode: "400000",
+          country: "RO",
+        },
+      },
     });
+    expect(order?.billing).not.toHaveProperty("company");
     expect(order).not.toHaveProperty("vat");
     // The shop sent the tick, but nothing in the cart asked for it.
     expect(order).not.toHaveProperty("unlockNowAt");
+  });
+
+  test("keeps the company a couple bought as, for its invoice", async () => {
+    const { t, stripe } = await withCart();
+    await t.action(api.checkout.start, { token, language: "ro" });
+    const session = stripe.pay(stripe.latest().id, {
+      company: { name: "Nunta Ana SRL", taxId: "RO44776462" },
+    });
+    await t.action(api.checkout.confirm, { session: session.id });
+    const [order] = await orders(t);
+    expect(order?.billing).toMatchObject({
+      company: "Nunta Ana SRL",
+      taxId: "RO44776462",
+      address: { name: "ANA POPESCU", city: "Cluj-Napoca" },
+    });
+    if (!order) throw new Error("No order recorded");
+    expect(noticeEmail(order, null).text).toContain(
+      "Factură pe firmă: Nunta Ana SRL · CUI RO44776462\nAdresa de facturare: aceeași cu cea de mai sus\n",
+    );
   });
 
   test("keeps the VAT Stripe Tax found in the total", async () => {
@@ -749,6 +782,19 @@ describe("the digital invitation", () => {
     });
     const [recorded] = await orders(t);
     if (!recorded) throw new Error("No order recorded");
+    // Nothing travels, so the billing address is all the invoice has, its
+    // county found from the postal code.
+    expect(recorded.billing?.address).toEqual({
+      name: "ANA POPESCU",
+      line1: "Bulevardul Unirii 1",
+      city: "București",
+      county: "București",
+      postalCode: "030167",
+      country: "RO",
+    });
+    expect(noticeEmail(recorded, null).text).toContain(
+      "Factură pe persoană fizică: ANA POPESCU\nAdresa de facturare:\nANA POPESCU\nBulevardul Unirii 1\nBucurești, 030167\n",
+    );
     expect(noticeEmail(recorded, null).text).toContain(
       `  Pentru Ana și Mihai, evenimentul ${eventId}\n\nNimic de livrat`,
     );
@@ -945,10 +991,30 @@ describe("a paid order", () => {
       "Client: ANA POPESCU · ana@example.com · +40712345678",
     );
     expect(notice.text).toContain("Adresa:\nAna Popescu");
+    expect(notice.text).toContain(
+      "Factură pe persoană fizică: ANA POPESCU\nAdresa de facturare: aceeași cu cea de mai sus",
+    );
+    expect(notice.text).not.toContain("Județul lipsește");
     expect(notice.text).not.toContain("Ridicare");
     expect(notice.text).toContain("  Text personalizat: Ana și Mihai");
     expect(notice.text).toContain(`Plata în Stripe: ${order.paymentIntent}`);
     expect(notice.text).not.toContain("TVA");
+  });
+
+  test("tells the team when the invoice's address has no county", async () => {
+    const order = await recorded();
+    if (!order.billing) throw new Error("No billing details");
+    const { county: _, ...address } = order.billing.address;
+    const notice = noticeEmail(
+      {
+        ...order,
+        billing: { address: { ...address, line1: "Strada Mare 3" } },
+      },
+      null,
+    ).text;
+    expect(notice).toContain(
+      "Adresa de facturare:\nANA POPESCU\nStrada Mare 3\nAp. 2\nCluj-Napoca, 400000\nJudețul lipsește din adresa de facturare: completați-l pe factură.",
+    );
   });
 
   test("tells the team when Stripe Tax put no VAT in it", async () => {

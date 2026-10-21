@@ -47,6 +47,19 @@ export const addressValidator = v.object({
   country: v.string(),
 });
 
+/**
+ * Who an order's invoice is made out to, as the couple gave it on Stripe's
+ * page: the payer at their billing address, or the company they bought as.
+ */
+export const billingValidator = v.object({
+  /** The company's name, when they bought as a company. */
+  company: v.optional(v.string()),
+  /** The company's tax code as Stripe's page took it: a CUI or VAT number. */
+  taxId: v.optional(v.string()),
+  /** The payer's name and billing address. */
+  address: addressValidator,
+});
+
 export const customerValidator = v.object({
   name: v.string(),
   email: v.string(),
@@ -81,6 +94,7 @@ export const paidSessionValidator = v.object({
   test: v.boolean(),
   customer: customerValidator,
   address: v.optional(addressValidator),
+  billing: v.optional(billingValidator),
   delivery: v.optional(deliveryValidator),
   /** The lines and fees as Stripe added them up, in bani. */
   subtotal: v.number(),
@@ -90,6 +104,7 @@ export const paidSessionValidator = v.object({
   vat: v.optional(v.number()),
 });
 
+export type Address = Infer<typeof addressValidator>;
 export type DeliveryKey = Infer<typeof deliveryKeyValidator>;
 export type OrderLine = Infer<typeof orderLineValidator>;
 export type OrderFee = Infer<typeof orderFeeValidator>;

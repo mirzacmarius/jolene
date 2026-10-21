@@ -3,6 +3,7 @@ import { WORKSHOP_ADDRESS } from "../checkout/delivery";
 import { escapeHtml } from "../emails";
 import type { Unlock } from "../invites/validators";
 import { lei, orderName } from "./format";
+import type { Address } from "./validators";
 
 /**
  * An order's emails, which Convex writes itself: the couple's confirmation,
@@ -95,15 +96,47 @@ function choices(line: Order["lines"][number]): string[] {
 }
 
 /** The address's lines, as a courier reads them. */
-function addressLines(address: NonNullable<Order["address"]>): string[] {
+function addressLines(address: Address): string[] {
+  // București's county is București: once is enough.
+  const county = address.county !== address.city && address.county;
   return [
     address.name,
     address.line1,
     ...(address.line2 ? [address.line2] : []),
-    [address.city, address.county, address.postalCode]
-      .filter(Boolean)
-      .join(", "),
+    [address.city, county, address.postalCode].filter(Boolean).join(", "),
     ...(address.country === "RO" ? [] : [address.country]),
+  ];
+}
+
+/** Whether two addresses are one place, whoever they name. */
+const samePlace = (a: Address, b: Address) =>
+  a.line1 === b.line1 &&
+  a.line2 === b.line2 &&
+  a.city === b.city &&
+  a.postalCode === b.postalCode &&
+  a.country === b.country;
+
+/**
+ * Who the invoice is for, as the team's notice says it: the company and its
+ * tax code, or the person, and the billing address unless it's the one above.
+ */
+function billingLines(order: Order): string[] {
+  const { billing } = order;
+  if (!billing) return [];
+  const company = [billing.company, billing.taxId && `CUI ${billing.taxId}`]
+    .filter(Boolean)
+    .join(" · ");
+  const { address } = billing;
+  return [
+    company
+      ? `Factură pe firmă: ${company}`
+      : `Factură pe persoană fizică: ${address.name}`,
+    ...(order.address && samePlace(order.address, address)
+      ? ["Adresa de facturare: aceeași cu cea de mai sus"]
+      : ["Adresa de facturare:", ...addressLines(address)]),
+    ...(address.country === "RO" && !address.county
+      ? ["Județul lipsește din adresa de facturare: completați-l pe factură."]
+      : []),
   ];
 }
 
@@ -308,6 +341,7 @@ export function noticeEmail(
           ...addressLines(order.address),
         ]
       : []),
+    ...billingLines(order),
     "",
     ...order.lines.flatMap((line) => [
       `${line.quantity} × ${line.title} (${line.product}): ${lei(line.total)}`,
