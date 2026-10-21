@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 31536000,
     // The catalog's photos load from the photo store once they're copied there, and from jolene.ro until then (ADR 0016); a photo put in Convex's storage loads from there.
     remotePatterns: [
+      { hostname: "tnmeb8t2pe4ritq0.public.blob.vercel-storage.com", protocol: "https" },
       { hostname: "jolene.ro", protocol: "https" },
       { hostname: "*.convex.cloud", protocol: "https" },
     ],
