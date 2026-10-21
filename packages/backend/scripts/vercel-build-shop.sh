@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Vercel build for the shop: deploys the Convex backend to the deployment the
-# studio's build uses (production, or the branch's preview), seeds it, then
-# builds the shop against it, so the pages built ahead show the catalog.
+# studio's build uses (production, or the branch's preview), seeds it, tells
+# it the shop's address, then builds the shop against it, so the pages built
+# ahead show the catalog.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -34,13 +35,26 @@ export NEXT_PUBLIC_CONVEX_URL
 
 if [ "${VERCEL_ENV:-}" = "preview" ] && [ -n "${VERCEL_GIT_COMMIT_REF:-}" ]; then
   # `convex deploy` names a Vercel preview deployment after its Git branch, and
-  # the preview deploy key in CONVEX_DEPLOY_KEY lets `convex run` reach it.
-  npx convex run --preview-name "$VERCEL_GIT_COMMIT_REF" \
-    --typecheck disable --codegen disable \
-    init:seed
+  # the preview deploy key in CONVEX_DEPLOY_KEY reaches it by that name.
+  deployment=(--preview-name "$VERCEL_GIT_COMMIT_REF")
+  # Vercel also builds a preview of main, and gives it no branch URL.
+  shop_url="https://${VERCEL_BRANCH_URL:-$VERCEL_URL}"
 elif [ "${VERCEL_ENV:-}" = "production" ]; then
   # The production deploy key in CONVEX_DEPLOY_KEY reaches production only.
-  npx convex run --typecheck disable --codegen disable init:seed
+  deployment=()
+  shop_url="https://$VERCEL_PROJECT_PRODUCTION_URL"
+fi
+
+if [ -n "${shop_url:-}" ]; then
+  npx convex run "${deployment[@]}" --typecheck disable --codegen disable init:seed
+
+  # Stripe sends couples back to the shop, and order emails link to it, at
+  # SHOP_URL: the address of this build. Production keeps one it already has,
+  # so it can be set by hand, as https://jolene.ro once that serves the shop.
+  names="$(npx convex env list --names-only "${deployment[@]}")"
+  if [ "$VERCEL_ENV" = "preview" ] || ! grep -qx SHOP_URL <<<"$names"; then
+    npx convex env set "${deployment[@]}" SHOP_URL "$shop_url" >/dev/null
+  fi
 fi
 
 cd ../.. && bunx turbo run build --filter=@jolene/shop

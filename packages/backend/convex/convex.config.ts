@@ -62,6 +62,12 @@ const app = defineApp({
      */
     INVITE_URL: v.optional(v.string()),
     /**
+     * The shop's address, such as https://jolene.ro: Stripe sends couples
+     * back to it after paying, and order emails link to it. The shop's build
+     * sets it on a deployment that has none; SITE_URL's address when unset.
+     */
+    SHOP_URL: v.optional(v.string()),
+    /**
      * Stripe's secret key, sk_test_… in test mode: the shop's checkout opens
      * with it. Without it the shop says paying online opens soon.
      */

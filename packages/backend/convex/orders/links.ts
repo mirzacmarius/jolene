@@ -1,17 +1,20 @@
 import { env } from "../_generated/server";
 
 /**
- * The shop's address, without a trailing slash: the studio's own, since the
- * studio is served at /studio on it. Null until SITE_URL is set.
+ * The shop's address, without a trailing slash: SHOP_URL's, else SITE_URL's,
+ * since the studio is served at /studio on the shop's address. Null until
+ * either is set.
  */
 export function shopUrl(): string | null {
-  const site = env.SITE_URL?.trim();
-  if (!site) return null;
-  try {
-    return new URL(site).origin;
-  } catch {
-    return null;
+  for (const url of [env.SHOP_URL, env.SITE_URL]) {
+    if (!url?.trim()) continue;
+    try {
+      return new URL(url.trim()).origin;
+    } catch {
+      return null;
+    }
   }
+  return null;
 }
 
 /** An order's page in the shop, which its emails link to. */

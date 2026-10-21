@@ -39,6 +39,7 @@ const subtotal = 36_500;
 
 const checkoutEnv = [
   "SITE_URL",
+  "SHOP_URL",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
 ] as const;
@@ -140,6 +141,18 @@ describe("checkout.start", () => {
       ],
     });
     expect(session.amount_subtotal).toBe(subtotal);
+  });
+
+  test("sends the couple back to SHOP_URL's address when it's set", async () => {
+    process.env.SHOP_URL = "https://www.orvibo.it/";
+    const { t, stripe } = await withCart();
+    await t.action(api.checkout.start, { token, language: "ro" });
+    const fields = Object.fromEntries(stripe.requests[0]?.fields ?? []);
+    expect(fields).toMatchObject({
+      success_url:
+        "https://www.orvibo.it/checkout/return?session_id={CHECKOUT_SESSION_ID}",
+      cancel_url: "https://www.orvibo.it/cart",
+    });
   });
 
   test("speaks the couple's language on Stripe's page", async () => {
