@@ -1,212 +1,77 @@
-import { buildProductSelectionSearchParams, getSelectedProductOptions } from "@shopify/hydrogen";
+import type { api } from "@jolene/backend/convex/_generated/api";
+import type { FunctionReturnType } from "convex/server";
 
+import { htmlToText } from "@/lib/content";
 import type { Image } from "@/lib/media/types";
-import type {
-  OptionValueSwatch,
-  ProductDetails,
-  ProductOption,
-  ProductVariant,
-  SelectedOption,
-} from "@/lib/product/types";
 
-import type {
-  OptionGroupState,
-  ProductFormInput,
-  ProductFormVariant,
-  SelectedOptions,
-} from "./types";
+import type { ProductCard, ProductDetails, ProductOption, SelectedOptions } from "./types";
 
-// URLs carry lowercased option names and values; canonicalize both against the product before Shopify sees them.
-export function parseSelectedOptions(
-  options: ProductOption[],
-  searchParams: Record<string, string | string[] | undefined>,
-): SelectedOptions {
-  const params = new URLSearchParams();
-  for (const [key, raw] of Object.entries(searchParams)) {
-    const value = Array.isArray(raw) ? raw[0] : raw;
-    if (value !== undefined) params.set(key, value);
-  }
-  const optionsByLowerName = new Map(options.map((option) => [option.name.toLowerCase(), option]));
-  const selected: SelectedOptions = {};
-  for (const { name, value } of getSelectedProductOptions({ searchParams: params })) {
-    const option = optionsByLowerName.get(name.toLowerCase());
-    if (!option) continue;
-    const match = option.values.find((v) => v.name.toLowerCase() === value.toLowerCase());
-    selected[option.name] = match?.name ?? value;
-  }
-  return selected;
+type ConvexCard = FunctionReturnType<typeof api.shop.search>[number];
+type ConvexProduct = NonNullable<FunctionReturnType<typeof api.shop.product>>;
+
+export function toImage({ alt, url }: { alt: string; url: string }): Image {
+  return { altText: alt, url };
 }
 
-export function toStaticOptionGroups(product: ProductDetails): OptionGroupState[] {
-  return product.options.map((option) => ({
-    name: option.name,
-    values: option.values.map((value) => ({
-      available: true,
-      crossProduct: false,
-      exists: true,
-      href: buildProductUrl(product.handle, [{ name: option.name, value: value.name }]),
-      image: value.image,
-      name: value.name,
-      selected: false,
-      swatch: value.swatch,
-    })),
-  }));
-}
-
-export function getProductPurchaseOptions(
-  variant: Pick<ProductVariant, "requiresSellingPlan" | "sellingPlanAllocations"> | undefined,
-  purchaseOption = "",
-) {
-  const plans =
-    variant?.sellingPlanAllocations.filter(
-      (allocation) => allocation.sellingPlan.recurringDeliveries,
-    ) ?? [];
-  const selectedPlan =
-    plans.find((allocation) => allocation.sellingPlan.id === purchaseOption) ??
-    (variant?.requiresSellingPlan ? plans[0] : undefined);
-  return { plans, selectedPlan };
-}
-
-// Customized bundle parents have no fixed components, so they cannot be added without a bundle builder.
-export function requiresBundleConfiguration(
-  variant: Pick<ProductVariant, "components" | "requiresComponents">,
-): boolean {
-  return variant.requiresComponents && variant.components.length === 0;
-}
-
-// Only the bundle gating boolean crosses the client boundary.
-function toProductFormVariant(variant: ProductVariant): ProductFormVariant {
+export function toProductCard(card: ConvexCard): ProductCard {
   return {
-    availableForSale: variant.availableForSale,
-    compareAtPrice: variant.compareAtPrice,
-    id: variant.id,
-    image: variant.image,
-    price: variant.price,
-    product: { handle: variant.productHandle, title: variant.productTitle },
-    requiresBundleConfiguration: requiresBundleConfiguration(variant),
-    requiresSellingPlan: variant.requiresSellingPlan,
-    selectedOptions: variant.selectedOptions,
-    sellingPlanAllocations: variant.sellingPlanAllocations,
-    title: variant.title,
+    compareAtPrice: card.compareAtPrice,
+    handle: card.handle,
+    images: card.images.map(toImage),
+    minQuantity: card.minQuantity,
+    price: card.price,
+    title: card.title,
   };
 }
 
-// The store seeds its selection from selectedOrFirstAvailableVariant, so the URL-resolved variant goes there.
-export function toProductFormInput(
-  product: ProductDetails,
-  selectedVariant: ProductVariant | undefined,
-): ProductFormInput {
+export function toProductDetails(product: ConvexProduct): ProductDetails {
   return {
-    adjacentVariants: product.adjacentVariants.map(toProductFormVariant),
-    encodedVariantAvailability: product.encodedVariantAvailability ?? null,
-    encodedVariantExistence: product.encodedVariantExistence ?? null,
+    categories: product.categories.map(({ handle, title }) => ({
+      handle,
+      path: `/collections/${handle}`,
+      title,
+    })),
+    compareAtPrice: product.compareAtPrice,
+    description: htmlToText(product.descriptionHtml),
+    descriptionHtml: product.descriptionHtml,
+    fees: product.fees,
+    forEvent: product.forEvent,
     handle: product.handle,
-    id: product.id,
-    options: product.options.map((option) => ({
-      name: option.name,
-      optionValues: option.values.map((value) => ({
-        firstSelectableVariant: value.firstSelectableVariant
-          ? toProductFormVariant(value.firstSelectableVariant)
-          : null,
-        name: value.name,
-        swatch:
-          value.swatch || value.image ? { ...value.swatch, variantImage: value.image } : undefined,
-      })),
-    })),
-    priceRange: product.priceRange,
-    selectedOrFirstAvailableVariant: selectedVariant ? toProductFormVariant(selectedVariant) : null,
+    images: product.images.map(toImage),
+    lineOptions: product.lineOptions.map(({ handle: _, ...option }) => option),
+    minQuantity: product.minQuantity,
+    options: product.options,
+    price: product.price,
+    tags: product.tags,
     title: product.title,
-    vendor: product.vendor ?? null,
   };
 }
 
-export function defaultSelectedOptions(product: ProductDetails): SelectedOptions {
-  const selected: SelectedOptions = {};
-  for (const option of product.defaultVariant?.selectedOptions ??
-    product.defaultVariantSelectedOptions ??
-    []) {
-    selected[option.name] = option.value;
-  }
-  return selected;
-}
-
-export function toSelectedOptionList(selectedOptions: SelectedOptions): SelectedOption[] {
-  return Object.entries(selectedOptions).map(([name, value]) => ({ name, value }));
-}
-
-export function buildProductUrl(
-  handle: string,
-  selectedOptions: readonly SelectedOption[],
-  base?: URLSearchParams,
-): string {
-  const searchParams = buildProductSelectionSearchParams({
-    base,
-    optionNames: base ? [...base.keys()].filter((key) => isOptionParam(key, selectedOptions)) : [],
-    selectedOptions,
-  });
-  return searchParams.size > 0 ? `/products/${handle}?${searchParams}` : `/products/${handle}`;
-}
-
-// Inbound URLs may carry lowercased option names; strip them case-insensitively so they don't linger next to the new selection.
-function isOptionParam(key: string, selectedOptions: readonly SelectedOption[]): boolean {
-  const lower = key.toLowerCase();
-  return selectedOptions.some((option) => option.name.toLowerCase() === lower);
-}
-
-export function isColorOption(option: {
-  name: string;
-  values: ReadonlyArray<{ swatch?: OptionValueSwatch }>;
-}): boolean {
-  return (
-    option.values.some((value) => value.swatch?.color || value.swatch?.image) ||
-    option.name.toLowerCase().includes("color")
+// jolene.ro preselected each option's first value, which is almost always the paper the price includes.
+export function getDefaultSelectedOptions(options: ProductOption[]): SelectedOptions {
+  return Object.fromEntries(
+    options.flatMap((option) => (option.values[0] ? [[option.name, option.values[0].name]] : [])),
   );
 }
 
-// Shopify returns a zero-amount compare-at for undiscounted products; only a real markdown counts.
+/** What the picked values add to each one ordered, in bani. */
+export function getSurcharges(options: ProductOption[], selected: SelectedOptions): number {
+  return options.reduce(
+    (sum, option) =>
+      sum + (option.values.find((value) => value.name === selected[option.name])?.surcharge ?? 0),
+    0,
+  );
+}
+
 export function isMarkedDown(
-  amount: string,
-  compareAtAmount: string | undefined,
-): compareAtAmount is string {
-  return compareAtAmount !== undefined && Number(compareAtAmount) > Number(amount);
+  price: number,
+  compareAtPrice: number | undefined,
+): compareAtPrice is number {
+  return compareAtPrice !== undefined && compareAtPrice > price;
 }
 
-function findColorOption(options: ProductOption[]): ProductOption | undefined {
-  return options.find(isColorOption);
-}
-
-// Only color partitions the gallery; other option axes share imagery.
-export function hasColorImagePartitioning(options: ProductOption[]): boolean {
-  const color = findColorOption(options);
-  if (!color || color.values.length <= 1) return false;
-  return color.values.filter((value) => value.image).length > 1;
-}
-
-export function getSharedImages(images: Image[], options: ProductOption[]): Image[] {
-  const color = findColorOption(options);
-  if (!color) return images;
-  const colorUrls = new Set(
-    color.values.map((value) => value.image).filter((url): url is string => Boolean(url)),
-  );
-  if (colorUrls.size === 0) return images;
-  const shared = images.filter((image) => !colorUrls.has(image.url));
-  return shared.length > 0 ? shared : images;
-}
-
-export function getSelectedColorImage(
-  product: ProductDetails,
-  selectedOptions: SelectedOptions,
-): Image | undefined {
-  const color = findColorOption(product.options);
-  if (!color) return undefined;
-  const value = color.values.find((v) => v.name === selectedOptions[color.name]);
-  if (!value?.image) return undefined;
-  return (
-    product.images.find((image) => image.url === value.image) ?? {
-      url: value.image,
-      altText: product.title,
-      width: 0,
-      height: 0,
-    }
-  );
+export function getDiscountPercent(price: number, compareAtPrice: number | undefined) {
+  return isMarkedDown(price, compareAtPrice)
+    ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
+    : null;
 }

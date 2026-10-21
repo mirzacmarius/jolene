@@ -3,36 +3,34 @@ import type { ComponentProps } from "react";
 
 import { DiscountBadge } from "@/components/product/discount-badge";
 import { Price } from "@/components/product/price";
-import { isMarkedDown } from "@/lib/product";
+import { getDiscountPercent } from "@/lib/product";
 
 interface ProductPriceProps extends ComponentProps<"div"> {
-  amount: string;
-  currencyCode: string;
-  compareAtAmount?: string;
+  compareAtPrice?: number;
+  /** One piece, in bani. */
+  price: number;
+  /** What the price buys, after it. */
+  unit?: string;
 }
 
 export function ProductPrice({
-  amount,
-  currencyCode,
-  compareAtAmount,
   className,
+  compareAtPrice,
+  price,
+  unit = "/ buc.",
   ...props
 }: ProductPriceProps) {
-  const markedDown = isMarkedDown(amount, compareAtAmount);
-  const discountPercent = markedDown
-    ? Math.round(((Number(compareAtAmount) - Number(amount)) / Number(compareAtAmount)) * 100)
-    : null;
+  const discountPercent = getDiscountPercent(price, compareAtPrice);
   return (
-    <div className={cn("flex items-center gap-2.5 flex-wrap", className)} {...props}>
-      <Price amount={amount} currencyCode={currencyCode} className="text-xl" />
-      {markedDown && (
-        <Price
-          amount={compareAtAmount}
-          currencyCode={currencyCode}
-          className="text-xl line-through text-foreground/35"
-        />
-      )}
-      {discountPercent && <DiscountBadge percent={discountPercent} />}
+    <div className={cn("flex flex-wrap items-center gap-2.5", className)} {...props}>
+      <Price amount={price} className="text-xl" />
+      {discountPercent && compareAtPrice ? (
+        <>
+          <Price amount={compareAtPrice} className="text-xl line-through text-foreground/35" />
+          <DiscountBadge percent={discountPercent} />
+        </>
+      ) : null}
+      <span className="text-sm text-muted-foreground">{unit}</span>
     </div>
   );
 }

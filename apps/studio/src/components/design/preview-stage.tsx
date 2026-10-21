@@ -64,14 +64,14 @@ const sameSpace = (a: Space, b: Space) =>
  * grain and light for a real change of zoom and not for every pixel of a
  * resize.
  */
-const densityStep = (value: number) =>
+export const densityStep = (value: number) =>
   2 ** (Math.round(Math.log2(value) * 4) / 4);
 
 /**
  * The linen the item lies on, its weave as fine as the screen shows it. It
  * follows the tiles itself, so a tile arriving redraws the cloth alone.
  */
-function Tablecloth({
+export function Tablecloth({
   color,
   pixelsPerMm,
   perMm,

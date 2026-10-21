@@ -1,4 +1,3 @@
-import { PredictiveSearchProvider } from "@shopify/hydrogen/react";
 import { cn } from "cn";
 import Image from "next/image";
 import { Suspense } from "react";
@@ -10,7 +9,6 @@ import { PillArrow, pillVariants } from "@/components/ui/pill";
 import { shopConfig } from "@/lib/config";
 import type { MenuItem } from "@/lib/menu/types";
 
-import { NavAccount, NavAccountFallback } from "./account";
 import { CartIcon, CartIconFallback } from "./cart";
 import logo from "./jolene-logo.webp";
 import { MobileMenu } from "./mobile-menu";
@@ -45,20 +43,7 @@ export function Nav() {
         <QuickLinks items={items} />
 
         <div className="flex items-center gap-4">
-          {shopConfig.search.isEnabled && (
-            <PredictiveSearchProvider
-              debounceInMs={300}
-              limit={3}
-              types={["PRODUCT", "COLLECTION", "QUERY"]}
-            >
-              <SearchModal />
-            </PredictiveSearchProvider>
-          )}
-          {shopConfig.auth.isEnabled && (
-            <Suspense fallback={<NavAccountFallback />}>
-              <NavAccount />
-            </Suspense>
-          )}
+          {shopConfig.search.isEnabled && <SearchModal />}
           <Suspense fallback={<CartIconFallback />}>
             <CartIcon />
           </Suspense>

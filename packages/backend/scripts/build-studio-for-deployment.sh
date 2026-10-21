@@ -24,4 +24,11 @@ if ! grep -qx JWKS <<<"$names"; then
   bun scripts/set-auth-keys.ts "$site_url" "${deployment[@]}"
 fi
 
+# A preview writes sign-in codes to its logs, where the team reads them to
+# sign in, unless it has a Resend key to email them with (from the Convex
+# project's default environment variables).
+if [ "${VERCEL_ENV:-}" = "preview" ] && ! grep -qx AUTH_LOG_CODES <<<"$names"; then
+  npx convex env set "${deployment[@]}" AUTH_LOG_CODES 1 >/dev/null
+fi
+
 cd ../.. && bunx turbo run build --filter=@jolene/studio

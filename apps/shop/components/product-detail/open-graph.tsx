@@ -1,24 +1,16 @@
-import type { Money } from "@/lib/money/types";
-
-interface ProductOpenGraphProps {
-  availableForSale: boolean;
-  price: Money;
-}
+import { CURRENCY_CODE, toAmount } from "@/lib/money";
 
 // Next Metadata cannot emit product `property=` tags, so React hoists these raw meta elements.
-export function ProductOpenGraph({ availableForSale, price }: ProductOpenGraphProps) {
+export function ProductOpenGraph({ price }: { price: number }) {
   return (
     <>
-      <meta property="og:type" content="product" />
-      <meta property="og:price:amount" content={price.amount} />
-      <meta property="og:price:currency" content={price.currencyCode} />
-      <meta property="og:availability" content={availableForSale ? "instock" : "oos"} />
-      <meta property="product:price:amount" content={price.amount} />
-      <meta property="product:price:currency" content={price.currencyCode} />
-      <meta
-        property="product:availability"
-        content={availableForSale ? "in stock" : "out of stock"}
-      />
+      <meta content="product" property="og:type" />
+      <meta content={toAmount(price)} property="og:price:amount" />
+      <meta content={CURRENCY_CODE} property="og:price:currency" />
+      <meta content="instock" property="og:availability" />
+      <meta content={toAmount(price)} property="product:price:amount" />
+      <meta content={CURRENCY_CODE} property="product:price:currency" />
+      <meta content="in stock" property="product:availability" />
     </>
   );
 }

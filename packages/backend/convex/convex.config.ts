@@ -1,3 +1,5 @@
+import rateLimiter from "@convex-dev/rate-limiter/convex.config.js";
+import resend from "@convex-dev/resend/convex.config.js";
 import { defineApp } from "convex/server";
 import { v } from "convex/values";
 
@@ -32,31 +34,72 @@ const app = defineApp({
      */
     AI_STAND_IN: v.optional(v.string()),
     /**
-     * The workshop's Google sign-in: the ID and secret of an OAuth client in
-     * Google Cloud (auth.ts). The workshop's page says sign-in isn't set up
-     * while they're unset; couples sign in without them.
+     * Resend's API key, for the emails Jolene sends: sign-in codes and the
+     * couples' invitations. Without it the studio says signing in by email
+     * isn't set up yet, and invitations go by link only.
      */
-    AUTH_GOOGLE_ID: v.optional(v.string()),
-    AUTH_GOOGLE_SECRET: v.optional(v.string()),
+    RESEND_API_KEY: v.optional(v.string()),
     /**
-     * The Google accounts the workshop's order list opens to, by address,
-     * comma-separated. It opens to no one while unset.
+     * The signing secret of Resend's webhook (http.ts), which tells the
+     * couple when an invitation's email bounced. Emails go without it.
+     */
+    RESEND_WEBHOOK_SECRET: v.optional(v.string()),
+    /**
+     * Who Jolene's emails come from: an address on a domain Resend verified.
+     * "Jolene <salut@jolene.ro>" when unset.
+     */
+    EMAIL_FROM: v.optional(v.string()),
+    /**
+     * Development and previews only: "1" writes sign-in codes to the logs
+     * instead of sending them, to sign in without Resend, while there's no
+     * RESEND_API_KEY. Never set on production.
+     */
+    AUTH_LOG_CODES: v.optional(v.string()),
+    /**
+     * Where guests open digital invitations, such as
+     * https://invitatie.orvibo.it: a family's link is this, the invitation's
+     * address and their code. The studio's own /invitatie when unset.
+     */
+    INVITE_URL: v.optional(v.string()),
+    /**
+     * The shop's address, such as https://jolene.ro: Stripe sends couples
+     * back to it after paying, and order emails link to it. The shop's build
+     * sets it on a deployment that has none; SITE_URL's address when unset.
+     */
+    SHOP_URL: v.optional(v.string()),
+    /**
+     * Stripe's key for the shop's checkout, …_test_… in test mode: a
+     * restricted key (rk_…), as Stripe advises, or the secret key (sk_…).
+     * The shop's checkout opens with it. Without it the shop says paying
+     * online opens soon.
+     */
+    STRIPE_SECRET_KEY: v.optional(v.string()),
+    /**
+     * The signing secret of Stripe's webhook (http.ts), which records a paid
+     * order even when the couple never comes back from Stripe's page. Without
+     * it orders are still recorded, when the couple comes back and by the
+     * hourly check (crons.ts).
+     */
+    STRIPE_WEBHOOK_SECRET: v.optional(v.string()),
+    /**
+     * Local development only: where a stand-in for Stripe's API answers, such
+     * as http://127.0.0.1:12111. Never set on a real deployment.
+     */
+    STRIPE_API_URL: v.optional(v.string()),
+    /**
+     * Where Jolene's team hears of each new order, and where a couple's reply
+     * to their order's confirmation goes. EMAIL_FROM's address when unset.
+     */
+    ORDERS_EMAIL: v.optional(v.string()),
+    /**
+     * The accounts the workshop's pages open to, by email address,
+     * comma-separated. They open to no one while unset.
      */
     WORKSHOP_EMAILS: v.optional(v.string()),
-    /**
-     * The Shopify store the workshop's order list reads, such as
-     * jolene.myshopify.com. The list says it isn't connected to the store
-     * while this or the app's credentials are unset.
-     */
-    SHOPIFY_STORE_DOMAIN: v.optional(v.string()),
-    /**
-     * The client ID and secret of the Dev Dashboard app the store installed
-     * (packages/products), which reads orders with read_orders. The secret
-     * is only ever sent to the store.
-     */
-    SHOPIFY_CLIENT_ID: v.optional(v.string()),
-    SHOPIFY_CLIENT_SECRET: v.optional(v.string()),
   },
 });
+
+app.use(rateLimiter);
+app.use(resend);
 
 export default app;

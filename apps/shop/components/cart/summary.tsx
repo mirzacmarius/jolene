@@ -1,92 +1,57 @@
 "use client";
 
-import type { CartData } from "@shopify/hydrogen";
-import { Loader2 } from "lucide-react";
+import { useActionState } from "react";
 
 import { Price } from "@/components/product/price";
 import { Button } from "@/components/ui/button";
-import { useCart, useCheckout } from "@/lib/cart/client";
+import { useCart } from "@/lib/cart/client";
+import type { Cart } from "@/lib/cart/types";
+import { checkoutAction } from "@/lib/checkout/action";
 
-import { DiscountForm } from "./discount-form";
-
-interface CartSummaryProps {
-  cart: CartData;
-}
-
-export function CartSummary({ cart }: CartSummaryProps) {
+export function CartSummary({ cart }: { cart: Cart }) {
+  const { isUpdating } = useCart();
+  const [error, checkout, isOpening] = useActionState(checkoutAction, undefined);
+  const hasProblems = cart.lines.some((line) => line.problems.length > 0);
+  const status = !cart.checkoutOpen
+    ? "Plata online se deschide în curând."
+    : hasProblems
+      ? "Rezolvă mai întâi produsele marcate în coș."
+      : error;
   return (
     <div className="grid gap-5">
-      <div className="grid gap-2.5">
-        <DiscountForm cart={cart} />
-        <CartTotal cart={cart} />
-      </div>
-      <CartCheckout label="Go to Checkout" />
-    </div>
-  );
-}
-
-interface CartTotalProps {
-  cart: CartData;
-}
-
-export function CartTotal({ cart }: CartTotalProps) {
-  const isCostPending = useCart((state) =>
-    Boolean(state.loading || state.pending.cost || state.revalidating),
-  );
-  const { amount, currencyCode } = cart.cost.totalAmount;
-  return (
-    <div
-      aria-busy={isCostPending || undefined}
-      aria-label="Estimated total"
-      className="grid gap-1"
-      role="group"
-    >
-      <div className="flex items-baseline justify-between text-base text-foreground">
-        <span>Estimated total</span>
-        {isCostPending || !currencyCode ? (
-          <span className="font-medium text-muted-foreground text-xl">Updating…</span>
-        ) : (
-          <Price amount={amount} className="font-medium text-xl" currencyCode={currencyCode} />
-        )}
-      </div>
-      <p className="text-muted-foreground text-xs">Taxes and shipping calculated at checkout.</p>
-    </div>
-  );
-}
-
-interface CartCheckoutProps {
-  label?: string;
-}
-
-export function CartCheckout({ label = "Checkout" }: CartCheckoutProps) {
-  const {
-    checkoutError,
-    checkoutErrorId,
-    handleCheckout,
-    isCheckingOut,
-    isCheckoutDisabled,
-    isUpdatingCart,
-  } = useCheckout();
-  return (
-    <div className="grid gap-2.5">
-      <Button
-        aria-busy={isCheckingOut || isUpdatingCart || undefined}
-        aria-describedby={checkoutError ? checkoutErrorId : undefined}
-        className="h-12 w-full justify-center"
-        disabled={isCheckoutDisabled}
-        onClick={handleCheckout}
-        type="button"
-      >
-        {isCheckingOut || isUpdatingCart ? (
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+      <div aria-busy={isUpdating || undefined} className="grid gap-2.5" role="group">
+        {cart.fees.map((fee) => (
+          <div className="flex items-baseline justify-between gap-2.5 text-sm" key={fee.key}>
+            <span>
+              {fee.label} <span className="text-muted-foreground">(o dată pe comandă)</span>
+            </span>
+            <Price amount={fee.price} className="text-sm" />
+          </div>
+        ))}
+        <div className="flex items-baseline justify-between text-base text-foreground">
+          <span>Total</span>
+          {isUpdating ? (
+            <span className="font-medium text-muted-foreground text-xl">Se actualizează…</span>
+          ) : (
+            <Price amount={cart.total} className="font-medium text-xl" />
+          )}
+        </div>
+        {cart.lines.some((line) => !line.event) ? (
+          <p className="text-muted-foreground text-xs">Livrarea se calculează la plată.</p>
         ) : null}
-        {isCheckingOut ? "Redirecting..." : isUpdatingCart ? "Updating cart..." : label}
-      </Button>
-      {checkoutError ? (
-        <p className="text-xs text-destructive" id={checkoutErrorId} role="alert">
-          {checkoutError}
+      </div>
+      <form action={checkout} className="grid gap-2.5">
+        <Button
+          className="h-12 w-full justify-center"
+          disabled={!cart.checkoutOpen || hasProblems || isUpdating || isOpening}
+          type="submit"
+        >
+          {isOpening ? "Se deschide plata…" : "Mergi la plată"}
+        </Button>
+        <p className="text-xs text-muted-foreground" role="status">
+          {status ?? "Plătești pe pagina securizată a Stripe."}
         </p>
-      ) : null}
+      </form>
     </div>
   );
 }

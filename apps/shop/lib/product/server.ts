@@ -1,60 +1,56 @@
-import type { ProductRecommendationIntent } from "@shopify/hydrogen/storefront-api-types";
+import { api } from "@jolene/backend/convex/_generated/api";
+import { fetchQuery } from "convex/nextjs";
+import type { FunctionReturnType } from "convex/server";
 import { cacheLife, cacheTag } from "next/cache";
 
-import type { CommerceLocale } from "@/lib/config/types";
-import type { ProductCard, ProductDetails, ProductPage } from "@/lib/product/types";
-import { getNumericShopifyId } from "@/lib/shopify/id/server";
-import {
-  fetchProduct,
-  fetchProductRecommendations,
-  fetchSearchIndexProducts,
-} from "@/lib/shopify/operations/products/server";
-import type { SearchIndexProductsParams } from "@/lib/shopify/operations/products/types";
+import { toProductCard, toProductDetails } from "@/lib/product";
+import type { ProductCard, ProductDetails } from "@/lib/product/types";
 
-// Only valid inside a cache directive scope.
-export function tagProducts(products: Array<{ id: string }>): void {
-  for (const product of products) {
-    const numericId = getNumericShopifyId(product.id);
-    if (numericId) cacheTag(`product-${numericId}`);
-  }
-}
-
-export async function getProduct(params: {
-  handle: string;
-  locale?: CommerceLocale;
-}): Promise<ProductDetails | undefined> {
+// Convex sends no webhook when the seed or Jolene's team changes a product, so "minutes" bounds how stale a page gets.
+export async function getProduct(handle: string): Promise<ProductDetails | undefined> {
   "use cache: remote";
-  cacheLife("max");
-  cacheTag("products", `product-${params.handle}`);
+  cacheLife("minutes");
+  cacheTag("products", `product-${handle}`);
 
-  const product = await fetchProduct(params);
-  if (product) tagProducts([product]);
-  return product;
+  const product = await fetchQuery(api.shop.product, { handle });
+  return product ? toProductDetails(product) : undefined;
 }
 
-// Cursor-paginated browse reads stay uncached in lib/collections/server.ts; this serves fixed grids only.
-export async function getSearchIndexProducts(
-  params: SearchIndexProductsParams,
-): Promise<ProductPage> {
-  "use cache: remote";
-  cacheLife("max");
-  cacheTag("products", "products-index");
-
-  const result = await fetchSearchIndexProducts(params);
-  tagProducts(result.products);
-  return result;
-}
-
-export async function getProductRecommendations(params: {
+/** Other products of a category, in Jolene's order. */
+export async function getRelatedProducts(params: {
+  category: string;
   handle: string;
-  intent: ProductRecommendationIntent;
-  locale?: CommerceLocale;
+  limit: number;
 }): Promise<ProductCard[]> {
   "use cache: remote";
-  cacheLife("max");
-  cacheTag("products", `recommendations-${params.handle}`);
+  cacheLife("minutes");
+  cacheTag("products", `category-${params.category}`);
 
-  const products = await fetchProductRecommendations(params);
-  tagProducts(products);
-  return products;
+  const { page } = await fetchQuery(api.shop.products, {
+    category: params.category,
+    paginationOpts: { cursor: null, numItems: params.limit + 1 },
+  });
+  return page
+    .filter((product) => product.handle !== params.handle)
+    .slice(0, params.limit)
+    .map(toProductCard);
+}
+
+const HANDLES_PER_PAGE = 200;
+
+/** Every product on sale, in Jolene's order, for the sitemap. */
+export async function getProductHandles(): Promise<string[]> {
+  "use cache: remote";
+  cacheLife("hours");
+  cacheTag("products", "products-index");
+
+  const handles: string[] = [];
+  let result: FunctionReturnType<typeof api.shop.products> | undefined;
+  do {
+    result = await fetchQuery(api.shop.products, {
+      paginationOpts: { cursor: result?.continueCursor ?? null, numItems: HANDLES_PER_PAGE },
+    });
+    handles.push(...result.page.map((product) => product.handle));
+  } while (!result.isDone);
+  return handles;
 }

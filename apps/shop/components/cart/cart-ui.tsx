@@ -1,11 +1,5 @@
-import { CartNotifications } from "./notifications";
 import { CartOverlay } from "./overlay";
 
 export function CartUI() {
-  return (
-    <>
-      <CartNotifications />
-      <CartOverlay description="Review your cart items and proceed to checkout" title="Cart" />
-    </>
-  );
+  return <CartOverlay description="Verifică produsele din coș și mergi la plată" title="Coș" />;
 }

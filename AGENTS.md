@@ -3,7 +3,7 @@
 - Read `GLOSSARY.md` before naming anything. Jolene speaks Romanian first, and the glossary fixes each word in both languages and in code.
 - Architecture decisions are in `docs/adr/`. A change that goes against one comes with a new ADR.
 - Work in your own git worktree: another agent session may be using this checkout.
-- `apps/shop` is the Vercel Shop template with Jolene's changes. It keeps the template's conventions (oxlint, oxfmt, TypeScript 7) and has its own `AGENTS.md`; Biome checks everything else.
+- `apps/shop` started from the Vercel Shop template and sells from Convex. It keeps the template's conventions (oxlint, oxfmt, TypeScript 7) and has its own `AGENTS.md`; Biome checks everything else.
 - When a page behaves differently locally than in CI, reinstall with `rm -rf node_modules && bun install`: bun keeps stale nested packages after lockfile changes.
 
 ## Designs
