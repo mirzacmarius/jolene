@@ -198,12 +198,20 @@ _Avoid_: Order id (an order's key in Convex)
 The shop's page of one order, at a long random address that the couple's emails link to.
 _Avoid_: Receipt, order status
 
+**Order status** (ro: stadiul comenzii; code: status):
+Where an order is between paid and in the couple's hands: paid (plătită), being made (în lucru), sent (expediată) by courier or ready to pick up (gata de ridicat), then complete (finalizată), which the couple's page calls delivered (livrată) or picked up (ridicată); or cancelled (anulată). The workshop moves it on. An order with nothing to deliver, such as a digital invitation alone, is complete once it's paid.
+_Avoid_: State, stage, fulfilment, shipped (in copy)
+
+**Note** (ro: notă; code: note):
+What the workshop writes on an order for the rest of the team, such as what the couple said on the phone. The couple never sees it. It sits in the order's history (ro: istoric; code: orderHistory) beside each change of status, with who wrote it and when.
+_Avoid_: Comment, memo
+
 **Test order** (ro: comandă de test; code: test):
 An order paid in Stripe's test mode, with a test card: a trial, not a sale.
 _Avoid_: Sandbox order
 
 **Workshop** (ro: atelier):
-Jolene's team, who print, assemble and send what couples order, and their pages in the studio, where they see every paid order and make its print files.
+Jolene's team, who print, assemble and send what couples order, and their pages in the studio, where they see every paid order, make its print files and move it on.
 _Avoid_: Admin, back office, staff
 
 ### Digital invitations
