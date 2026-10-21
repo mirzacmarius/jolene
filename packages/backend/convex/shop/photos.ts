@@ -5,7 +5,7 @@ import type { QueryCtx } from "../_generated/server";
 /**
  * A photo as the shop shows it: from Convex storage when it was put there,
  * otherwise from its address, which the seed gives as the photo store's
- * (ADR 0016), or jolene.ro's until the photos are copied.
+ * (ADR 0016).
  */
 export const photoValidator = v.object({ url: v.string(), alt: v.string() });
 

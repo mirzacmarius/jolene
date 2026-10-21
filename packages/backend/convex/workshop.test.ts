@@ -400,7 +400,7 @@ describe("an order's status", () => {
     await expect(
       workshop.mutation(api.workshop.setStatus, move),
     ).rejects.toThrow("order-moved");
-    // Cargus brings it: it's sent, never ready to pick up.
+    // A courier brings it: it's sent, never ready to pick up.
     await expect(
       workshop.mutation(api.workshop.setStatus, {
         number: 1001,

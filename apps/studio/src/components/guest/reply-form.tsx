@@ -46,6 +46,7 @@ export function ReplyForm({
   hosts,
   initial,
   submitLabel,
+  allergiesHint,
   onSubmit,
   onCancel,
 }: {
@@ -55,6 +56,8 @@ export function ReplyForm({
   hosts: string;
   initial?: Reply | null;
   submitLabel?: string;
+  /** Under the allergies, for guests writing their own: who reads them. */
+  allergiesHint?: string;
   onSubmit: (reply: ReplyInput, name: string) => Promise<void>;
   onCancel?: () => void;
 }) {
@@ -316,8 +319,19 @@ export function ReplyForm({
                 id={`${id}-allergies`}
                 value={allergies}
                 maxLength={LENGTHS.allergies}
+                aria-describedby={
+                  allergiesHint ? `${id}-allergies-hint` : undefined
+                }
                 onChange={(event) => setAllergies(event.target.value)}
               />
+              {allergiesHint ? (
+                <p
+                  id={`${id}-allergies-hint`}
+                  className="text-xs leading-snug text-muted-foreground"
+                >
+                  {allergiesHint}
+                </p>
+              ) : null}
             </div>
           ) : null}
         </fieldset>

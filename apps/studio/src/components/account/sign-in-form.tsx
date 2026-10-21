@@ -9,11 +9,14 @@ import { useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { LoaderCircle } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
-import { useI18n } from "@/locales/client";
+import { POLICIES } from "@/lib/shop";
+import { useCurrentLocale, useI18n } from "@/locales/client";
 
 type Step = { kind: "email" } | { kind: "code"; email: string };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const LINK = "underline underline-offset-4 hover:text-foreground";
 
 /**
  * Signs a visitor in with a code sent to their email (Convex Auth's email
@@ -22,6 +25,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 export function SignInForm({ lead }: { lead?: string }) {
   const t = useI18n();
+  const locale = useCurrentLocale();
   const { signIn } = useAuthActions();
   const me = useQuery(api.accounts.me);
   const [step, setStep] = useState<Step>({ kind: "email" });
@@ -117,6 +121,21 @@ export function SignInForm({ lead }: { lead?: string }) {
             ) : null}
             {pending ? t("account.sending") : t("account.sendCode")}
           </Button>
+          {/* The shop's pages, on this address: the browser loads them whole. */}
+          <p className="text-xs leading-snug text-muted-foreground">
+            {t("account.legal", {
+              terms: (
+                <a href={POLICIES[locale].terms} className={LINK}>
+                  {t("account.terms")}
+                </a>
+              ),
+              privacy: (
+                <a href={POLICIES[locale].privacy} className={LINK}>
+                  {t("account.privacy")}
+                </a>
+              ),
+            })}
+          </p>
         </form>
       ) : (
         <form onSubmit={onCode} className="mt-6 flex flex-col gap-3">

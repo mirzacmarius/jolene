@@ -1,7 +1,21 @@
+import type { Locale } from "@jolene/i18n";
 import { useEffect, useState } from "react";
 
 /** Where a couple writes for what the shop doesn't sell online yet. */
 export const JOLENE_EMAIL = "invitatii.jolene@gmail.com";
+
+/**
+ * The shop's policies the studio links to, at their address in each
+ * language (apps/shop/lib/legal has them all). The shop serves them on the
+ * studio's own address, so a path reaches them.
+ */
+export const POLICIES: Record<Locale, { terms: string; privacy: string }> = {
+  ro: {
+    terms: "/termeni-si-conditii",
+    privacy: "/politica-de-confidentialitate",
+  },
+  en: { terms: "/en/terms-and-conditions", privacy: "/en/privacy-policy" },
+};
 
 /**
  * Whether the shop sells an item, which is whether its product has a page:

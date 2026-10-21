@@ -30,11 +30,10 @@ const PRODUCTS_PER_MUTATION = 100;
  * Gives a deployment Jolene's collections (@jolene/suites) in the order the
  * gallery shows them, with the artwork they draw, and the shop's catalog
  * (@jolene/products) as jolene.ro had it (`bun run seed`). The artwork ships
- * with the studio and the photos are in the photo store (ADR 0016), or on
- * jolene.ro until they're copied, so nothing is uploaded. Running it again
- * brings every collection up to date with the code, and every product nobody
- * has changed in Convex. Orders paid before they had statuses get their
- * first.
+ * with the studio and the photos are in the photo store (ADR 0016), so
+ * nothing is uploaded. Running it again brings every collection up to date
+ * with the code, and every product nobody has changed in Convex. Orders paid
+ * before they had statuses get their first.
  */
 export const seed = internalAction({
   args: {},

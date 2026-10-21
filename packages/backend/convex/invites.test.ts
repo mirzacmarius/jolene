@@ -349,6 +349,8 @@ describe("digital invitations", () => {
     expect(first.fields.guestName).toBe("Familia 1");
     expect(first.hosts).toBe("Ana și Mihai");
     expect(first.household).toMatchObject({ name: "Familia 1", seats: 2 });
+    // SITE_URL's address: the studio is served on the shop's.
+    expect(first.shop).toBe("http://localhost:3024");
     expect((await open(codes[3])).kind).toBe("locked");
     expect((await open()).kind).toBe("locked");
     expect((await open("nothing1")).kind).toBe("not-found");

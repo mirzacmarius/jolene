@@ -152,6 +152,11 @@ export function GuestReply({
           questions={questions}
           hosts={hosts}
           initial={answer}
+          allergiesHint={
+            hosts
+              ? t("guest.allergiesHint", { hosts })
+              : t("guest.allergiesHintUnnamed")
+          }
           onCancel={answer ? () => setEditing(false) : undefined}
           onSubmit={async (input, name) => {
             try {
