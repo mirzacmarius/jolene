@@ -14,7 +14,7 @@ ADR 0001's boundary holds: the shop owns selling (the catalog's pages, the cart,
 ## Consequences
 
 - The shop's Vercel project needs the studio's `CONVEX_DEPLOY_KEY`: the production key for production and the preview key for previews. A build without one has no catalog.
-- Both projects' builds deploy the same Convex functions to the same deployment and seed it, so whichever builds first brings the catalog, and the shop's pages are built with it. A deploy that meets the other project's is tried again.
+- Both projects' builds deploy the same Convex functions to the same deployment and seed it, so whichever builds first brings the catalog, and the shop's pages are built with it.
 - The shop drops Hydrogen, the Storefront and Customer Account APIs, Shopify's analytics and the template's Shop Agent. It keeps the template's Next.js patterns and code style but no longer follows its releases, so `update-shop` and the template's Shopify skills go.
 - ADR 0007 holds, but the shop reads a proof from Convex itself and a cart line keeps the proof's id, so the studio's `/studio/api/proofs` route and the line's attributes go. The shop's answers about a product, its Markdown page included, are cached for minutes, since Convex sends no webhook, so ADR 0007's wait for Shopify's webhooks goes too.
 - `packages/products` keeps the lift and loses the sync to Shopify and its workflow.

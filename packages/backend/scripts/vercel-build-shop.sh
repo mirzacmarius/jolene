@@ -6,7 +6,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Both projects build every push and deploy the same functions to the same
-# deployment, so a deploy that meets the studio's is tried again.
+# deployment; a deploy that fails, such as one meeting the studio's, is tried
+# again.
 url_file="$(mktemp)"
 for attempt in 1 2 3; do
   if npx convex deploy \
