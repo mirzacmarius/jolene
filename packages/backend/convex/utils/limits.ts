@@ -25,6 +25,16 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   partnerLink: { kind: "token bucket", rate: 10, period: MINUTE, capacity: 5 },
   /** Stripe checkout pages opened for one cart. */
   checkout: { kind: "token bucket", rate: 30, period: HOUR, capacity: 10 },
+  /**
+   * Stripe checkout pages opened for one visitor, by the address the shop's
+   * server saw them at, once it sends one (SHOP_SECRET).
+   */
+  visitorCheckouts: {
+    kind: "token bucket",
+    rate: 30,
+    period: HOUR,
+    capacity: 10,
+  },
   /** Stripe checkout pages opened for anyone, so no one floods Stripe through us. */
   checkouts: { kind: "token bucket", rate: 1200, period: HOUR, capacity: 60 },
   /** Returns from Stripe that Convex hasn't recorded yet, each a call to Stripe. */

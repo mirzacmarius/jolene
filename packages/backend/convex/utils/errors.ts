@@ -54,6 +54,11 @@ export const errors = {
   replyClosed: "reply-closed",
   /** Paying online isn't set up on this deployment yet (no Stripe key). */
   checkoutUnavailable: "checkout-unavailable",
+  /**
+   * Stripe's page opens only for the shop's server once SHOP_SECRET is set,
+   * and the caller didn't send it.
+   */
+  shopOnly: "shop-only",
   /** A cart with nothing in it to pay for. */
   cartEmpty: "cart-empty",
   /** A cart line can't be ordered as it is: the cart says why. */
