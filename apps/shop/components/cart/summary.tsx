@@ -44,8 +44,8 @@ export function CartSummary({ cart }: { cart: Cart }) {
         {cart.delivery ? (
           <p className="text-muted-foreground text-xs">
             {cart.delivery.price > 0
-              ? `Livrare Cargus: ${formatPrice(cart.delivery.price)}, gratuită de la ${formatPrice(cart.delivery.freeFrom)}.`
-              : "Livrare Cargus gratuită."}{" "}
+              ? `Livrare prin curier: ${formatPrice(cart.delivery.price)}, gratuită de la ${formatPrice(cart.delivery.freeFrom)}.`
+              : "Livrare prin curier gratuită."}{" "}
             Sau ridici comanda gratuit din atelierul din Iași. Alegi la plată.
           </p>
         ) : null}

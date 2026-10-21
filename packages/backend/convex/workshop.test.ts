@@ -210,8 +210,8 @@ describe("the workshop", () => {
       price: 0,
     });
     await order(t, 1003, lines(proofId), {
-      key: "cargus",
-      label: "Curier Cargus, la adresă",
+      key: "courier",
+      label: "Curier la adresă",
       price: 2500,
     });
     const first = await workshop.query(api.workshop.orders, {

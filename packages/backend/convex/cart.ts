@@ -71,7 +71,7 @@ const cartValidator = v.object({
   /** The lines and the fees together, in bani, before delivery. */
   total: v.number(),
   /**
-   * What Cargus would cost to the door, and from what total it's free; the
+   * What a courier would cost to the door, and from what total it's free; the
    * couple chooses on Stripe's page. Null when nothing in the cart travels.
    */
   delivery: v.union(

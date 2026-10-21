@@ -3,19 +3,20 @@ import type { DeliveryKey } from "../orders/validators";
 
 /**
  * How a printed order reaches the couple, offered on Stripe's checkout page
- * with its price in bani. They are jolene.ro's terms: Cargus to the door,
- * free from 800 lei, or picked up from the workshop in Iași for nothing.
+ * with its price in bani. They are jolene.ro's terms: a courier to the door,
+ * free from 800 lei, or picked up from the workshop in Iași for nothing. The
+ * courier is whichever Colete Online books cheapest for the parcel.
  */
 
 /** Where Jolene sends printed orders. */
 export const deliveryCountries = ["RO"] as const;
 
-/** What Cargus costs to the door, below FREE_DELIVERY_FROM. */
+/** What a courier costs to the door, below FREE_DELIVERY_FROM. */
 export const COURIER_PRICE = 2500;
 
 /**
  * From what a checkout's lines and fees come to, before a promotion code,
- * Cargus brings it for nothing: 800 lei.
+ * the courier brings it for nothing: 800 lei.
  */
 export const FREE_DELIVERY_FROM = 80_000;
 
@@ -23,9 +24,9 @@ export const FREE_DELIVERY_FROM = 80_000;
 export const WORKSHOP_ADDRESS = "Str. Ion Creangă 41, Iași";
 
 const labels: Record<DeliveryKey, Record<Language, string>> = {
-  cargus: {
-    ro: "Curier Cargus, la adresă",
-    en: "Cargus courier, to your door",
+  courier: {
+    ro: "Curier la adresă",
+    en: "Courier to your door",
   },
   pickup: {
     ro: `Ridicare de la atelier, ${WORKSHOP_ADDRESS}`,
@@ -33,7 +34,7 @@ const labels: Record<DeliveryKey, Record<Language, string>> = {
   },
 };
 
-/** What Cargus costs a checkout of `subtotal` bani. */
+/** What the courier costs a checkout of `subtotal` bani. */
 export function courierPrice(subtotal: number): number {
   return subtotal >= FREE_DELIVERY_FROM ? 0 : COURIER_PRICE;
 }
@@ -45,8 +46,8 @@ export function courierPrice(subtotal: number): number {
 export function deliveryOptions(subtotal: number, language: Language) {
   return [
     {
-      key: "cargus",
-      label: labels.cargus[language],
+      key: "courier",
+      label: labels.courier[language],
       price: courierPrice(subtotal),
     },
     { key: "pickup", label: labels.pickup[language], price: 0 },

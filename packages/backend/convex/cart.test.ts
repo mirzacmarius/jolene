@@ -61,7 +61,7 @@ describe("cart.add", () => {
     expect(cart?.count).toBe(1);
   });
 
-  test("says Cargus brings it for nothing from 800 lei", async () => {
+  test("says the courier brings it for nothing from 800 lei", async () => {
     const t = await seeded();
     await t.mutation(api.cart.add, { ...roses, quantity: 72 });
     const cart = await t.query(api.cart.get, { token });
