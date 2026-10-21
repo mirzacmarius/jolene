@@ -82,6 +82,11 @@ const cartValidator = v.object({
   count: v.number(),
   /** Paying online is set up on this deployment. */
   checkoutOpen: v.boolean(),
+  /**
+   * It charges for a digital invitation, so the couple agrees to unlock it
+   * right away before they pay (OUG 34/2014, art. 16).
+   */
+  unlockNow: v.boolean(),
 });
 
 export async function findCart(ctx: QueryCtx, token: string) {
@@ -210,6 +215,10 @@ export async function priceCart(ctx: QueryCtx, cartId: Id<"carts">) {
     total:
       priced.reduce((sum, line) => sum + line.total, 0) +
       fees.reduce((sum, fee) => sum + fee.price, 0),
+    // One that comes free leaves nothing to withdraw from.
+    unlockNow: priced.some(
+      (line) => line.handle === digitalInvitation.handle && line.total > 0,
+    ),
   };
 }
 
