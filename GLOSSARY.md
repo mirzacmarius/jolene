@@ -214,12 +214,16 @@ _Avoid_: State, stage, fulfilment, shipped (in copy)
 What the workshop writes on an order for the rest of the team, such as what the couple said on the phone. The couple never sees it. It sits in the order's history (ro: istoric; code: orderHistory) beside each change of status, with who wrote it and when.
 _Avoid_: Comment, memo
 
+**Refund** (ro: rambursare; code: refund):
+Money Stripe gives back from an order's payment to the card that paid, all of it or a part: from the order's page in the workshop, or from Stripe's dashboard. It's pending (în curs) until it reaches the card's bank, and can fail (eșuată). It changes nothing else about the order.
+_Avoid_: Reimbursement, return (sending products back), chargeback (a dispute the bank opens)
+
 **Test order** (ro: comandă de test; code: test):
 An order paid in Stripe's test mode, with a test card: a trial, not a sale.
 _Avoid_: Sandbox order
 
 **Workshop** (ro: atelier):
-Jolene's team, who print, assemble and send what couples order, and their pages in the studio, where they see every paid order, make its print files and move it on.
+Jolene's team, who print, assemble and send what couples order, and their pages in the studio, where they see every paid order, make its print files, move it on and refund it.
 _Avoid_: Admin, back office, staff
 
 ### Digital invitations
