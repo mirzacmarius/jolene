@@ -4,7 +4,7 @@ import { buildOpenGraph } from "@/lib/seo";
 
 import type { LegalLanguage, LegalPageInfo, LegalPageKey } from "./types";
 
-// TODO(mirzacmarius): add the trade register number and the registered office's street before launch.
+// TODO(mirzacmarius): add the registered office's street before launch.
 export const COMPANY = {
   email: "invitatii.jolene@gmail.com",
   name: "Jolene Design SRL",
@@ -13,6 +13,7 @@ export const COMPANY = {
   phoneInternational: "+40 754 536 366",
   registeredOffice: "Aroneanu, județul Iași",
   taxId: "49475720",
+  tradeRegister: "J22/291/2024",
   vatId: "RO49475720",
   workshop: "Str. Ion Creangă nr. 41, Iași",
 } as const;
