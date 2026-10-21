@@ -1,3 +1,4 @@
+import { digitalInvitation } from "@jolene/products/digital-invitation";
 import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
@@ -8,6 +9,7 @@ import {
 } from "./_generated/server";
 import { checkoutOpen } from "./checkout/open";
 import { eventForShop, eventForShopValidator } from "./invites/shop";
+import { printedInvitations } from "./invites/unlock";
 import { proofSummaryValidator, summarize } from "./proofs";
 import { photoValidator, photoView } from "./shop/photos";
 import {
@@ -46,6 +48,11 @@ const lineValidator = v.object({
   ),
   /** The event it's bought for, as the digital invitation is. */
   event: v.optional(eventForShopValidator),
+  /**
+   * The digital invitation, free beside its event's printed invitations:
+   * `price` is nothing, and `compareAtPrice` what it costs without them.
+   */
+  freeWithPrinted: v.optional(v.literal(true)),
   /** One of it, in bani, with its options' surcharges and paid choices. */
   price: v.number(),
   compareAtPrice: v.optional(v.number()),
@@ -113,7 +120,9 @@ function sameLine(a: Line, b: Line) {
 /**
  * A cart's lines and fees, priced from the catalog as it is now: each line
  * with what stops it being ordered, if anything, and the fees the order pays
- * once. A line whose product is gone from the catalog is left out.
+ * once. A line whose product is gone from the catalog is left out. The
+ * digital invitation comes free with its event's printed invitations (ADR
+ * 0014), so beside them in the cart it costs nothing.
  */
 export async function priceCart(ctx: QueryCtx, cartId: Id<"carts">) {
   const lines = (
@@ -130,9 +139,28 @@ export async function priceCart(ctx: QueryCtx, cartId: Id<"carts">) {
   const fees = orderFees(
     lines.map(({ line, product }) => ({ product, choices: line })),
   ).map(({ key, label, price }) => ({ key, label, price }));
+  const printed = new Set(
+    (
+      await Promise.all(
+        lines.map(({ line }) =>
+          printedInvitations(ctx, {
+            proof: line.proofId,
+            quantity: line.quantity,
+          }),
+        ),
+      )
+    ).flatMap((found) => (found ? [found.eventId] : [])),
+  );
   const priced = await Promise.all(
     lines.map(async ({ line, product }) => {
-      const { price, compareAtPrice } = unitPrice(product, line);
+      const regular = unitPrice(product, line);
+      const free =
+        product.product.handle === digitalInvitation.handle &&
+        line.eventId !== undefined &&
+        printed.has(line.eventId);
+      const { price, compareAtPrice } = free
+        ? { price: 0, compareAtPrice: regular.price }
+        : regular;
       const proof = line.proofId && (await summarize(ctx, line.proofId));
       const event = line.eventId
         ? await eventForShop(ctx, line.eventId)
@@ -159,6 +187,7 @@ export async function priceCart(ctx: QueryCtx, cartId: Id<"carts">) {
         proof:
           line.proofId && proof ? { id: line.proofId, ...proof } : undefined,
         ...(event && { event }),
+        ...(free && { freeWithPrinted: true as const }),
         price,
         compareAtPrice,
         total: price * line.quantity,
