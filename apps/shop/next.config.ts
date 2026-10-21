@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   reactCompiler: true,
   // Guests' links on invitatie.orvibo.it are short, /<invitation>/<family code>: they go to the studio's /invitatie on the same address, and the address's root to Jolene.
-  // jolene.ro's WooCommerce addresses, so links and search results find the products and categories here.
+  // jolene.ro's WooCommerce addresses, so links and search results find the products, categories and policies here.
   async redirects() {
     const guests = [{ type: "host" as const, value: "invitatie\\..+" }];
     return [
@@ -57,6 +57,16 @@ const nextConfig: NextConfig = {
         source: "/categorie-produs/:parent/:handle",
       },
       { destination: "/collections/:handle", permanent: true, source: "/categorie-produs/:handle" },
+      {
+        destination: "/termeni-si-conditii",
+        permanent: true,
+        source: "/termeni-si-conditii-jolene",
+      },
+      {
+        destination: "/politica-de-confidentialitate",
+        permanent: true,
+        source: "/politica-de-confidentialitate-jolene",
+      },
     ];
   },
   turbopack: {
