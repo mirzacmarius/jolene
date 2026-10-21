@@ -161,3 +161,57 @@ _Avoid_: MOQ
 **Fee** (ro: taxă):
 A one-off charge on an order, such as for diacritics or an urgent order, sold as a product of its own.
 _Avoid_: Surcharge (what a paper adds to a variant's price)
+
+### Digital invitations
+
+**Digital invitation** (ro: invitație digitală; code: invite):
+An event's invitation sent by link: the page guests open on their phone, with the couple's invitation, the day's programme and the reply form.
+_Avoid_: E-invite, website, RSVP page
+
+**Publish** (ro: publicați):
+To make one of the event's invitation designs the one guests see. Later changes show once the couple publishes again.
+_Avoid_: Share, send
+
+**Unlock** (ro: deblocați; code: unlocked):
+To open a digital invitation to every family on the list, by buying it in the shop or with the event's printed invitations. Before that it is **on trial** (ro: de probă): only the first three families can open it.
+_Avoid_: Activate, upgrade
+
+**Account** (ro: cont):
+What a couple signs in to with a code sent to their email, to keep a guest list and share their event. Designing needs none.
+_Avoid_: Profile, login
+
+**Partner** (ro: partener):
+The other half of the couple, who joins an event from their own account by the owner's link and manages its digital invitation with them.
+_Avoid_: Collaborator, co-owner
+
+**Family** (ro: familie; code: household):
+The people one invitation goes to, such as a couple, a family with children or one friend. They open it by their own link and reply together.
+_Avoid_: Party, group, household (in copy)
+
+**People** (ro: persoane; code: seats):
+How many of a family are invited, children included.
+_Avoid_: Seats (in copy), headcount
+
+**Plus-one** (ro: însoțitor; code: plusOne):
+Someone a family may bring who isn't on the list.
+_Avoid_: Guest of a guest
+
+**Whose guests** (ro: invitații cui; code: side):
+Which of the couple invited a family, or both.
+_Avoid_: Side (in copy)
+
+**Personal link** (ro: link personal) / **Open link**:
+A family's own link, the invitation's address and their code, knows who they are. The address alone is the open link, which anyone can reply by, adding their family to the list; the couple can turn it off.
+_Avoid_: URL, code (only the end of the link)
+
+**Reply** (ro: confirmare; code: reply):
+A family's answer: who of them is coming, each with their meal, or that they can't. The couple can take one for a family who phoned.
+_Avoid_: RSVP (the printed card)
+
+**Guest** (ro: invitat):
+One person on a family's reply.
+_Avoid_: Attendee
+
+**Meal** (ro: meniu; code: meal):
+What a guest chooses to eat, from those the couple offers.
+_Avoid_: Menu in code (the printed item)
