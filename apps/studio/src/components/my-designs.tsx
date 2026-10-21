@@ -9,11 +9,15 @@ import {
 import { Button } from "@jolene/ui/button";
 import { Skeleton } from "@jolene/ui/skeleton";
 import { useConvexAuth, useQuery } from "convex/react";
+import { Send } from "lucide-react";
 import Link from "next/link";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { DesignPreview } from "./design/design-preview";
 
-/** The visitor's designs, newest first, each opening in the workspace. */
+/**
+ * The visitor's designs, newest first, each opening in the workspace; an
+ * invitation also opens its event's digital invitation.
+ */
 export function MyDesigns() {
   const t = useI18n();
   const locale = useCurrentLocale();
@@ -79,6 +83,15 @@ export function MyDesigns() {
                 })}
               </p>
             </Link>
+            {document.kind === "invitation" ? (
+              <Link
+                href={`/studio/invitatie-digitala/${design.eventId}`}
+                className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline"
+              >
+                <Send className="size-3.5" aria-hidden />
+                {t("myDesigns.digital")}
+              </Link>
+            ) : null}
           </li>
         );
       })}

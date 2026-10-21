@@ -3,26 +3,12 @@ import { googleFontsHref } from "@jolene/design";
 import { defaultLocale, isLocale } from "@jolene/i18n";
 import { Toaster } from "@jolene/ui/toaster";
 import { cn } from "@jolene/ui/utils";
-import { Cormorant_Garamond, Jost } from "next/font/google";
 import type { ReactNode } from "react";
 import { ConvexClientProvider } from "@/app/convex-client-provider";
+import { display, sans } from "@/app/fonts";
 import { I18nProvider } from "@/locales/client";
 import { dictionaries } from "@/locales/dictionaries";
 import { getI18n, getStaticParams } from "@/locales/server";
-
-// Latin Extended carries Romanian's ă, â, î, ș and ț.
-const sans = Jost({
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-sans",
-  display: "swap",
-});
-const display = Cormorant_Garamond({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-display",
-  display: "swap",
-});
 
 /** Every language is prerendered, so each page has a static shell to serve. */
 export function generateStaticParams() {

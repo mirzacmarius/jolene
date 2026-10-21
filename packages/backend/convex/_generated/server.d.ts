@@ -36,6 +36,11 @@ type Env = {
   readonly AI_MODEL: string | undefined;
   readonly AI_STAND_IN: string | undefined;
   readonly ANTHROPIC_API_KEY: string | undefined;
+  readonly AUTH_LOG_CODES: string | undefined;
+  readonly EMAIL_FROM: string | undefined;
+  readonly INVITE_URL: string | undefined;
+  readonly RESEND_API_KEY: string | undefined;
+  readonly RESEND_WEBHOOK_SECRET: string | undefined;
   readonly SITE_URL: string | undefined;
 };
 

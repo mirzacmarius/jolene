@@ -21,4 +21,27 @@ export const errors = {
   aiInvalidMessage: "ai-invalid-message",
   /** A picture that isn't a PNG or a JPEG, or is too large to keep. */
   invalidImage: "invalid-image",
+  /**
+   * Needs an account, not an anonymous session: a guest list outlives this
+   * browser. The studio asks the visitor to sign in.
+   */
+  accountNeeded: "account-needed",
+  /** Emails can't go out from this deployment yet (no Resend key). */
+  emailUnavailable: "email-unavailable",
+  /** Asked too often; the same works again a little later. */
+  tooMany: "too-many",
+  /** The digital invitation's address is taken, or isn't one it can have. */
+  slugTaken: "slug-taken",
+  invalidSlug: "invalid-slug",
+  /** A family, reply or setting it can't hold, such as a name too long. */
+  invalidInput: "invalid-input",
+  /** A digital invitation holds this many families at most. */
+  tooManyHouseholds: "too-many-households",
+  /**
+   * The digital invitation isn't paid for yet: until it is, only the first
+   * families can open it, for the couple to try.
+   */
+  inviteLocked: "invite-locked",
+  /** The reply date has passed; the couple takes replies themselves now. */
+  replyClosed: "reply-closed",
 } as const;

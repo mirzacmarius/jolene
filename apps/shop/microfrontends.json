@@ -15,7 +15,7 @@
       },
       "routing": [
         {
-          "paths": ["/studio/:path*"]
+          "paths": ["/studio/:path*", "/invitatie/:path*"]
         }
       ]
     }
