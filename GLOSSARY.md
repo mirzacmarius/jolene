@@ -186,6 +186,14 @@ _Avoid_: Collection (a family of designs)
 The value added tax inside the shop's prices. Jolene's prices include it, so Stripe Tax shows how much of what the couple paid is VAT, and never adds to it.
 _Avoid_: Tax (in Romanian, taxă is a fee)
 
+**Invoice** (ro: factură):
+The fiscal document of a paid order, made out to whoever paid or the company they bought as, which Jolene's invoicing tool sends to e-Factura.
+_Avoid_: Receipt (a fiscal receipt, bon fiscal, is another document)
+
+**Billing details** (ro: date de facturare; code: billing):
+Who an order's invoice is for, as Stripe's page took them: the payer's name and billing address and, for a company, its name and tax code (CUI).
+_Avoid_: Customer (who paid, to email), billing info
+
 **Order** (ro: comandă):
 What a couple paid for in one checkout: its lines and fees as they were priced, its delivery, where it goes and what Stripe charged.
 _Avoid_: Purchase, sale

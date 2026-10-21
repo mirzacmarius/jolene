@@ -2,7 +2,9 @@ import type { Language } from "@jolene/design";
 import { ConvexError, type Infer, v } from "convex/values";
 import Stripe from "stripe";
 import { env } from "../_generated/server";
+import { romanianCounty } from "../orders/counties";
 import {
+  type Address,
   type DeliveryKey,
   deliveryKeyValidator,
   type OrderLine,
@@ -95,9 +97,10 @@ function describe(line: OrderLine, language: Language): string | undefined {
 /**
  * The Checkout Session for a checkout: its lines and fees in lei, the ways it
  * can reach an address in Romania with the couple's phone for them, unless
- * nothing in the order travels, and the shop's pages Stripe sends them back
- * to. Prices include VAT, so Stripe Tax, when `vat` turns it on, shows the
- * VAT inside them and never adds to what the couple pays.
+ * nothing in the order travels, the billing address and, for a company, its
+ * name and tax code, which its invoice needs, and the shop's pages Stripe
+ * sends them back to. Prices include VAT, so Stripe Tax, when `vat` turns it
+ * on, shows the VAT inside them and never adds to what the couple pays.
  */
 export function sessionParams(
   checkout: CheckoutForStripe,
@@ -161,6 +164,10 @@ export function sessionParams(
         },
       })),
     }),
+    // The delivery address unless the couple gives another.
+    billing_address_collection: "required",
+    // "Buying as a business": the company's name and CUI, for its invoice.
+    tax_id_collection: { enabled: true },
     automatic_tax: { enabled: vat },
     phone_number_collection: { enabled: travels },
     allow_promotion_codes: true,
@@ -176,6 +183,24 @@ export async function retrieveSession(id: string) {
   });
 }
 
+/** An address as Stripe's page took it, with its county in Romania. */
+function addressOf(name: string, address: Stripe.Address): Address {
+  const country = address.country ?? "";
+  const county =
+    country === "RO"
+      ? romanianCounty(address.state, address.postal_code)
+      : address.state?.trim();
+  return {
+    name,
+    line1: address.line1 ?? "",
+    ...(address.line2 && { line2: address.line2 }),
+    city: address.city ?? "",
+    ...(county && { county }),
+    ...(address.postal_code && { postalCode: address.postal_code }),
+    country,
+  };
+}
+
 /** Which way an order travels, as the shipping rate Convex offered names it. */
 function deliveryKey(
   rate: Stripe.ShippingRate | string | null | undefined,
@@ -188,8 +213,9 @@ function deliveryKey(
 
 /**
  * What a paid Checkout Session says of its order: who paid, where it goes,
- * what Stripe charged and, when Stripe Tax worked it out, the VAT in it.
- * Null until it's paid, and for a session no checkout opened.
+ * who the invoice is for, what Stripe charged and, when Stripe Tax worked it
+ * out, the VAT in it. Null until it's paid, and for a session no checkout
+ * opened.
  */
 export function paidSession(
   session: Stripe.Checkout.Session,
@@ -207,6 +233,7 @@ export function paidSession(
   const details = session.customer_details;
   const shipping = session.collected_information?.shipping_details;
   const address = shipping?.address;
+  const taxId = details?.tax_ids?.find((id) => id.value)?.value;
   const rate = session.shipping_cost?.shipping_rate;
   const key = deliveryKey(rate);
   const paymentIntent =
@@ -225,16 +252,18 @@ export function paidSession(
     },
     ...(shipping &&
       address && {
-        address: {
-          name: shipping.name ?? details?.name ?? "",
-          line1: address.line1 ?? "",
-          ...(address.line2 && { line2: address.line2 }),
-          city: address.city ?? "",
-          ...(address.state && { county: address.state }),
-          ...(address.postal_code && { postalCode: address.postal_code }),
-          country: address.country ?? "",
-        },
+        address: addressOf(shipping.name ?? details?.name ?? "", address),
       }),
+    ...(details?.address && {
+      billing: {
+        ...(details.business_name && { company: details.business_name }),
+        ...(taxId && { taxId }),
+        address: addressOf(
+          details.individual_name || details.name || "",
+          details.address,
+        ),
+      },
+    }),
     ...(session.shipping_cost && {
       delivery: {
         ...(key && { key }),

@@ -97,6 +97,7 @@ export const record = internalMutation({
       ...(checkout.unlockNowAt !== undefined && {
         unlockNowAt: checkout.unlockNowAt,
       }),
+      ...(session.billing && { billing: session.billing }),
       paidAt: Date.now(),
     });
     for (const lineId of checkout.cartLines)

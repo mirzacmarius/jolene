@@ -172,6 +172,16 @@ function create(fields: URLSearchParams): Session {
   return session;
 }
 
+/** Where the stand-in's couple lives, without the county Stripe may leave out. */
+const cluj = {
+  line1: "Strada Florilor 1",
+  line2: "Ap. 2",
+  city: "Cluj-Napoca",
+  state: null,
+  postal_code: "400000",
+  country: "RO",
+};
+
 /** What a session's couple pays with the delivery they chose. */
 const totalOf = (session: Session, rate: Rate | null | undefined) =>
   session.amount_subtotal + (rate?.amount ?? 0);
@@ -190,19 +200,13 @@ function pay(session: Session, rate: Rate | null) {
       name: "ANA POPESCU",
       email: "ana@example.com",
       phone: "+40712345678",
+      address: cluj,
+      business_name: null,
+      individual_name: null,
+      tax_ids: [],
     },
     collected_information: rate && {
-      shipping_details: {
-        name: "Ana Popescu",
-        address: {
-          line1: "Strada Florilor 1",
-          line2: "Ap. 2",
-          city: "Cluj-Napoca",
-          state: "Cluj",
-          postal_code: "400000",
-          country: "RO",
-        },
-      },
+      shipping_details: { name: "Ana Popescu", address: cluj },
     },
     shipping_cost: rate && {
       amount_total: delivery,

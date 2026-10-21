@@ -18,6 +18,7 @@ import {
 } from "./invites/validators";
 import {
   addressValidator,
+  billingValidator,
   customerValidator,
   deliveryValidator,
   orderFeeValidator,
@@ -515,6 +516,8 @@ export default defineSchema({
     address: v.optional(addressValidator),
     /** When the couple agreed, before paying, to unlock its digital invitation right away. */
     unlockNowAt: v.optional(v.number()),
+    /** Who the invoice is for. None on orders from before Stripe asked. */
+    billing: v.optional(billingValidator),
     paidAt: v.number(),
   })
     .index("by_number", ["number"])
