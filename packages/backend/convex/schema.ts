@@ -100,7 +100,7 @@ export default defineSchema({
     slug: v.string(),
     kind: productKindValidator,
     document: documentValidator,
-    /** The Shopify product a finished design is ordered as. */
+    /** The shop's product a finished design is ordered as, named when Shopify sold it. */
     shopifyProductHandle: v.optional(v.string()),
     sortOrder: v.number(),
     /**

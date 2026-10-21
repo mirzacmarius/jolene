@@ -32,7 +32,7 @@ async function latestProof(ctx: QueryCtx, designId: Id<"designs">) {
     .first();
 }
 
-/** The Shopify product a proof's template is ordered as, if the shop has it. */
+/** The shop's product a proof's template is ordered as, if it sells one. */
 async function productOf(ctx: QueryCtx, templateId: Id<"templates">) {
   const template = await ctx.db.get("templates", templateId);
   return template?.shopifyProductHandle ?? null;
@@ -95,7 +95,7 @@ export const latest = query({
       revision: v.number(),
       approvedAt: v.number(),
       current: v.boolean(),
-      /** The Shopify product it is ordered as; null while the shop has none. */
+      /** The shop's product it is ordered as; null while the shop has none. */
       product: v.union(v.string(), v.null()),
     }),
     v.null(),

@@ -13,13 +13,11 @@
   "scripts": {
     "lift": "bun scripts/lift.ts",
     "lint": "biome lint",
-    "sync": "bun scripts/sync.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@jolene/typescript": "workspace:*",
     "@types/bun": "^1.4.3",
-    "graphql": "17.0.2",
     "typescript": "^5.9.3"
   }
 }
