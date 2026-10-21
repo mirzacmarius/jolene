@@ -138,12 +138,13 @@ export function PrivacyEn() {
           <strong>Anthropic</strong> (United States): the AI designer’s model.
         </li>
         <li>
-          <strong>Cargus</strong> (Romania): delivering orders, with the recipient’s name, address
-          and phone number.
+          <strong>Colete Online</strong> (Romania), which books the delivery, and the courier it
+          books for the parcel, such as Cargus, Sameday, FAN Courier, DPD or GLS: delivering orders,
+          with the recipient’s name, address and phone number.
         </li>
         <li>
-          <strong>Our invoicing provider</strong> and <strong>ANAF</strong>, Romania’s tax
-          authority, through the RO e-Factura system: invoices.
+          <strong>SmartBill</strong> (Intelligent IT SRL, Romania), which issues our invoices, and{" "}
+          <strong>ANAF</strong>, Romania’s tax authority, through the RO e-Factura system: invoices.
         </li>
       </ul>
 
@@ -353,12 +354,13 @@ export function PrivacyRo() {
           <strong>Anthropic</strong> (SUA): modelul designerului AI.
         </li>
         <li>
-          <strong>Cargus</strong> (România): livrarea comenzilor, cu numele, adresa și telefonul
-          destinatarului.
+          <strong>Colete Online</strong> (România), prin care comandăm livrarea, și curierul ales
+          pentru colet, precum Cargus, Sameday, FAN Courier, DPD sau GLS: livrarea comenzilor, cu
+          numele, adresa și telefonul destinatarului.
         </li>
         <li>
-          <strong>Furnizorul nostru de facturare</strong> și <strong>ANAF</strong>, prin sistemul RO
-          e-Factura: facturile.
+          <strong>SmartBill</strong> (Intelligent IT SRL, România), prin care emitem facturile, și{" "}
+          <strong>ANAF</strong>, prin sistemul RO e-Factura: facturile.
         </li>
       </ul>
 
