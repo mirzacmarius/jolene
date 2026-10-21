@@ -16,6 +16,7 @@ import {
   sideValidator,
   unlockValidator,
 } from "./invites/validators";
+import { orderStatusValidator } from "./orders/status";
 import {
   addressValidator,
   customerValidator,
@@ -509,10 +510,39 @@ export default defineSchema({
     customer: customerValidator,
     address: v.optional(addressValidator),
     paidAt: v.number(),
+    /**
+     * Where it is between paid and in the couple's hands. Orders paid before
+     * statuses get theirs from the seed (workshop/statuses.ts).
+     */
+    status: v.optional(orderStatusValidator),
   })
     .index("by_number", ["number"])
     .index("by_token", ["token"])
-    .index("by_session", ["session"]),
+    .index("by_session", ["session"])
+    .index("by_status_and_number", ["status", "number"]),
+
+  /**
+   * What happened to an order since it was paid, oldest first: each change
+   * of its status and each note the workshop wrote on it, with who did it.
+   */
+  orderHistory: defineTable(
+    v.union(
+      v.object({
+        orderId: v.id("orders"),
+        /** The workshop account's email. */
+        by: v.string(),
+        kind: v.literal("status"),
+        from: orderStatusValidator,
+        status: orderStatusValidator,
+      }),
+      v.object({
+        orderId: v.id("orders"),
+        by: v.string(),
+        kind: v.literal("note"),
+        note: v.string(),
+      }),
+    ),
+  ).index("by_orderId", ["orderId"]),
 
   /**
    * Who manages an event with its owner: a partner who joined by the

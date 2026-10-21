@@ -55,6 +55,7 @@ import type * as orders from "../orders.js";
 import type * as orders_emails from "../orders/emails.js";
 import type * as orders_format from "../orders/format.js";
 import type * as orders_links from "../orders/links.js";
+import type * as orders_status from "../orders/status.js";
 import type * as orders_validators from "../orders/validators.js";
 import type * as partners from "../partners.js";
 import type * as proofs from "../proofs.js";
@@ -75,6 +76,7 @@ import type * as utils_validators from "../utils/validators.js";
 import type * as workshop from "../workshop.js";
 import type * as workshop_proofs from "../workshop/proofs.js";
 import type * as workshop_staff from "../workshop/staff.js";
+import type * as workshop_statuses from "../workshop/statuses.js";
 import type * as workshop_validators from "../workshop/validators.js";
 
 import type {
@@ -131,6 +133,7 @@ declare const fullApi: ApiFromModules<{
   "orders/emails": typeof orders_emails;
   "orders/format": typeof orders_format;
   "orders/links": typeof orders_links;
+  "orders/status": typeof orders_status;
   "orders/validators": typeof orders_validators;
   partners: typeof partners;
   proofs: typeof proofs;
@@ -151,6 +154,7 @@ declare const fullApi: ApiFromModules<{
   workshop: typeof workshop;
   "workshop/proofs": typeof workshop_proofs;
   "workshop/staff": typeof workshop_staff;
+  "workshop/statuses": typeof workshop_statuses;
   "workshop/validators": typeof workshop_validators;
 }>;
 

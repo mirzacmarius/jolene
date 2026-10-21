@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { orderStatusValidator } from "../orders/status";
 import {
   addressValidator,
   customerValidator,
@@ -44,6 +45,7 @@ export const orderSummaryValidator = v.object({
   lines: v.array(v.object({ title: v.string(), quantity: v.number() })),
   /** What Stripe charged, in bani. */
   total: v.number(),
+  status: orderStatusValidator,
 });
 
 /** A designed line's proof, as the workshop's order page shows it. */
@@ -54,6 +56,24 @@ export const proofValidator = v.object({
   image: v.union(v.string(), v.null()),
   approvedAt: v.number(),
 });
+
+/** An entry in an order's history, as the workshop's order page shows it. */
+export const historyEntryValidator = v.union(
+  v.object({
+    at: v.number(),
+    /** The workshop account's email. */
+    by: v.string(),
+    kind: v.literal("status"),
+    from: orderStatusValidator,
+    status: orderStatusValidator,
+  }),
+  v.object({
+    at: v.number(),
+    by: v.string(),
+    kind: v.literal("note"),
+    note: v.string(),
+  }),
+);
 
 /** An order as the workshop's order page shows it: all of it. */
 export const workshopOrderValidator = v.object({
@@ -83,6 +103,11 @@ export const workshopOrderValidator = v.object({
   page: v.union(v.string(), v.null()),
   /** The payment in Stripe's dashboard; null when Stripe gave none. */
   payment: v.union(v.string(), v.null()),
+  status: orderStatusValidator,
+  /** The statuses it can have, in the order it goes through them. */
+  statuses: v.array(orderStatusValidator),
+  /** Its changes of status and the workshop's notes, newest first. */
+  history: v.array(historyEntryValidator),
 });
 
 /** What the print file of an order's designed line is made from. */

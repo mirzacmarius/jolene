@@ -2,12 +2,14 @@ import {
   paginationOptsValidator,
   paginationResultValidator,
 } from "convex/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
-import { type QueryCtx, query } from "./_generated/server";
+import { mutation, type QueryCtx, query } from "./_generated/server";
 import { linePictures } from "./orders";
 import { orderName } from "./orders/format";
 import { orderUrl, shopUrl } from "./orders/links";
+import { orderStatusValidator, statusesOf, statusOf } from "./orders/status";
+import { errors } from "./utils/errors";
 import { printJobOf } from "./workshop/proofs";
 import { requireWorkshop, workshopAccess } from "./workshop/staff";
 import {
@@ -29,17 +31,28 @@ export const access = query({
   handler: async (ctx) => await workshopAccess(ctx),
 });
 
-/** The orders, newest first, a page at a time. */
+/** How many entries of an order's history its page shows, newest first. */
+const HISTORY_SHOWN = 100;
+
+/** The longest note the workshop can write on an order. */
+const NOTE_LENGTH = 2000;
+
+/** The orders, newest first, a page at a time: all, or those with a status. */
 export const orders = query({
-  args: { paginationOpts: paginationOptsValidator },
+  args: {
+    paginationOpts: paginationOptsValidator,
+    status: v.optional(orderStatusValidator),
+  },
   returns: paginationResultValidator(orderSummaryValidator),
-  handler: async (ctx, { paginationOpts }) => {
+  handler: async (ctx, { paginationOpts, status }) => {
     await requireWorkshop(ctx);
-    const page = await ctx.db
-      .query("orders")
-      .withIndex("by_number")
-      .order("desc")
-      .paginate(paginationOpts);
+    const orders = status
+      ? ctx.db
+          .query("orders")
+          .withIndex("by_status_and_number", (q) => q.eq("status", status))
+          .order("desc")
+      : ctx.db.query("orders").withIndex("by_number").order("desc");
+    const page = await orders.paginate(paginationOpts);
     return {
       ...page,
       page: page.page.map((order) => ({
@@ -52,6 +65,7 @@ export const orders = query({
         pickup: order.delivery?.key === "pickup",
         lines: order.lines.map(({ title, quantity }) => ({ title, quantity })),
         total: order.total,
+        status: statusOf(order),
       })),
     };
   },
@@ -73,8 +87,8 @@ function paymentUrl(order: Doc<"orders">) {
 
 /**
  * One order, all of it: each line with its proof or photo, what the couple
- * chose and wrote, who paid and where it goes. Null for a number no order
- * has.
+ * chose and wrote, who paid and where it goes, where it is and what the
+ * workshop noted on it. Null for a number no order has.
  */
 export const order = query({
   args: { number: v.number() },
@@ -85,6 +99,11 @@ export const order = query({
     if (!order) return null;
     const pictures = await linePictures(ctx, order);
     const shop = shopUrl();
+    const history = await ctx.db
+      .query("orderHistory")
+      .withIndex("by_orderId", (q) => q.eq("orderId", order._id))
+      .order("desc")
+      .take(HISTORY_SHOWN);
     return {
       number: order.number,
       name: orderName(order.number),
@@ -120,7 +139,66 @@ export const order = query({
       ...(order.address && { address: order.address }),
       page: shop && orderUrl(shop, order.token),
       payment: paymentUrl(order),
+      status: statusOf(order),
+      statuses: statusesOf(order),
+      history: history.map(({ _id, _creationTime, orderId, ...entry }) => ({
+        at: _creationTime,
+        ...entry,
+      })),
     };
+  },
+});
+
+/**
+ * Moves an order on, or back, from the status the workshop's page showed.
+ * If someone has moved it since, nothing changes (order-moved), and the
+ * page shows where it is now. Each change goes in the order's history.
+ */
+export const setStatus = mutation({
+  args: {
+    number: v.number(),
+    from: orderStatusValidator,
+    status: orderStatusValidator,
+  },
+  returns: v.null(),
+  handler: async (ctx, { number, from, status }) => {
+    const by = await requireWorkshop(ctx);
+    const order = await orderByNumber(ctx, number);
+    if (!order) throw new ConvexError(errors.notFound);
+    if (statusOf(order) !== from) throw new ConvexError(errors.orderMoved);
+    if (!statusesOf(order).includes(status))
+      throw new ConvexError(errors.invalidInput);
+    if (status === from) return null;
+    await ctx.db.patch("orders", order._id, { status });
+    await ctx.db.insert("orderHistory", {
+      orderId: order._id,
+      by,
+      kind: "status",
+      from,
+      status,
+    });
+    return null;
+  },
+});
+
+/** Writes a note on an order, for the rest of the workshop to read. */
+export const addNote = mutation({
+  args: { number: v.number(), note: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { number, note }) => {
+    const by = await requireWorkshop(ctx);
+    const order = await orderByNumber(ctx, number);
+    if (!order) throw new ConvexError(errors.notFound);
+    const text = note.trim();
+    if (!text || text.length > NOTE_LENGTH)
+      throw new ConvexError(errors.invalidInput);
+    await ctx.db.insert("orderHistory", {
+      orderId: order._id,
+      by,
+      kind: "note",
+      note: text,
+    });
+    return null;
   },
 });
 

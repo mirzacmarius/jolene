@@ -62,4 +62,6 @@ export const errors = {
   inviteUnlocked: "invite-unlocked",
   /** The workshop's pages are for the accounts in WORKSHOP_EMAILS alone. */
   workshopOnly: "workshop-only",
+  /** Someone else changed the order's status first: the page shows theirs. */
+  orderMoved: "order-moved",
 } as const;
