@@ -621,6 +621,37 @@ describe("a refund", () => {
         await workshop.query(api.workshop.order, { number }),
       ).toMatchObject({ refunded: 0, refunds: [] });
   });
+
+  test("reverses the order's invoice once all of it is given back", async () => {
+    const { t, workshop } = await paidOrder();
+    const orderId = await t.run(async (ctx) => {
+      const paid = await ctx.db
+        .query("orders")
+        .withIndex("by_number", (q) => q.eq("number", 1001))
+        .unique();
+      if (!paid) throw new Error("No order J1001");
+      await ctx.db.patch("orders", paid._id, {
+        invoice: { status: "issued", at: 1, series: "JOL", number: "0042" },
+      });
+      return paid._id;
+    });
+    const reversals = () =>
+      t.run(async (ctx) =>
+        (await ctx.db.system.query("_scheduled_functions").collect())
+          .filter((job) => job.name === "invoices:reverse")
+          .map((job) => job.args),
+      );
+    await workshop.action(api.workshop.refund, {
+      number: 1001,
+      amount: 30_000,
+    });
+    expect(await reversals()).toEqual([]);
+    await workshop.action(api.workshop.refund, {
+      number: 1001,
+      amount: 70_000,
+    });
+    expect(await reversals()).toEqual([[{ orderId }]]);
+  });
 });
 
 describe("the workshop's settings", () => {

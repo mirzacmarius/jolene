@@ -8,6 +8,7 @@ import {
   internalQuery,
 } from "../_generated/server";
 import { stripe } from "../checkout/stripe";
+import { creditInvoice } from "../invoices";
 import { orderName } from "../orders/format";
 import { givesBack, refundOf, stripeRefundValidator } from "../orders/refunds";
 import { errors } from "../utils/errors";
@@ -78,8 +79,9 @@ export const paidHere = internalQuery({
 
 /**
  * Keeps an order's refunds as Stripe said they were, each once by its id,
- * and what they gave back on the order. Nothing happens for a payment that
- * isn't one of this deployment's orders, such as a preview's.
+ * and what they gave back on the order. Once they've given back all of it,
+ * a credit note reverses the order's invoice. Nothing happens for a payment
+ * that isn't one of this deployment's orders, such as a preview's.
  */
 export const record = internalMutation({
   args: {
@@ -126,6 +128,11 @@ export const record = internalMutation({
       .reduce((sum, refund) => sum + refund.amount, 0);
     if (refunded !== (order.refunded ?? 0))
       await ctx.db.patch("orders", order._id, { refunded });
+    const given = all
+      .filter((refund) => refund.status === "succeeded")
+      .reduce((sum, refund) => sum + refund.amount, 0);
+    // A part given back leaves the invoice for the team to amend in SmartBill.
+    if (given >= order.total) await creditInvoice(ctx, order._id);
     return null;
   },
 });
