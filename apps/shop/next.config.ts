@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     deviceSizes: [1320, 1920],
     imageSizes: [],
     minimumCacheTTL: 31536000,
-    // The catalog's photos load from jolene.ro until they're copied into Convex's storage.
+    // The catalog's photos load from the photo store once they're copied there, and from jolene.ro until then (ADR 0016); a photo put in Convex's storage loads from there.
     remotePatterns: [
       { hostname: "jolene.ro", protocol: "https" },
       { hostname: "*.convex.cloud", protocol: "https" },

@@ -1,5 +1,7 @@
 # Jolene sells through its own cart and Stripe Checkout
 
+Where its photos go is superseded by [ADR 0016](0016-product-photos-live-in-one-vercel-blob-store.md): one Vercel Blob store, which every deployment shows them from.
+
 Jolene sells from its own catalog, cart and orders, kept in Convex, and takes payment through Stripe Checkout. Shopify leaves the project, so this replaces ADR 0001 and the Shopify parts of ADR 0008. Selling on Shopify needed a paid plan before the shop could even be tested, and Shopify's limits had shaped how the catalog sells (ADR 0008). Stripe charges per payment only, and Jolene's orders are simple enough to own: one currency, made to order, mostly from a proof.
 
 ADR 0001's boundary holds: the shop owns selling (the catalog's pages, the cart, checkout and the couple's order page) and the studio owns designs and proofs. What moves is where selling keeps its data: Convex, beside the designs it sells.
