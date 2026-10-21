@@ -110,6 +110,18 @@ export function fakeStripe() {
       },
       customer_details: null,
       collected_information: null,
+      shipping_address_collection: fields.has(
+        "shipping_address_collection[allowed_countries][0]",
+      )
+        ? {
+            allowed_countries: [
+              fields.get("shipping_address_collection[allowed_countries][0]"),
+            ],
+          }
+        : null,
+      phone_number_collection: {
+        enabled: fields.get("phone_number_collection[enabled]") === "true",
+      },
       shipping_cost: null,
       payment_intent: null,
     };
@@ -213,19 +225,23 @@ export function fakeStripe() {
     },
     /**
      * Pays for a session as Stripe's page would: the couple's details, a
-     * courier to Cluj, a promotion code's discount if any and, with Stripe
-     * Tax on, Romania's VAT inside the total unless `vat` says otherwise.
+     * courier to Cluj when the session asks for an address, a promotion
+     * code's discount if any and, with Stripe Tax on, Romania's VAT inside
+     * the total unless `vat` says otherwise.
      */
     pay(
       id: string,
       {
         discount = 0,
-        delivery = 2000,
+        delivery: price = 2000,
         vat,
       }: { discount?: number; delivery?: number; vat?: number } = {},
     ) {
       const session = sessions.get(id);
       if (!session) throw new Error(`No Checkout Session ${id}`);
+      const ships = session.shipping_address_collection !== null;
+      const delivery = ships ? price : 0;
+      const phone = session.phone_number_collection as { enabled: boolean };
       const total = session.amount_subtotal - discount + delivery;
       const automaticTax = session.automatic_tax as { enabled: boolean };
       Object.assign(session, {
@@ -234,25 +250,26 @@ export function fakeStripe() {
         customer_details: {
           name: "ANA POPESCU",
           email: "ana@example.com",
-          phone: "+40712345678",
+          phone: phone.enabled ? "+40712345678" : null,
         },
-        collected_information: {
-          shipping_details: {
-            name: "Ana Popescu",
-            address: {
-              line1: "Strada Florilor 1",
-              line2: "Ap. 2",
-              city: "Cluj-Napoca",
-              state: "Cluj",
-              postal_code: "400000",
-              country: "RO",
-            },
-          },
-        },
-        shipping_cost: {
-          amount_total: delivery,
-          shipping_rate: shippingRate.id,
-        },
+        collected_information: ships
+          ? {
+              shipping_details: {
+                name: "Ana Popescu",
+                address: {
+                  line1: "Strada Florilor 1",
+                  line2: "Ap. 2",
+                  city: "Cluj-Napoca",
+                  state: "Cluj",
+                  postal_code: "400000",
+                  country: "RO",
+                },
+              },
+            }
+          : null,
+        shipping_cost: ships
+          ? { amount_total: delivery, shipping_rate: shippingRate.id }
+          : null,
         total_details: {
           amount_discount: discount,
           amount_shipping: delivery,

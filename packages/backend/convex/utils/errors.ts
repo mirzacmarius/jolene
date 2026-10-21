@@ -26,7 +26,7 @@ export const errors = {
   /**
    * A cart line asking what its product doesn't: an option it doesn't have,
    * a value or choice it doesn't offer, a quantity out of range, a fee it
-   * doesn't list, or a proof of another product.
+   * doesn't list, a proof of another product, or an event it isn't for.
    */
   invalidLine: "invalid-line",
   /**
@@ -58,4 +58,6 @@ export const errors = {
   cartEmpty: "cart-empty",
   /** A cart line can't be ordered as it is: the cart says why. */
   cartNotReady: "cart-not-ready",
+  /** The event's digital invitation is open to every guest already. */
+  inviteUnlocked: "invite-unlocked",
 } as const;

@@ -4,10 +4,12 @@ import { MAX_QUANTITY } from "@jolene/backend/convex/shop/pricing";
 import { Loader2 } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 
+import { InviteCard, InviteCardMissing, InviteCardSkeleton } from "@/components/invite/invite-card";
 import { ProofCard } from "@/components/proof/proof-card";
 import { Button } from "@/components/ui/button";
 import { QuantityInput } from "@/components/ui/quantity-input";
 import { useCartActions, useCartDrawer } from "@/lib/cart/client";
+import type { InviteEvent } from "@/lib/invite/types";
 import {
   getDefaultAnswers,
   getExtrasPerItem,
@@ -26,13 +28,15 @@ import { ProductPrice } from "./product-price";
 const LABELS = new Intl.ListFormat("ro", { type: "conjunction" });
 
 interface PurchaseFormProps {
-  /** While the page still reads the proof it may carry: the same form, not yet usable. */
+  /** While the page still reads the proof or event it may carry: the same form, not yet usable. */
   disabled?: boolean;
+  /** The event a product bought for an event is for, from the studio's link. */
+  event?: InviteEvent | null;
   product: ProductDetails;
   proof?: ProductProof | null;
 }
 
-export function PurchaseForm({ disabled = false, product, proof }: PurchaseFormProps) {
+export function PurchaseForm({ disabled = false, event, product, proof }: PurchaseFormProps) {
   const { add } = useCartActions();
   const drawer = useCartDrawer();
   const errorId = useId();
@@ -52,10 +56,12 @@ export function PurchaseForm({ disabled = false, product, proof }: PurchaseFormP
     .filter((fee) => fees.includes(fee.key))
     .reduce((sum, fee) => sum + fee.price, 0);
   const missing = getMissingOptions(product.lineOptions, answers);
+  // Sold only with the studio's event, and only while its invitation isn't open to every guest.
+  const unsellable = product.forEvent && (!event || event.unlocked);
 
-  async function addToCart(event: FormEvent) {
-    event.preventDefault();
-    if (missing.length) return;
+  async function addToCart(submit: FormEvent) {
+    submit.preventDefault();
+    if (missing.length || unsellable) return;
     setAdding(true);
     setError(undefined);
     const problem = await add({
@@ -65,8 +71,9 @@ export function PurchaseForm({ disabled = false, product, proof }: PurchaseFormP
       options: product.options.flatMap((option) =>
         selected[option.name] ? [{ name: option.name, value: selected[option.name] }] : [],
       ),
+      eventId: event?.id,
       proofId: proof?.id,
-      quantity,
+      quantity: product.forEvent ? 1 : quantity,
     });
     setAdding(false);
     if (problem) setError(problem);
@@ -82,8 +89,18 @@ export function PurchaseForm({ disabled = false, product, proof }: PurchaseFormP
             product.compareAtPrice === undefined ? undefined : product.compareAtPrice + addOns
           }
           price={price}
+          unit={product.forEvent ? "pentru toată lista de invitați" : undefined}
         />
         {proof ? <ProofCard proof={proof} /> : null}
+        {product.forEvent ? (
+          disabled ? (
+            <InviteCardSkeleton />
+          ) : event ? (
+            <InviteCard event={event} />
+          ) : (
+            <InviteCardMissing />
+          )
+        ) : null}
         {product.options.length ? (
           <div className="grid gap-5">
             {product.options.map((option) => (
@@ -119,22 +136,30 @@ export function PurchaseForm({ disabled = false, product, proof }: PurchaseFormP
             </p>
           ) : null}
           <div className="flex flex-wrap gap-2.5">
-            <QuantityInput
-              disabled={disabled || isAdding}
-              max={MAX_QUANTITY}
-              min={minQuantity}
-              onChange={setQuantity}
-              value={quantity}
-            />
-            <Button className="h-12 min-w-40 flex-1" disabled={missing.length > 0} type="submit">
+            {product.forEvent ? null : (
+              <QuantityInput
+                disabled={disabled || isAdding}
+                max={MAX_QUANTITY}
+                min={minQuantity}
+                onChange={setQuantity}
+                value={quantity}
+              />
+            )}
+            <Button
+              className="h-12 min-w-40 flex-1"
+              disabled={missing.length > 0 || (!disabled && unsellable)}
+              type="submit"
+            >
               {isAdding ? <Loader2 aria-hidden="true" className="animate-spin" /> : null}
               {isAdding ? "Se adaugă…" : "Adaugă în coș"}
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground" role="status">
-            {quantity} buc.: {formatPrice(price * quantity + feesTotal)}
-            {minQuantity > 1 ? ` · comandă minimă ${minQuantity} buc.` : null}
-          </p>
+          {product.forEvent ? null : (
+            <p className="text-sm text-muted-foreground" role="status">
+              {quantity} buc.: {formatPrice(price * quantity + feesTotal)}
+              {minQuantity > 1 ? ` · comandă minimă ${minQuantity} buc.` : null}
+            </p>
+          )}
           {error ? (
             <p className="text-sm text-destructive" id={errorId} role="alert">
               {error}

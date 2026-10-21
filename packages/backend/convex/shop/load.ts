@@ -93,6 +93,7 @@ export const products = internalMutation({
         minQuantity: v.optional(v.number()),
         fees: v.array(v.string()),
         position: v.number(),
+        forEvent: v.optional(v.literal(true)),
       }),
     ),
   },
@@ -143,7 +144,9 @@ export const retire = internalMutation({
     const gone: Doc<"products">[] = [];
     for await (const product of ctx.db
       .query("products")
-      .withIndex("by_published_and_position", (q) => q.eq("published", true)))
+      .withIndex("by_published_and_forEvent_and_position", (q) =>
+        q.eq("published", true),
+      ))
       if (!listed.has(product.handle) && product.editedAt === undefined)
         gone.push(product);
     for (const product of gone) {

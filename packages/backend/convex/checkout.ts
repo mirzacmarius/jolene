@@ -72,6 +72,9 @@ export const prepare = internalMutation({
       options: line.options,
       answers: line.answers,
       ...(line.proof && { proof: line.proof.id }),
+      ...(line.event && {
+        event: { id: line.event.id, hosts: line.event.hosts[language] },
+      }),
       price: line.price,
       total: line.total,
     }));

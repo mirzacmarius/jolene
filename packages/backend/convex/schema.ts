@@ -345,17 +345,32 @@ export default defineSchema({
     /** On sale: the shop shows it and sells it. */
     published: v.boolean(),
     /**
+     * Bought for one of a couple's events, as the digital invitation is: its
+     * cart line carries the event, one line each, and nothing of it is
+     * delivered. The studio sends the couple to its page, so the shop's
+     * lists, search and sitemap leave it out.
+     */
+    forEvent: v.optional(v.literal(true)),
+    /**
      * When Jolene's team last changed it: from then on the seed leaves it
      * as they made it.
      */
     editedAt: v.optional(v.number()),
   })
     .index("by_handle", ["handle"])
-    .index("by_published_and_position", ["published", "position"])
-    .index("by_published_and_price", ["published", "price"])
+    .index("by_published_and_forEvent_and_position", [
+      "published",
+      "forEvent",
+      "position",
+    ])
+    .index("by_published_and_forEvent_and_price", [
+      "published",
+      "forEvent",
+      "price",
+    ])
     .searchIndex("search_title", {
       searchField: "title",
-      filterFields: ["published"],
+      filterFields: ["published", "forEvent"],
     }),
 
   /**
@@ -431,6 +446,8 @@ export default defineSchema({
     fees: v.array(v.string()),
     /** The design the couple approved for it in the studio. */
     proofId: v.optional(v.id("proofs")),
+    /** The event a product `forEvent` is bought for. */
+    eventId: v.optional(v.id("events")),
   }).index("by_cartId", ["cartId"]),
 
   /** A one-off charge on an order, such as for diacritics or an urgent order. */

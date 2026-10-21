@@ -35,6 +35,7 @@ export function toProductDetails(product: ConvexProduct): ProductDetails {
     description: htmlToText(product.descriptionHtml),
     descriptionHtml: product.descriptionHtml,
     fees: product.fees,
+    forEvent: product.forEvent,
     handle: product.handle,
     images: product.images.map(toImage),
     lineOptions: product.lineOptions.map(({ handle: _, ...option }) => option),

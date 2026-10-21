@@ -7,11 +7,12 @@ import {
   spyOn,
   test,
 } from "bun:test";
+import { digitalInvitation } from "@jolene/products/digital-invitation";
 import Stripe from "stripe";
 import { testConvex } from "../test/convex";
 import { fakeStripe } from "../test/stripe";
 import { api, internal } from "./_generated/api";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { paidSession } from "./checkout/stripe";
 import { confirmationEmail, noticeEmail } from "./orders/emails";
 import { lei } from "./orders/format";
@@ -488,6 +489,118 @@ describe("checkout.forget", () => {
     expect(
       await t.run((ctx) => ctx.db.query("checkouts").take(5)),
     ).toHaveLength(1);
+  });
+});
+
+describe("the digital invitation", () => {
+  /** A couple's wedding, its digital invitation alone in the cart. */
+  async function withInvitation() {
+    const t = testConvex();
+    await t.action(internal.init.seed, {});
+    const eventId = await t.run(async (ctx) =>
+      ctx.db.insert("events", {
+        ownerId: await ctx.db.insert("users", { isAnonymous: true }),
+        occasion: "wedding",
+        fields: { partner1: "Ana", partner2: "Mihai", date: "2027-06-12" },
+        updatedAt: Date.now(),
+      }),
+    );
+    await t.mutation(api.cart.add, {
+      token,
+      handle: digitalInvitation.handle,
+      quantity: 1,
+      options: [],
+      answers: [],
+      fees: [],
+      eventId,
+    });
+    stripe = fakeStripe();
+    return { t, stripe, eventId };
+  }
+
+  const inviteOf = (t: ReturnType<typeof testConvex>, eventId: Id<"events">) =>
+    t.run((ctx) =>
+      ctx.db
+        .query("invites")
+        .withIndex("by_eventId", (q) => q.eq("eventId", eventId))
+        .unique(),
+    );
+
+  test("asks for no address when nothing travels, and unlocks the event once paid", async () => {
+    const { t, stripe, eventId } = await withInvitation();
+    await t.action(api.checkout.start, { token, language: "ro" });
+    const fields = Object.fromEntries(stripe.opened()[0]?.fields ?? []);
+    expect(fields).toMatchObject({
+      "line_items[0][quantity]": "1",
+      "line_items[0][price_data][unit_amount]": "24900",
+      "line_items[0][price_data][product_data][name]": "Invitație digitală",
+      "line_items[0][price_data][product_data][description]":
+        "Pentru Ana și Mihai",
+      "phone_number_collection[enabled]": "false",
+    });
+    expect(
+      Object.keys(fields).filter((key) => key.startsWith("shipping")),
+    ).toEqual([]);
+
+    const session = stripe.pay(stripe.latest().id);
+    const orderToken = await t.action(api.checkout.confirm, {
+      session: session.id,
+    });
+    const order = await t.query(api.orders.byToken, {
+      token: orderToken as string,
+    });
+    expect(order).toMatchObject({
+      lines: [
+        {
+          product: digitalInvitation.handle,
+          quantity: 1,
+          total: 24_900,
+          event: { id: eventId, hosts: "Ana și Mihai" },
+        },
+      ],
+      subtotal: 24_900,
+      total: 24_900,
+    });
+    expect(order).not.toHaveProperty("delivery");
+    expect(order).not.toHaveProperty("address");
+    expect((await inviteOf(t, eventId))?.unlocked).toMatchObject({
+      by: "order",
+      order: "J1001",
+    });
+    const [recorded] = await orders(t);
+    if (!recorded) throw new Error("No order recorded");
+    expect(noticeEmail(recorded, null).text).toContain(
+      `  Pentru Ana și Mihai, evenimentul ${eventId}\n\nNimic de livrat`,
+    );
+    expect(confirmationEmail(recorded, null, [null]).text).toContain(
+      "1 × Invitație digitală: 249,00 lei\n  Pentru Ana și Mihai",
+    );
+  });
+
+  test("goes with printed invitations by courier, the address asked once", async () => {
+    const { t, stripe } = await withInvitation();
+    await t.mutation(api.cart.add, roses);
+    await t.action(api.checkout.start, { token, language: "en" });
+    const fields = Object.fromEntries(stripe.opened()[0]?.fields ?? []);
+    expect(fields).toMatchObject({
+      "line_items[0][price_data][product_data][description]":
+        "For Ana and Mihai",
+      "shipping_address_collection[allowed_countries][0]": "RO",
+      "shipping_options[0][shipping_rate_data][fixed_amount][amount]": "2000",
+      "phone_number_collection[enabled]": "true",
+    });
+  });
+
+  test("isn't paid for once the event's invitation is unlocked another way", async () => {
+    const { t, eventId } = await withInvitation();
+    await t.mutation(internal.invites.unlock.byHand, {
+      event: eventId,
+      note: "Transfer",
+    });
+    await expectError(
+      t.action(api.checkout.start, { token, language: "ro" }),
+      errors.cartNotReady,
+    );
   });
 });
 

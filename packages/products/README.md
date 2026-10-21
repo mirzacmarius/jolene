@@ -20,4 +20,4 @@ reads jolene.ro's WooCommerce shop as pulled on 19 October 2026 (`products.json`
 - **Categories** are jolene.ro's that have products.
 - **Handles are jolene.ro's addresses**, with underscores as hyphens, so the shop redirects `/produs/<name>/` to `/products/<name>`.
 
-`src/digital-invitation.ts` is the digital invitation, a product of its own (ADR 0014).
+`src/digital-invitation.ts` is the digital invitation, a product of its own that the seed adds to the catalog without listing it: it's sold for one event at a time, from the studio (ADR 0014).

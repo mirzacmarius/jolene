@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { catalog } from "@jolene/products/data";
+import { digitalInvitation } from "@jolene/products/digital-invitation";
 import { Glob } from "bun";
 import type { FunctionReturnType } from "convex/server";
 import { convexTest } from "convex-test";
@@ -112,6 +113,26 @@ describe("shop.product", () => {
     expect(await t.query(api.shop.product, { handle: "18207" })).toBeNull();
     expect(await t.query(api.shop.product, { handle: "nowhere" })).toBeNull();
   });
+
+  test("shows the digital invitation, which no list or search shows", async () => {
+    const t = await seeded();
+    expect(
+      await t.query(api.shop.product, { handle: digitalInvitation.handle }),
+    ).toMatchObject({
+      title: digitalInvitation.title,
+      price: digitalInvitation.price * 100,
+      categories: [],
+      forEvent: true,
+    });
+    expect(await t.query(api.shop.product, { handle: "18207" })).toMatchObject({
+      forEvent: false,
+    });
+    const found = await t.query(api.shop.search, { query: "Invitație" });
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.map((product) => product.handle)).not.toContain(
+      digitalInvitation.handle,
+    );
+  });
 });
 
 describe("init.seed", () => {
@@ -127,7 +148,8 @@ describe("init.seed", () => {
       }));
     const before = await count();
     expect(before).toEqual({
-      products: catalog.products.length,
+      // The catalog's, and the digital invitation.
+      products: catalog.products.length + 1,
       shelves: catalog.products.reduce(
         (sum, product) => sum + new Set(product.categories).size,
         0,
@@ -236,7 +258,7 @@ describe("shop.products", () => {
     expect(prices).toHaveLength(inCategory.length);
   });
 
-  test("lists every product on sale a page at a time", async () => {
+  test("lists every product on sale a page at a time, but the digital invitation", async () => {
     const t = await seeded();
     const handles: string[] = [];
     let cursor: string | null = null;

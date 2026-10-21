@@ -4,6 +4,7 @@ import {
   type Language,
   type Occasion,
 } from "@jolene/design";
+import type { Doc } from "../_generated/dataModel";
 import { escapeHtml } from "../emails";
 
 /**
@@ -28,6 +29,12 @@ export function hostNames(
     .filter(Boolean);
   return names.join(language === "ro" ? " și " : " and ");
 }
+
+/** Who an event's invitation is from, in each language. */
+export const hosts = (event: Pick<Doc<"events">, "occasion" | "fields">) => ({
+  ro: hostNames(event.occasion, event.fields, "ro"),
+  en: hostNames(event.occasion, event.fields, "en"),
+});
 
 const words = {
   ro: {

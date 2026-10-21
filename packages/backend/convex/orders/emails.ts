@@ -20,6 +20,7 @@ const words = {
     test: "Comandă de test: plătită în modul de test al Stripe, fără bani.",
     button: "Vedeți comanda",
     design: "Cu designul vostru",
+    forEvent: (hosts: string) => `Pentru ${hosts}`,
     subtotal: "Subtotal",
     delivery: "Livrare",
     discount: "Reducere",
@@ -37,6 +38,7 @@ const words = {
     test: "A test order: paid in Stripe's test mode, with no money taken.",
     button: "View your order",
     design: "With your design",
+    forEvent: (hosts: string) => `For ${hosts}`,
     subtotal: "Subtotal",
     delivery: "Delivery",
     discount: "Discount",
@@ -158,6 +160,7 @@ export function confirmationEmail(
   const details = (line: Order["lines"][number]) => [
     ...choices(line),
     ...(line.proof ? [w.design] : []),
+    ...(line.event ? [w.forEvent(line.event.hosts)] : []),
   ];
   const sums = [
     ...order.fees.map((fee): [string, string] => [fee.label, lei(fee.price)]),
@@ -225,7 +228,16 @@ export function noticeEmail(order: Order, link: string | null) {
       `${line.quantity} × ${line.title} (${line.product}): ${lei(line.total)}`,
       ...choices(line).map((choice) => `  ${choice}`),
       ...(line.proof ? [`  Design aprobat în studio: ${line.proof}`] : []),
+      ...(line.event
+        ? [`  Pentru ${line.event.hosts}, evenimentul ${line.event.id}`]
+        : []),
     ]),
+    ...(order.lines.every((line) => line.event)
+      ? [
+          "",
+          "Nimic de livrat: comanda deschide invitația digitală tuturor invitaților.",
+        ]
+      : []),
     "",
     ...order.fees.map((fee) => `${fee.label}: ${lei(fee.price)}`),
     ...totals(order, w).map(([label, amount]) => `${label}: ${amount}`),

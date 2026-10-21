@@ -7,6 +7,7 @@ import {
   query,
 } from "./_generated/server";
 import { checkoutOpen } from "./checkout/open";
+import { eventForShop, eventForShopValidator } from "./invites/shop";
 import { proofSummaryValidator, summarize } from "./proofs";
 import { photoValidator, photoView } from "./shop/photos";
 import {
@@ -43,6 +44,8 @@ const lineValidator = v.object({
   proof: v.optional(
     v.object({ id: v.id("proofs"), ...proofSummaryValidator.fields }),
   ),
+  /** The event it's bought for, as the digital invitation is. */
+  event: v.optional(eventForShopValidator),
   /** One of it, in bani, with its options' surcharges and paid choices. */
   price: v.number(),
   compareAtPrice: v.optional(v.number()),
@@ -92,16 +95,17 @@ async function lineInCart(
   return { cart, line };
 }
 
+type Line = Pick<Doc<"cartLines">, "productId" | "proofId" | "eventId"> &
+  LineChoices;
+
 /** Whether two lines ask the same of the same product. */
-function sameLine(
-  a: Pick<Doc<"cartLines">, "productId" | "proofId"> & LineChoices,
-  b: Pick<Doc<"cartLines">, "productId" | "proofId"> & LineChoices,
-) {
+function sameLine(a: Line, b: Line) {
   const choices = ({ options, answers, fees }: LineChoices) =>
     JSON.stringify([options, answers, fees]);
   return (
     a.productId === b.productId &&
     a.proofId === b.proofId &&
+    a.eventId === b.eventId &&
     choices(a) === choices(b)
   );
 }
@@ -130,12 +134,20 @@ export async function priceCart(ctx: QueryCtx, cartId: Id<"carts">) {
     lines.map(async ({ line, product }) => {
       const { price, compareAtPrice } = unitPrice(product, line);
       const proof = line.proofId && (await summarize(ctx, line.proofId));
-      const image = product.product.images[0];
+      const event = line.eventId
+        ? await eventForShop(ctx, line.eventId)
+        : undefined;
+      const photo = product.product.images[0];
       return {
         id: line._id,
         handle: product.product.handle,
         title: product.product.title,
-        image: image ? await photoView(ctx, image) : null,
+        // A line bought for an event shows the invitation its guests see.
+        image: event?.image
+          ? { url: event.image, alt: event.hosts.ro }
+          : photo
+            ? await photoView(ctx, photo)
+            : null,
         quantity: line.quantity,
         minQuantity: product.product.minQuantity,
         options: line.options,
@@ -146,10 +158,11 @@ export async function priceCart(ctx: QueryCtx, cartId: Id<"carts">) {
         fees: line.fees,
         proof:
           line.proofId && proof ? { id: line.proofId, ...proof } : undefined,
+        ...(event && { event }),
         price,
         compareAtPrice,
         total: price * line.quantity,
-        problems: problems(product, line),
+        problems: problems(product, line, event),
       };
     }),
   );
@@ -184,7 +197,9 @@ export const get = query({
 /**
  * Puts a product in the cart with the couple's choices, adding to the line
  * that already asks the same. Makes the cart on its first line, under the
- * token the shop's server made for it.
+ * token the shop's server made for it. A product bought for an event, as the
+ * digital invitation is, takes one line of one for each event, and only
+ * while the event's invitation isn't open to every guest yet.
  */
 export const add = mutation({
   args: {
@@ -196,9 +211,14 @@ export const add = mutation({
     fees: v.array(v.string()),
     /** A proof the couple approved in the studio for this product. */
     proofId: v.optional(v.string()),
+    /** The event a product bought for an event is for. */
+    eventId: v.optional(v.string()),
   },
   returns: v.null(),
-  handler: async (ctx, { token, handle, proofId: rawProofId, ...choices }) => {
+  handler: async (
+    ctx,
+    { token, handle, proofId: rawProofId, eventId: rawEventId, ...choices },
+  ) => {
     if (token.length < MIN_TOKEN_LENGTH) throw new ConvexError(errors.notFound);
     const product = await ctx.db
       .query("products")
@@ -216,6 +236,19 @@ export const add = mutation({
         throw new ConvexError(errors.invalidLine);
     }
 
+    let eventId: Id<"events"> | undefined;
+    if (product.forEvent) {
+      eventId =
+        (rawEventId !== undefined &&
+          ctx.db.normalizeId("events", rawEventId)) ||
+        undefined;
+      const event = eventId && (await eventForShop(ctx, eventId));
+      if (!event || line.quantity !== 1)
+        throw new ConvexError(errors.invalidLine);
+      if (event.unlocked) throw new ConvexError(errors.inviteUnlocked);
+    } else if (rawEventId !== undefined)
+      throw new ConvexError(errors.invalidLine);
+
     const now = Date.now();
     const cart = await findCart(ctx, token);
     const cartId =
@@ -226,27 +259,35 @@ export const add = mutation({
       productId: product._id,
       ...line,
       ...(proofId === undefined ? {} : { proofId }),
+      ...(eventId === undefined ? {} : { eventId }),
     };
     const existing = cart
       ? (await linesOf(ctx, cart._id)).find((other) => sameLine(other, wanted))
       : undefined;
     if (existing)
       await ctx.db.patch("cartLines", existing._id, {
-        quantity: Math.min(existing.quantity + line.quantity, MAX_QUANTITY),
+        quantity: Math.min(
+          existing.quantity + line.quantity,
+          eventId ? 1 : MAX_QUANTITY,
+        ),
       });
     else await ctx.db.insert("cartLines", { cartId, ...wanted });
     return null;
   },
 });
 
-/** Changes how many of a line the cart holds; none takes it out. */
+/**
+ * Changes how many of a line the cart holds; none takes it out. A line
+ * bought for an event holds one.
+ */
 export const setQuantity = mutation({
   args: { token: v.string(), lineId: v.id("cartLines"), quantity: v.number() },
   returns: v.null(),
   handler: async (ctx, { token, lineId, quantity }) => {
     if (!Number.isInteger(quantity) || quantity < 0 || quantity > MAX_QUANTITY)
       throw new ConvexError(errors.invalidLine);
-    const { cart } = await lineInCart(ctx, token, lineId);
+    const { cart, line } = await lineInCart(ctx, token, lineId);
+    if (line.eventId && quantity > 1) throw new ConvexError(errors.invalidLine);
     if (quantity === 0) await ctx.db.delete("cartLines", lineId);
     else await ctx.db.patch("cartLines", lineId, { quantity });
     await ctx.db.patch("carts", cart._id, { updatedAt: Date.now() });
