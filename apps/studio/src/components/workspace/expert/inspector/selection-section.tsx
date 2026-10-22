@@ -5,7 +5,6 @@ import {
   alignPlacements,
   type DesignDocument,
   distributePlacements,
-  duplicateLayers,
   type FaceRef,
   type Frame,
   type Layer,
@@ -15,11 +14,10 @@ import {
 import {
   AlignHorizontalDistributeCenter,
   AlignVerticalDistributeCenter,
-  Copy,
-  Trash2,
 } from "lucide-react";
 import { useI18n } from "@/locales/client";
-import { IconAction, Section, SquareButton } from "./fields";
+import { LayerActionButtons, layerActions } from "../layer-actions";
+import { IconAction, Section } from "./fields";
 import { AlignRow, ArrangeRow } from "./layer-section";
 
 const round = (value: number) => Math.round(value * 100) / 100;
@@ -68,7 +66,15 @@ export function SelectionSection({
 
   return (
     <>
-      <Section title={t("expert.selection.title", { count: layers.length })}>
+      <Section
+        title={t("expert.selection.title", { count: layers.length })}
+        action={
+          <LayerActionButtons
+            actions={layerActions({ document, target, ids, apply, onSelect })}
+            className="-my-1 -mr-1.5"
+          />
+        }
+      >
         <p className="text-[12px] text-muted-foreground">
           {t("expert.selection.lead")}
         </p>
@@ -94,36 +100,6 @@ export function SelectionSection({
         <ArrangeRow
           onRestack={(how) => apply(restackLayers(document, target, ids, how))}
         />
-        <div className="flex justify-end gap-1.5">
-          <SquareButton
-            label={t("expert.actions.duplicate")}
-            onClick={() => {
-              const copies = duplicateLayers(document, target, ids, 3);
-              apply(copies.operations);
-              onSelect(copies.ids);
-            }}
-          >
-            <Copy />
-          </SquareButton>
-          <SquareButton
-            label={t("expert.actions.delete")}
-            disabled={movable.length === 0}
-            onClick={() => {
-              apply(
-                movable.map((layer) => ({
-                  op: "removeLayer" as const,
-                  ...target,
-                  layer: layer.id,
-                })),
-              );
-              onSelect(
-                layers.filter((layer) => layer.locked).map((layer) => layer.id),
-              );
-            }}
-          >
-            <Trash2 />
-          </SquareButton>
-        </div>
       </Section>
     </>
   );

@@ -91,6 +91,8 @@ export function useViewport(
   faceKey: string,
 ) {
   const size = useRef<Size>({ width: 0, height: 0 });
+  // The same size, for what is drawn to fit inside the stage.
+  const [stageSize, setStageSize] = useState<Size>(size.current);
   const [view, setView] = useState<Viewport | null>(null);
   const areaRef = useRef(area);
   useLayoutEffect(() => {
@@ -104,6 +106,7 @@ export function useViewport(
       const { width, height } = element.getBoundingClientRect();
       if (width === 0 || height === 0) return;
       size.current = { width, height };
+      setStageSize(size.current);
       setView((current) =>
         !current || current.fitted
           ? fitView(areaRef.current, size.current)
@@ -174,7 +177,7 @@ export function useViewport(
     };
   }, []);
 
-  return { view, ...actions };
+  return { view, stageSize, ...actions };
 }
 
 export type ViewportControls = ReturnType<typeof useViewport>;

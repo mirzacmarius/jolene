@@ -4,7 +4,6 @@ import {
   type Alignment,
   alignPlacements,
   type DesignDocument,
-  duplicateLayers,
   type FaceRef,
   type Ink,
   inkLabels,
@@ -29,12 +28,10 @@ import {
   ArrowDownToLine,
   ArrowUp,
   ArrowUpToLine,
-  Copy,
   Eye,
   EyeOff,
   Lock,
   LockOpen,
-  Trash2,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
@@ -45,7 +42,6 @@ import {
   Row,
   Section,
   Select,
-  SquareButton,
 } from "./fields";
 
 export const alignIcons: Record<Alignment, ReactNode> = {
@@ -124,7 +120,6 @@ export function LayerSection({
   layer,
   apply,
   onPreview,
-  onSelect,
 }: {
   document: DesignDocument;
   piece: Piece;
@@ -132,7 +127,6 @@ export function LayerSection({
   layer: Layer;
   apply: (operations: Operation[]) => void;
   onPreview: (changes: LayerChanges | null) => void;
-  onSelect: (ids: string[]) => void;
 }) {
   const t = useI18n();
   const locale = useCurrentLocale();
@@ -273,31 +267,6 @@ export function LayerSection({
           >
             {layer.hidden ? <EyeOff /> : <Eye />}
           </IconToggle>
-          <span className="flex-1" />
-          <SquareButton
-            onClick={() => {
-              const copies = duplicateLayers(document, target, [layer.id], 3);
-              apply(copies.operations);
-              onSelect(copies.ids);
-            }}
-            label={t("expert.actions.duplicate")}
-          >
-            <Copy />
-          </SquareButton>
-          <SquareButton
-            disabled={layer.locked}
-            onClick={() => {
-              apply([{ op: "removeLayer", ...target, layer: layer.id }]);
-              onSelect([]);
-            }}
-            label={
-              layer.locked
-                ? t("expert.actions.unlockToDelete")
-                : t("expert.actions.delete")
-            }
-          >
-            <Trash2 />
-          </SquareButton>
         </div>
       </Section>
     </>

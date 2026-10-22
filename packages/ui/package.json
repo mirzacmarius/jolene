@@ -11,6 +11,7 @@
   "exports": {
     "./badge": "./src/components/badge.tsx",
     "./button": "./src/components/button.tsx",
+    "./context-menu": "./src/components/context-menu.tsx",
     "./dialog": "./src/components/dialog.tsx",
     "./dropdown-menu": "./src/components/dropdown-menu.tsx",
     "./globals.css": "./src/globals.css",

@@ -882,7 +882,7 @@ export default {
       title: "Straturi",
       empty:
         "Această față nu are încă straturi. Adăugați un text, o formă sau o ilustrație.",
-      hint: "Trageți un strat mai sus sau mai jos ca să-i schimbați locul ori apăsați Alt+↑ și Alt+↓. Cu dublu clic îl redenumiți.",
+      hint: "Trageți un strat mai sus sau mai jos ca să-i schimbați locul ori apăsați Alt+↑ și Alt+↓. Cu dublu clic îl redenumiți, cu clic dreapta îl duplicați sau îl ștergeți.",
       rename: "Numele stratului",
       hide: "Ascundeți",
       show: "Arătați",
@@ -908,9 +908,9 @@ export default {
       path: "Formă",
     },
     actions: {
+      label: "Straturile selectate",
       duplicate: "Duplicați",
       delete: "Ștergeți",
-      unlockToDelete: "Deblocați stratul ca să-l ștergeți",
     },
     arrange: {
       front: "Aduceți în față de tot",

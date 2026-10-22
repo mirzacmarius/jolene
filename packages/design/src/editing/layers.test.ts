@@ -7,6 +7,7 @@ import {
   duplicateLayers,
   newLayerId,
   previewLayers,
+  removeLayers,
   restackLayers,
 } from "./layers";
 
@@ -66,6 +67,30 @@ describe("duplicateLayers", () => {
     const copy = after.pieces[0]?.front.layers[2];
     expect(copy?.locked).toBe(false);
     expect(copy?.frame).toEqual({ x: 33, y: 15, width: 60, height: 22 });
+  });
+});
+
+describe("removeLayers", () => {
+  test("deletes the layers and keeps the locked ones", () => {
+    // The sprig is Jolene's artwork, locked; the names are the couple's.
+    const { operations, kept } = removeLayers(invitation, front, [
+      "sprig",
+      "names",
+      "missing",
+    ]);
+    expect(kept).toEqual(["sprig"]);
+    const after = apply(invitation, operations);
+    expect(order(after)).toContain("sprig");
+    expect(order(after)).not.toContain("names");
+    expect(order(after)).toHaveLength((order(invitation)?.length ?? 0) - 1);
+  });
+
+  test("takes a copy away, though its original is locked", () => {
+    const copies = duplicateLayers(invitation, front, ["sprig"], 3);
+    const copied = apply(invitation, copies.operations);
+    const { operations, kept } = removeLayers(copied, front, copies.ids);
+    expect(kept).toEqual([]);
+    expect(order(apply(copied, operations))).toEqual(order(invitation));
   });
 });
 
