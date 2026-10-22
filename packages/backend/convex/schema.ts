@@ -8,6 +8,7 @@ import {
   aiStatusValidator,
   aiUsageValidator,
 } from "./ai/validators";
+import { finishesValidator } from "./designs/finishes";
 import {
   channelValidator,
   emailStatusValidator,
@@ -160,6 +161,8 @@ export default defineSchema({
     document: documentValidator,
     /** Goes up by one with every change, so edits can't overwrite each other. */
     revision: v.number(),
+    /** What the couple picked to order it, once they pick something. */
+    finishes: v.optional(finishesValidator),
     updatedAt: v.number(),
   })
     .index("by_ownerId_and_updatedAt", ["ownerId", "updatedAt"])

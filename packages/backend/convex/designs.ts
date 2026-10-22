@@ -4,9 +4,12 @@ import { ConvexError, v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { type MutationCtx, mutation, query } from "./_generated/server";
 import { applyToDesign } from "./designs/apply";
+import { MOST_PICKS, PICK_LENGTH, withPick } from "./designs/finishes";
 import { saveRevision } from "./designs/versions";
 import { latestEvent } from "./events";
 import schema from "./schema";
+import { MAX_QUANTITY } from "./shop/pricing";
+import { answerValidator, pickedValidator } from "./shop/validators";
 import { resolveAssets, resolvedAssetValidator } from "./utils/assets";
 import { requireUser } from "./utils/auth";
 import { errors } from "./utils/errors";
@@ -229,6 +232,54 @@ export const apply = mutation({
     });
     if (!applied.ok) return applied;
     return { ok: true as const, revision: applied.revision };
+  },
+});
+
+/** A pick's name or value as a design keeps it: some text, not too long. */
+const isPick = (text: string) => text.length > 0 && text.length <= PICK_LENGTH;
+
+/**
+ * Keeps one of the couple's picks to order the design (ADR 0021): how many,
+ * a value of one of the product's options, such as its paper, or an order
+ * option's answer, empty for none of its choices. What a pick shows on the
+ * design reaches it through `apply`, as an edit, so it can be undone.
+ */
+export const setFinishes = mutation({
+  args: {
+    designId: v.id("designs"),
+    quantity: v.optional(v.number()),
+    option: v.optional(pickedValidator),
+    answer: v.optional(answerValidator),
+  },
+  returns: v.null(),
+  handler: async (ctx, { designId, ...pick }) => {
+    const { quantity, option, answer } = pick;
+    const design = await requireOwnDesign(ctx, designId);
+    if (
+      (quantity !== undefined &&
+        !(
+          Number.isInteger(quantity) &&
+          quantity >= 1 &&
+          quantity <= MAX_QUANTITY
+        )) ||
+      (option !== undefined &&
+        !(isPick(option.name) && isPick(option.value))) ||
+      (answer !== undefined &&
+        !(isPick(answer.key) && answer.value.length <= PICK_LENGTH))
+    )
+      throw new ConvexError(errors.invalidInput);
+
+    const finishes = withPick(design.finishes, pick);
+    if (
+      finishes.options.length > MOST_PICKS ||
+      finishes.answers.length > MOST_PICKS
+    )
+      throw new ConvexError(errors.invalidInput);
+    await ctx.db.patch("designs", design._id, {
+      finishes,
+      updatedAt: Date.now(),
+    });
+    return null;
   },
 });
 

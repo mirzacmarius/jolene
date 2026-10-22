@@ -3,7 +3,8 @@ import { useCurrentLocale } from "@/locales/client";
 
 /**
  * Writes a price in bani as the collections show it, in the page's
- * language: whole lei without decimals, "6 lei", otherwise "6,30 lei".
+ * language: whole lei without decimals, "6 lei" and "1 leu", otherwise
+ * "6,30 lei".
  */
 export function usePrice() {
   const locale = useCurrentLocale();
@@ -15,6 +16,8 @@ export function usePrice() {
       maximumFractionDigits: 2,
     });
     return (bani: number) =>
-      `${(bani % 100 === 0 ? whole : exact).format(bani / 100)} lei`;
+      bani === 100
+        ? "1 leu"
+        : `${(bani % 100 === 0 ? whole : exact).format(bani / 100)} lei`;
   }, [locale]);
 }

@@ -588,6 +588,24 @@ describe("digital invitations", () => {
     expect(household?.reply).toMatchObject({ coming: true, by: "couple" });
   });
 
+  test("say how big the guest list is to those who manage it", async () => {
+    const { t, visit, owner, eventId, inviteId } = await withInvite(0);
+    expect(await owner.as.query(api.invites.listSize, { eventId })).toBeNull();
+    await owner.as.mutation(api.households.add, {
+      inviteId,
+      households: [family("Familia Pop", 4), family("Ana", 1), family("Radu")],
+    });
+    expect(await owner.as.query(api.invites.listSize, { eventId })).toEqual({
+      households: 3,
+      seats: 7,
+    });
+    const stranger = await visit({ email: "eve@example.com" });
+    expect(
+      await stranger.as.query(api.invites.listSize, { eventId }),
+    ).toBeNull();
+    expect(await t.query(api.invites.listSize, { eventId })).toBeNull();
+  });
+
   test("hold families of a few seats each, with tidy details", async () => {
     const { owner, inviteId } = await withInvite(0);
     const add = (household: HouseholdInput) =>

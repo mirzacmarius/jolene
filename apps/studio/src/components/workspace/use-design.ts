@@ -2,6 +2,7 @@
 
 import { api } from "@jolene/backend/convex/_generated/api";
 import type { Id } from "@jolene/backend/convex/_generated/dataModel";
+import { withPick } from "@jolene/backend/convex/designs/finishes";
 import {
   applyOperations,
   type DesignDocument,
@@ -24,7 +25,7 @@ export function useSaving() {
   return { saving: pending > 0, track };
 }
 
-type Track = ReturnType<typeof useSaving>["track"];
+export type Track = ReturnType<typeof useSaving>["track"];
 
 /**
  * Changes the design by operations. The change shows at once: the same
@@ -64,6 +65,41 @@ export function useApply(designId: Id<"designs">, track: Track) {
         () => toast.error(t("common.error")),
       ),
     [apply, designId, track, t],
+  );
+}
+
+/** One of the couple's picks to order the design: how many, a paper, a choice. */
+export type FinishesPick = Parameters<typeof withPick>[1];
+
+/**
+ * Keeps the couple's picks to order the design. Each shows at once: the
+ * cached design takes it while the backend keeps it.
+ */
+export function useSetFinishes(designId: Id<"designs">, track: Track) {
+  const t = useI18n();
+  const setFinishes = useMutation(api.designs.setFinishes).withOptimisticUpdate(
+    (store, { designId: _, ...pick }) => {
+      const current = store.getQuery(api.designs.get, { designId });
+      if (!current) return;
+      store.setQuery(
+        api.designs.get,
+        { designId },
+        {
+          ...current,
+          design: {
+            ...current.design,
+            finishes: withPick(current.design.finishes, pick),
+          },
+        },
+      );
+    },
+  );
+  return useCallback(
+    (pick: FinishesPick) =>
+      track(setFinishes({ designId, ...pick })).catch(() =>
+        toast.error(t("common.error")),
+      ),
+    [setFinishes, designId, track, t],
   );
 }
 

@@ -307,6 +307,56 @@ describe("designs", () => {
     expect(design?.design.document.theme.palette.accent).toBe("#7a4b5c");
   });
 
+  test("keep what the couple picks to order them, apart from the design", async () => {
+    const { couple, stranger } = await setUp();
+    const designId = await couple.mutation(api.designs.start, {
+      template: "sample-invitation",
+    });
+    const pick = (picked: {
+      quantity?: number;
+      option?: { name: string; value: string };
+      answer?: { key: string; value: string };
+    }) => couple.mutation(api.designs.setFinishes, { designId, ...picked });
+    await pick({ option: { name: "Carton", value: "Alb mat 300 gr" } });
+    await pick({ answer: { key: "culoare-sigiliu", value: "Bronz" } });
+    await pick({
+      answer: { key: "flori-criogenate", value: "Flori criogenate" },
+    });
+    // A new pick takes the place of the one before; an empty one is none.
+    await pick({ option: { name: "Carton", value: "Alb sidef 300 gr" } });
+    await pick({ answer: { key: "flori-criogenate", value: "" } });
+    await pick({ quantity: 80 });
+
+    const design = await couple.query(api.designs.get, { designId });
+    expect(design?.design.finishes).toEqual({
+      quantity: 80,
+      options: [{ name: "Carton", value: "Alb sidef 300 gr" }],
+      answers: [
+        { key: "culoare-sigiliu", value: "Bronz" },
+        { key: "flori-criogenate", value: "" },
+      ],
+    });
+    expect(design?.design.revision).toBe(1);
+
+    for (const refused of [
+      { quantity: 0 },
+      { quantity: 2.5 },
+      { quantity: 1000 },
+      { option: { name: "Carton", value: "" } },
+      { answer: { key: "", value: "Bronz" } },
+      { answer: { key: "culoare-sigiliu", value: "A".repeat(201) } },
+    ])
+      await expect(pick(refused)).rejects.toThrow("invalid-input");
+    for (let number = 3; number <= 40; number++)
+      await pick({ answer: { key: `optiune-${number}`, value: "Da" } });
+    await expect(
+      pick({ answer: { key: "optiune-41", value: "Da" } }),
+    ).rejects.toThrow("invalid-input");
+    await expect(
+      stranger.mutation(api.designs.setFinishes, { designId, quantity: 30 }),
+    ).rejects.toThrow("not-found");
+  });
+
   test("keep versions: sittings fold, AI changes and restores don't", async () => {
     const { couple } = await setUp();
     setSystemTime(new Date("2027-01-10T10:00:00Z"));
