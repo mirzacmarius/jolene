@@ -19,15 +19,30 @@ import {
   productKindValidator,
 } from "../utils/validators";
 
+/**
+ * How the team signs in: null for a code sent to the address, or Google, with
+ * the addresses Google can bring the browser back to (workshop/google.ts).
+ */
+const googleValidator = v.union(
+  v.null(),
+  v.object({ origins: v.array(v.string()) }),
+);
+
 /** Who the workshop's pages see signed in. */
 export const accessValidator = v.union(
   /** No one with an account: a couple designing without one, or no one. */
-  v.object({ signedIn: v.literal(false) }),
+  v.object({ signedIn: v.literal(false), google: googleValidator }),
   v.object({
     signedIn: v.literal(true),
     email: v.string(),
-    /** One of the accounts in WORKSHOP_EMAILS. */
+    /** Its address, verified, is in WORKSHOP_EMAILS. */
+    listed: v.boolean(),
+    /**
+     * The workshop opens to it: it's listed and, once the team signs in with
+     * Google, Google vouches for its address.
+     */
     allowed: v.boolean(),
+    google: googleValidator,
   }),
 );
 

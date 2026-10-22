@@ -105,6 +105,16 @@ const app = defineApp({
      */
     WORKSHOP_EMAILS: v.optional(v.string()),
     /**
+     * The workshop's Google sign-in: the ID of the OAuth client Jolene's
+     * Google Cloud project made for it, whose authorized redirect URI is this
+     * deployment's CONVEX_SITE_URL/api/auth/callback/google. Once it and
+     * AUTH_GOOGLE_SECRET are set, the team signs in with Google instead of an
+     * emailed code. Google calls back to one deployment: production's.
+     */
+    AUTH_GOOGLE_ID: v.optional(v.string()),
+    /** The secret of AUTH_GOOGLE_ID's OAuth client. */
+    AUTH_GOOGLE_SECRET: v.optional(v.string()),
+    /**
      * The email address Jolene's SmartBill account signs in with. Paid
      * orders get their invoice from SmartBill once it, SMARTBILL_TOKEN and
      * SMARTBILL_SERIES are set; until then the team issues them by hand.

@@ -348,6 +348,15 @@ export default {
       "The workshop is for Jolene's team: sign in with your email and we'll send you a code.",
     notAllowed:
       "{email} isn't on the workshop's list. Sign in with another email, or ask for this one to be added.",
+    googleLead:
+      "The workshop is for Jolene's team: sign in with the Google account of an address on the workshop's list.",
+    googleNow:
+      "The workshop now opens with Google: sign in with the Google account of {email}.",
+    google: "Continue with Google",
+    googleOpening: "Opening Google…",
+    googleThere:
+      "Google only brings you back to {host}, so sign in from there.",
+    goThere: "Go to {host}",
     empty: "No orders yet. They show here as soon as a customer pays.",
     loadMore: "Show more",
     allOrders: "All orders",
@@ -988,6 +997,8 @@ export default {
     tooMany:
       "That's a lot of codes in a short time. Wait a few minutes, then try again.",
     unavailable: "Signing in by email isn't set up yet.",
+    useGoogle: "This address signs in with Google, from the {workshop}.",
+    workshop: "workshop",
     signedInAs: "Signed in as {email}",
     signOut: "Sign out",
     invites: "Digital invitations",

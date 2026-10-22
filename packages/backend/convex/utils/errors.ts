@@ -44,6 +44,11 @@ export const errors = {
   emailUnavailable: "email-unavailable",
   /** Asked too often; the same works again a little later. */
   tooMany: "too-many",
+  /**
+   * The address is the workshop's, and the workshop signs in with Google:
+   * it gets no emailed code. The studio offers Google instead.
+   */
+  useGoogle: "use-google",
   /** The digital invitation's address is taken, or isn't one it can have. */
   slugTaken: "slug-taken",
   invalidSlug: "invalid-slug",
