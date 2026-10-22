@@ -16,6 +16,7 @@
     "@convex-dev/auth": "^0.0.96",
     "@jolene/backend": "workspace:*",
     "@jolene/design": "workspace:*",
+    "@jolene/gate": "workspace:*",
     "@jolene/i18n": "workspace:*",
     "@jolene/print": "workspace:*",
     "@jolene/products": "workspace:*",

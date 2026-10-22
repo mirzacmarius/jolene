@@ -16,6 +16,7 @@
     "@base-ui/react": "1.9.0",
     "@jolene/backend": "workspace:*",
     "@jolene/design": "workspace:*",
+    "@jolene/gate": "workspace:*",
     "@jolene/products": "workspace:*",
     "@jolene/suites": "workspace:*",
     "@tailwindcss/turbopack": "4.3.3",

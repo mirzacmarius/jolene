@@ -1,0 +1,22 @@
+{
+  "name": "@jolene/gate",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/gate.ts"
+  },
+  "scripts": {
+    "lint": "biome lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@jolene/i18n": "workspace:*"
+  },
+  "devDependencies": {
+    "@jolene/typescript": "workspace:*",
+    "@types/bun": "^1.4.3",
+    "typescript": "^5.9.3"
+  }
+}
