@@ -31,12 +31,15 @@ export default {
       "Aprobați dovada online, iar atelierul Jolene tipărește, asamblează și vă trimite totul acasă.",
     collectionsTitle: "Colecții",
     collectionsLead:
-      "Pentru nuntă și pentru botez: fiecare colecție aduce împreună invitația și tot ce o însoțește.",
+      "Pentru nuntă și pentru botez: fiecare colecție aduce împreună invitația și tot ce o însoțește. Fotografiile sunt din atelierul Jolene; în colț, designul cu numele voastre.",
     occasion: "Ocazia",
     allOccasions: "Toate",
     style: "Stilul",
     personalise: "Personalizează",
     viewCollection: "Vezi colecția",
+    yourNames: "Cu numele voastre",
+    priceFrom: "{item}: de la {price} / buc.",
+    price: "{item}: {price} / buc.",
     pieces: "{count} piese",
     empty: "Colecțiile apar aici după importul catalogului Jolene.",
     previewInvitation: "Invitația Forest, cu pădurea pictată pe față",
@@ -51,8 +54,31 @@ export default {
   suite: {
     back: "Toate colecțiile",
     items: "Piesele colecției",
+    itemsLead:
+      "Fiecare se personalizează și se comandă separat, cu aceleași nume și aceeași dată.",
     size: "{width} × {height} mm",
+    sizeWithEnvelope: "{width} × {height} mm, cu plic",
     notFound: "Colecția nu există.",
+    occasion: {
+      wedding: "Colecție de nuntă",
+      christening: "Colecție de botez",
+    },
+    showing: "Ce arată imaginea",
+    real: "În realitate",
+    yourNames: "Cu numele voastre",
+    photo: "Foto",
+    design: "Design",
+    photos: "Fotografiile colecției",
+    photoOf: "{index} / {count}",
+    photosNote:
+      "Fotografiile sunt din atelierul Jolene; ultima imagine e designul, cu numele voastre.",
+    from: "de la {price} / buc.",
+    each: "{price} / buc.",
+    minimum: "comandă minimă {count} buc.",
+    seeFirst: "Vedeți designul cu numele și data voastră înainte să plătiți.",
+    arrives: "Ajunge la voi în cel mult 7 zile lucrătoare de la plată.",
+    delivery:
+      "Curier {courier}, gratuit de la {freeFrom}. Ridicare gratuită din atelierul din Iași.",
   },
   design: {
     back: "Înapoi la {suite}",

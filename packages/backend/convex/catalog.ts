@@ -1,7 +1,13 @@
 import { assetKeys, type DesignDocument } from "@jolene/design";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
-import { query } from "./_generated/server";
+import { type QueryCtx, query } from "./_generated/server";
+import {
+  productOf,
+  productSummary,
+  productSummaryValidator,
+} from "./catalog/products";
+import { COURIER_PRICE, FREE_DELIVERY_FROM } from "./checkout/delivery";
 import { resolveAssets, resolvedAssetValidator } from "./utils/assets";
 import {
   documentValidator,
@@ -26,6 +32,12 @@ const templateValidator = v.object({
   slug: v.string(),
   kind: productKindValidator,
   document: documentValidator,
+});
+
+/** A template with the product it's ordered as, while that's for sale. */
+const offerValidator = v.object({
+  ...templateValidator.fields,
+  product: v.union(productSummaryValidator, v.null()),
 });
 
 const suiteView = ({
@@ -53,6 +65,19 @@ const templateView = ({ _id, slug, kind, document }: Doc<"templates">) => ({
   document,
 });
 
+/** A template with its product and up to `photos` of the product's photos. */
+const offerView = async (
+  ctx: QueryCtx,
+  template: Doc<"templates">,
+  { photos }: { photos: number },
+) => {
+  const product = await productOf(ctx, template);
+  return {
+    ...templateView(template),
+    product: product ? await productSummary(ctx, product, { photos }) : null,
+  };
+};
+
 /** Stored documents were checked against the design schema when saved. */
 const keysOf = (templates: { document: unknown }[]) =>
   templates.flatMap((template) =>
@@ -61,7 +86,8 @@ const keysOf = (templates: { document: unknown }[]) =>
 
 /**
  * The published suites in the order Jolene sets, each with its lead item (the
- * invitation, usually) to preview it by, and the files those previews draw.
+ * invitation, usually) to preview it by and the first photo of its product,
+ * and the files those previews draw.
  */
 export const suites = query({
   args: {},
@@ -69,7 +95,7 @@ export const suites = query({
     suites: v.array(
       v.object({
         ...suiteValidator.fields,
-        lead: v.union(templateValidator, v.null()),
+        lead: v.union(offerValidator, v.null()),
       }),
     ),
     assets: v.array(resolvedAssetValidator),
@@ -87,7 +113,10 @@ export const suites = query({
             q.eq("suiteId", suite._id).eq("retired", undefined),
           )
           .first();
-        return { ...suiteView(suite), lead: lead ? templateView(lead) : null };
+        return {
+          ...suiteView(suite),
+          lead: lead ? await offerView(ctx, lead, { photos: 1 }) : null,
+        };
       }),
     );
     const leads = suites.flatMap((suite) => (suite.lead ? [suite.lead] : []));
@@ -98,14 +127,19 @@ export const suites = query({
   },
 });
 
-/** One published suite with every item it offers, or null. */
+/**
+ * One published suite with every item it offers, each with its product's
+ * photos and price, and what delivery costs; or null.
+ */
 export const suite = query({
   args: { slug: v.string() },
   returns: v.union(
     v.object({
       suite: suiteValidator,
-      templates: v.array(templateValidator),
+      templates: v.array(offerValidator),
       assets: v.array(resolvedAssetValidator),
+      /** In bani: the courier, and the order from which it's free. */
+      delivery: v.object({ courier: v.number(), freeFrom: v.number() }),
     }),
     v.null(),
   ),
@@ -115,18 +149,21 @@ export const suite = query({
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .unique();
     if (!suite?.published) return null;
-    const templates = (
-      await ctx.db
-        .query("templates")
-        .withIndex("by_suiteId_and_retired_and_sortOrder", (q) =>
-          q.eq("suiteId", suite._id).eq("retired", undefined),
-        )
-        .take(24)
-    ).map(templateView);
+    const templates = await Promise.all(
+      (
+        await ctx.db
+          .query("templates")
+          .withIndex("by_suiteId_and_retired_and_sortOrder", (q) =>
+            q.eq("suiteId", suite._id).eq("retired", undefined),
+          )
+          .take(24)
+      ).map((template) => offerView(ctx, template, { photos: 12 })),
+    );
     return {
       suite: suiteView(suite),
       templates,
       assets: await resolveAssets(ctx, keysOf(templates), null),
+      delivery: { courier: COURIER_PRICE, freeFrom: FREE_DELIVERY_FROM },
     };
   },
 });

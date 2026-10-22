@@ -7,7 +7,9 @@ import {
   type Occasion,
   occasionLabels,
   occasions,
+  type ProductKind,
   previewFields,
+  productKindLabels,
   suiteStyleLabel,
   suiteStyles,
 } from "@jolene/design";
@@ -23,6 +25,8 @@ import { useCurrentLocale, useI18n } from "@/locales/client";
 import { type AssetLink, DesignPreview } from "../design/design-preview";
 import { StartDesignButton } from "../design/start-design-button";
 import { useEventFields } from "../design/use-event-fields";
+import { Photo, type ProductPhoto } from "../suite/photo";
+import { usePrice } from "../suite/use-price";
 
 interface SuiteSummary {
   slug: string;
@@ -31,7 +35,12 @@ interface SuiteSummary {
   occasion: Occasion;
   styles: string[];
   sampleFields: Fields;
-  lead: { slug: string; document: unknown } | null;
+  lead: {
+    slug: string;
+    kind: ProductKind;
+    document: unknown;
+    product: { price: number; varies: boolean; photos: ProductPhoto[] } | null;
+  } | null;
 }
 
 const styleOrder: string[] = Object.keys(suiteStyles);
@@ -49,9 +58,9 @@ function stylesOf(suites: { styles: string[] }[]) {
 }
 
 /**
- * Jolene's published collections, each previewed by its invitation, to browse
- * by occasion and style. Once a couple has given their details, every
- * collection shows them.
+ * Jolene's published collections, each shown by a photo of its invitation as
+ * Jolene printed it, with the design in a corner, to browse by occasion and
+ * style. Once a couple has given their details, every design shows them.
  */
 export function SuiteGallery() {
   const t = useI18n();
@@ -149,8 +158,11 @@ function SuiteCard({
 }) {
   const t = useI18n();
   const locale = useCurrentLocale();
+  const price = usePrice();
   const href = `/studio/colectii/${suite.slug}`;
   const lead = suite.lead?.document as DesignDocument | undefined;
+  const product = suite.lead?.product ?? null;
+  const photo = product?.photos[0];
   const fields = useMemo(
     () =>
       previewFields(suite.occasion, lead?.language ?? "ro", {
@@ -163,15 +175,39 @@ function SuiteCard({
     <article className="group flex flex-col">
       <Link
         href={href}
+        aria-label={suite.name[locale]}
         className="relative block aspect-[4/5] overflow-hidden rounded-3xl bg-secondary/70 outline-none ring-offset-4 ring-offset-background transition-colors hover:bg-secondary focus-visible:ring-[3px] focus-visible:ring-ring/50"
       >
-        {lead ? (
+        {photo ? (
+          <>
+            <Photo
+              photo={photo}
+              decorative
+              sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
+              className="transition-transform duration-700 group-hover:scale-[1.03]"
+            />
+            {lead ? (
+              <span className="absolute right-3 bottom-3 flex w-[36%] flex-col items-center gap-1.5 rounded-2xl bg-card/90 p-2.5 shadow-lg backdrop-blur-sm">
+                <span className="relative block aspect-[4/5] w-full">
+                  <DesignPreview
+                    document={lead}
+                    fields={fields}
+                    assets={assets}
+                    className="absolute inset-0 size-full"
+                  />
+                </span>
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  {t("home.yourNames")}
+                </span>
+              </span>
+            ) : null}
+          </>
+        ) : lead ? (
           <div className="absolute inset-8">
             <DesignPreview
               document={lead}
               fields={fields}
               assets={assets}
-              title={suite.name[locale]}
               className="size-full transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-[1.02]"
             />
           </div>
@@ -191,6 +227,14 @@ function SuiteCard({
             <Badge key={style}>{suiteStyleLabel(style, locale)}</Badge>
           ))}
         </div>
+        {suite.lead && product ? (
+          <p className="mt-4 text-sm">
+            {t(product.varies ? "home.priceFrom" : "home.price", {
+              item: productKindLabels[suite.lead.kind][locale],
+              price: price(product.price),
+            })}
+          </p>
+        ) : null}
         <div className="mt-5 flex flex-wrap items-center gap-2">
           {suite.lead ? (
             <StartDesignButton template={suite.lead.slug}>
