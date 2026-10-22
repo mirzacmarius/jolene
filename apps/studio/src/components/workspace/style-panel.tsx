@@ -10,6 +10,7 @@ import {
   type Operation,
   type PalettePreset,
   palettePresets,
+  paletteTokens,
   type StockId,
   stocks,
   type WaxColor,
@@ -17,8 +18,9 @@ import {
 } from "@jolene/design";
 import { cn } from "@jolene/ui/utils";
 import { Check } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
+import { HexField, Row } from "./expert/inspector/fields";
 
 const nameInks = [
   "foil-gold",
@@ -53,20 +55,28 @@ type WaxSeal = Extract<Accessory, { kind: "wax-seal" }>;
  * Simple mode's choices: a palette, the finish of the names, the paper and
  * the wax. Each is one click, and each is an operation on the design. A
  * design the shop sells has its paper and wax picked on the Finisaje tab
- * instead, from what its product offers (ADR 0021).
+ * instead, from what its product offers (ADR 0021), and nowhere else.
  */
 export function StylePanel({
   document,
   apply,
   ordered = false,
+  face = false,
 }: {
   document: DesignDocument;
   apply: (operations: Operation[]) => void;
   /** The shop sells the design: the Finisaje tab picks its paper and wax. */
   ordered?: boolean;
+  /**
+   * Under a face's own settings in expert mode, which set its piece's paper:
+   * each of the palette's colours can be set by hand too, and the paper
+   * isn't asked again.
+   */
+  face?: boolean;
 }) {
   const t = useI18n();
   const locale = useCurrentLocale();
+  const id = useId();
   const names = nameLayers(document);
   const namesInk = names[0]?.layer.ink;
   const card =
@@ -103,6 +113,25 @@ export function StylePanel({
             />
           ))}
         </div>
+        {face ? (
+          <div className="mt-4 space-y-2.5">
+            {paletteTokens.map((token) => (
+              <Row
+                key={token}
+                label={t(`expert.palette.${token}`)}
+                htmlFor={`${id}-${token}`}
+              >
+                <HexField
+                  id={`${id}-${token}`}
+                  value={palette[token]}
+                  onChange={(color) =>
+                    apply([{ op: "setPalette", palette: { [token]: color } }])
+                  }
+                />
+              </Row>
+            ))}
+          </div>
+        ) : null}
       </Section>
 
       {names.length > 0 ? (
@@ -141,7 +170,7 @@ export function StylePanel({
         </Section>
       ) : null}
 
-      {card && !ordered ? (
+      {card && !ordered && !face ? (
         <Section title={t("design.paper")}>
           <div className="grid gap-2">
             {cardStocks.map((stock) => {

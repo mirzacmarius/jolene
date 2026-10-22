@@ -1,11 +1,8 @@
-import { cn } from "cn";
 import Image from "next/image";
 import { Suspense } from "react";
 
-import { StudioLink } from "@/components/studio/studio-link";
 import { Container } from "@/components/ui/container";
 import { Link } from "@/components/ui/link";
-import { PillArrow, pillVariants } from "@/components/ui/pill";
 import { shopConfig } from "@/lib/config";
 import type { MenuItem } from "@/lib/menu/types";
 
@@ -47,11 +44,6 @@ export function Nav() {
           <Suspense fallback={<CartIconFallback />}>
             <CartIcon />
           </Suspense>
-          <StudioLink
-            className={cn(pillVariants(), "min-h-11 gap-5 px-5 py-2.5 text-xs max-sm:hidden")}
-          >
-            Creați-vă invitația <PillArrow />
-          </StudioLink>
           <MobileMenu items={items} />
         </div>
       </Container>

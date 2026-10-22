@@ -26,7 +26,7 @@ import { Check, ChevronLeft, LoaderCircle, X } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { orderOf } from "@/lib/finishes";
+import { orderOf, picksCorners } from "@/lib/finishes";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { AiDesigner } from "../ai/ai-designer";
 import type { PreviewView } from "../design/design-preview";
@@ -112,6 +112,13 @@ function Editor({ data }: { data: DesignData }) {
     [document, product, finishes],
   );
   const panel = tab === "finishes" && !product ? "details" : tab;
+  // What the Finisaje tab picks, only it asks: the paper and the wax while
+  // the shop sells the design, and the corners when its order options do
+  // (ADR 0021). A product still loading counts as sold, so no panel shows a
+  // choice only to take it away.
+  const ordered = product !== null;
+  const orderedCorners =
+    product === undefined || (product !== null && picksCorners(product));
 
   const views = [
     { value: "assembly" as ViewKey, label: t("design.together") },
@@ -250,6 +257,8 @@ function Editor({ data }: { data: DesignData }) {
           onViewChange={setViewKey}
           details={details}
           finishes={finishesPanel}
+          ordered={ordered}
+          orderedCorners={orderedCorners}
           panel={expertPanel}
           onPanelChange={setExpertPanel}
           inspector={!aiOpen}
@@ -317,7 +326,7 @@ function Editor({ data }: { data: DesignData }) {
                   <StylePanel
                     document={document}
                     apply={history.apply}
-                    ordered={product !== null}
+                    ordered={ordered}
                   />
                 )}
               </div>

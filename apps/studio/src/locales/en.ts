@@ -1061,7 +1061,6 @@ export default {
       die: "Custom die cut",
       radius: "Corners",
       scallops: "Scallops",
-      palette: "Palette",
     },
   },
   account: {

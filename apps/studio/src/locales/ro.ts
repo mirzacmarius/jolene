@@ -1064,7 +1064,6 @@ export default {
       die: "Contur personalizat",
       radius: "Colțuri",
       scallops: "Festoane",
-      palette: "Paletă",
     },
   },
   account: {
