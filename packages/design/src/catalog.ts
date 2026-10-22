@@ -158,12 +158,26 @@ export const stocks = {
     translucent: false,
     color: "#ffffff",
   },
+  "smooth-250": {
+    labels: { ro: "Carton mat 250 g", en: "Smooth matte card 250 gsm" },
+    gsm: 250,
+    texture: "smooth",
+    translucent: false,
+    color: "#ffffff",
+  },
   "pearl-250": {
     labels: { ro: "Carton perlat 250 g", en: "Pearlescent card 250 gsm" },
     gsm: 250,
     texture: "pearl",
     translucent: false,
     color: "#f6f1e7",
+  },
+  "pearl-300": {
+    labels: { ro: "Carton perlat 300 g", en: "Pearlescent card 300 gsm" },
+    gsm: 300,
+    texture: "pearl",
+    translucent: false,
+    color: "#f8f6f1",
   },
   "kraft-300": {
     labels: { ro: "Carton kraft 300 g", en: "Kraft card 300 gsm" },
@@ -233,6 +247,16 @@ export const waxColors = {
   white: { labels: { ro: "Alb", en: "White" }, color: "#f4f1ea" },
 } as const satisfies Record<string, { labels: Labels; color: string }>;
 export type WaxColor = keyof typeof waxColors;
+
+/**
+ * A seal's wax as a colour: one of the waxes above by name, or a colour of
+ * its own, as the shop's choices give it (looks.ts).
+ */
+export function waxHex(color: string): string {
+  return Object.hasOwn(waxColors, color)
+    ? waxColors[color as WaxColor].color
+    : color;
+}
 
 export const ribbonMaterials = [
   "satin",

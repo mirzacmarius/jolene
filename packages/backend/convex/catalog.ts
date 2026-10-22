@@ -3,6 +3,8 @@ import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { type QueryCtx, query } from "./_generated/server";
 import {
+  orderedProduct,
+  orderedProductValidator,
   productOf,
   productSummary,
   productSummaryValidator,
@@ -165,6 +167,26 @@ export const suite = query({
       assets: await resolveAssets(ctx, keysOf(templates), null),
       delivery: { courier: COURIER_PRICE, freeFrom: FREE_DELIVERY_FROM },
     };
+  },
+});
+
+/**
+ * The product a template's designs are ordered as, while it's for sale: its
+ * price and minimum order, its papers and the order options its line asks,
+ * with how the studio shows each (ADR 0021). Null for one the shop doesn't
+ * sell.
+ */
+export const product = query({
+  args: { template: v.string() },
+  returns: v.union(orderedProductValidator, v.null()),
+  handler: async (ctx, { template: slug }) => {
+    const template = await ctx.db
+      .query("templates")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique();
+    if (!template) return null;
+    const product = await productOf(ctx, template);
+    return product ? await orderedProduct(ctx, product) : null;
   },
 });
 

@@ -170,6 +170,10 @@ _Avoid_: Add-on, customization, attribute
 What a line's paid order options add to each one ordered, in the line's price.
 _Avoid_: Add-ons, upsell
 
+**Look** (ro: în studio; code: look):
+What choosing one of a product's papers, or a choice of an order option, does to a design in the studio, so it shows what the couple orders: the paper and its colour, the seal's wax or no seal, the ribbon or none, the envelope's colour, its printed liner, the corners. The workshop sets each choice's on its order option's page; a choice without one, such as preserved flowers, is ordered in words only.
+_Avoid_: Effect, preview (any view in the studio), style (a collection's)
+
 **Minimum order** (ro: comandă minimă; code: minQuantity):
 The smallest quantity of a product Jolene takes an order for, such as 30 invitations.
 _Avoid_: MOQ

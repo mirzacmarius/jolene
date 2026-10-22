@@ -2,6 +2,7 @@
 
 import { useAuthToken } from "@convex-dev/auth/react";
 import { api } from "@jolene/backend/convex/_generated/api";
+import { type Look, sameLook } from "@jolene/design";
 import { Badge } from "@jolene/ui/badge";
 import { Button } from "@jolene/ui/button";
 import { Input } from "@jolene/ui/input";
@@ -18,6 +19,12 @@ import { moved } from "@/lib/lists";
 import { refreshShop } from "@/lib/shop";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { useAsks } from "./asks";
+import {
+  ChoiceLookField,
+  type LookDraft,
+  lookDraft,
+  readLook,
+} from "./choice-look";
 import { useFormats } from "./formats";
 import { IconButton } from "./icon-button";
 
@@ -48,6 +55,8 @@ interface ChoiceDraft {
   key: string;
   label: string;
   price: string;
+  /** How the studio shows it; null on an option asked in words. */
+  look: LookDraft | null;
 }
 
 /** The option's fields as the form shows them. */
@@ -63,7 +72,7 @@ interface Values {
   label: string;
   hint: string;
   required: boolean;
-  choices: { label: string; price: number }[];
+  choices: { label: string; price: number; look: Look | null }[];
 }
 
 type ChoiceProblem = "empty" | "long" | "twice";
@@ -76,6 +85,7 @@ const draftOf = (option: LineOption, locale: Locale): Draft => ({
     key: `choice-${index}`,
     label: choice.label,
     price: leiField(choice.price, locale),
+    look: option.shows ? lookDraft(option.shows, choice.look, locale) : null,
   })),
 });
 
@@ -92,7 +102,19 @@ const versionOf = (option: LineOption) =>
 
 const sameValues = (values: Values | null, option: LineOption) =>
   values !== null &&
-  JSON.stringify(values) === JSON.stringify(valuesOf(option));
+  values.label === option.label &&
+  values.hint === (option.hint ?? "") &&
+  values.required === option.required &&
+  values.choices.length === option.choices.length &&
+  values.choices.every((choice, index) => {
+    const was = option.choices[index];
+    return (
+      was !== undefined &&
+      choice.label === was.label &&
+      choice.price === was.price &&
+      sameLook(choice.look, was.look)
+    );
+  });
 
 /** A choice's name as the option compares it with its others'. */
 const nameOf = (label: string) => label.trim().toLocaleLowerCase("ro");
@@ -109,24 +131,33 @@ function readDraft(draft: Draft) {
     named.set(nameOf(choice.label), (named.get(nameOf(choice.label)) ?? 0) + 1);
   const names = new Map<string, ChoiceProblem>();
   const prices = new Set<string>();
+  const looks = new Set<string>();
   const choices: Values["choices"] = [];
   for (const choice of draft.choices) {
     const name = choice.label.trim();
     const price = parseLei(choice.price);
+    const look = choice.look ? readLook(choice.look) : null;
     if (!name) names.set(choice.key, "empty");
     else if (name.length > LABEL_LENGTH) names.set(choice.key, "long");
     else if ((named.get(nameOf(name)) ?? 0) > 1) names.set(choice.key, "twice");
     if (price === null || price > MOST_BANI) prices.add(choice.key);
-    else choices.push({ label: name, price });
+    if (look === undefined) looks.add(choice.key);
+    if (price !== null && price <= MOST_BANI && look !== undefined)
+      choices.push({ label: name, price, look });
   }
   const problems = {
     label: label === "" || label.length > LABEL_LENGTH,
     hint: hint.length > HINT_LENGTH,
     names,
     prices,
+    looks,
   };
   const values: Values | null =
-    !problems.label && !problems.hint && names.size === 0 && prices.size === 0
+    !problems.label &&
+    !problems.hint &&
+    names.size === 0 &&
+    prices.size === 0 &&
+    looks.size === 0
       ? { label, hint, required: draft.required, choices }
       : null;
   return { problems, values };
@@ -135,7 +166,8 @@ function readDraft(draft: Draft) {
 /**
  * One of the shop's order options, for the workshop to change on every
  * product that asks it: its name, the line under it, whether it must be
- * answered, and a select's choices with what each adds.
+ * answered, and a select's choices with what each adds and, on an option
+ * that changes a design, how the studio shows each.
  */
 export function LineOptionView({ handle }: { handle: string }) {
   const t = useI18n();
@@ -223,7 +255,13 @@ function LineOptionEditor({ live }: { live: LineOption }) {
     if (!label || full) return;
     changeChoices((current) => [
       ...current,
-      { key: `new-${crypto.randomUUID()}`, label, price: leiField(0, locale) },
+      {
+        key: `new-${crypto.randomUUID()}`,
+        label,
+        price: leiField(0, locale),
+        // A new choice shows nothing in the studio until it's given a look.
+        look: base.shows ? lookDraft(base.shows, null, locale) : null,
+      },
     ]);
     setAdding("");
   };
@@ -360,6 +398,11 @@ function LineOptionEditor({ live }: { live: LineOption }) {
                   <span className="block font-normal text-muted-foreground">
                     {t("workshop.lineOptions.choicesHint")}
                   </span>
+                  {base.shows ? (
+                    <span className="mt-1 block font-normal text-muted-foreground">
+                      {t("workshop.lineOptions.looks.hint")}
+                    </span>
+                  ) : null}
                 </legend>
                 <ol className="flex flex-col divide-y rounded-2xl border">
                   {draft.choices.map((choice, index) => {
@@ -481,6 +524,22 @@ function LineOptionEditor({ live }: { live: LineOption }) {
                             <X aria-hidden />
                           </IconButton>
                         </div>
+                        {base.shows && choice.look ? (
+                          <ChoiceLookField
+                            kind={base.shows}
+                            number={number}
+                            draft={choice.look}
+                            onChange={(look) =>
+                              changeChoices((current) =>
+                                current.map((other) =>
+                                  other.key === choice.key
+                                    ? { ...other, look }
+                                    : other,
+                                ),
+                              )
+                            }
+                          />
+                        ) : null}
                       </li>
                     );
                   })}

@@ -1,5 +1,7 @@
 # Couples approve a proof, and the shop carries it to the order
 
+Its product page step is superseded by [ADR 0021](0021-couples-order-a-design-from-the-studio.md): the studio asks the order beside the design, and approving the proof adds the line to the cart.
+
 A couple orders from their design's proof, at `/studio/design/<id>/bun-de-tipar`: every face of the design, flat, with their own details and nothing filled in for them, beside what to look at before it prints. The studio finds that with the checks the print file runs (`checkDesign` in `packages/design`, which `packages/print` uses too), measuring the words with the browser's own fonts once they have loaded: lines past the safe margin or too long for their box, details left empty, letters no face has, photos not given or under 300 dpi.
 
 Approving keeps the proof in Convex (`proofs`): the design document and all of the event's details as the couple saw them, with the design's revision. A design or details changed while the couple looked aren't approved; approving the same design and details again gives the same proof. The studio then draws the proof's picture, as the suite lies together, and sends its bytes to an action that stores it, so every proof's picture was stored by the server and no stored file can be attached or deleted by naming it.

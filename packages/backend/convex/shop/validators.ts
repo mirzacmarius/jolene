@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { lookValidator } from "../utils/validators";
 
 /** How a couple answers an order option: picking a choice, or writing. */
 export const lineOptionKindValidator = v.union(
@@ -12,6 +13,12 @@ export const lineOptionKindValidator = v.union(
 export const choiceValidator = v.object({
   label: v.string(),
   price: v.number(),
+  /**
+   * What choosing it does to a design in the studio, as the team set it on
+   * the workshop's page; null when it shows nothing. Left out, it's what
+   * catalog/looks.ts gives jolene.ro's choices (ADR 0021).
+   */
+  look: v.optional(v.union(lookValidator, v.null())),
 });
 
 /** An order option as the shop and the workshop show it. */

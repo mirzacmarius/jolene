@@ -38,6 +38,20 @@ describe("documentSchema", () => {
     expect(result.error?.issues[0]?.message).toContain('Duplicate id "border"');
   });
 
+  test("a seal's wax is one of the catalog's, or a colour of its own", () => {
+    const withWax = (color: string) => ({
+      ...eucaliptInvitation,
+      accessories: [{ ...invitation.accessories[0], color }],
+    });
+    expect(parseDocument(withWax("gold")).accessories[0]).toMatchObject({
+      color: "gold",
+    });
+    expect(parseDocument(withWax("#8A5A2B")).accessories[0]).toMatchObject({
+      color: "#8a5a2b",
+    });
+    expect(documentSchema.safeParse(withWax("bronze")).success).toBe(false);
+  });
+
   test("rejects colours that are neither hex nor a palette token", () => {
     const copy = structuredClone(invitation) as unknown as {
       theme: { text: { body: { color: string } } };

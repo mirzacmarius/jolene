@@ -1,5 +1,5 @@
 import { type CSSProperties, useId } from "react";
-import { waxColors } from "../catalog";
+import { waxHex } from "../catalog";
 import { type Hex, mix } from "../color";
 import { resolveText } from "../fields";
 import { assemblyBounds, type Box, trimPath } from "../geometry";
@@ -22,7 +22,7 @@ function WaxSeal({
   initials: string;
 }) {
   const r = seal.diameter / 2;
-  const wax = waxColors[seal.color].color as Hex;
+  const wax = waxHex(seal.color) as Hex;
   const light = mix(wax, "#ffffff", 0.35);
   const dark = mix(wax, "#000000", 0.35);
   const gradientId = `${prefix}-wax-${seal.id}`;

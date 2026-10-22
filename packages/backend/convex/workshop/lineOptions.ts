@@ -1,15 +1,19 @@
+import { lookSchema, sameLook } from "@jolene/design";
 import { ConvexError, v } from "convex/values";
 import type { Doc } from "../_generated/dataModel";
 import { mutation, type QueryCtx, query } from "../_generated/server";
+import { choiceLook, optionLook } from "../catalog/looks";
 import { choiceValidator, lineOptionKindValidator } from "../shop/validators";
 import { errors } from "../utils/errors";
+import { choiceLookKindValidator, lookValidator } from "../utils/validators";
 import { requireWorkshop } from "./staff";
 
 /**
  * The shop's order options in the workshop, at /studio/atelier/optiuni: what
- * each asks, whether it must be answered, and a select's choices and what
- * each adds. An option is the same on every product that asks it, so a
- * change shows on all of them. Its key and kind stay as the seed made them:
+ * each asks, whether it must be answered, and a select's choices, what each
+ * adds and, on an option that changes a design, how the studio shows it (ADR
+ * 0021). An option is the same on every product that asks it, so a change
+ * shows on all of them. Its key and kind stay as the seed made them:
  * the cart answers an option by its key. A changed option is the team's
  * (editedAt), and the seed leaves it alone.
  */
@@ -41,10 +45,19 @@ const optionRowValidator = v.object({
   kind: lineOptionKindValidator,
   required: v.boolean(),
   choices: v.array(choiceValidator),
+  /** What its choices change in a design; null for one asked in words. */
+  shows: v.union(choiceLookKindValidator, v.null()),
   /** How many products ask it, for sale or not. */
   askedBy: v.number(),
   /** When the team last changed it: null as the seed left it. */
   editedAt: v.union(v.number(), v.null()),
+});
+
+/** A choice with how the studio shows it: null when it shows nothing. */
+const lookedChoiceValidator = v.object({
+  label: v.string(),
+  price: v.number(),
+  look: v.union(lookValidator, v.null()),
 });
 
 /** An order option with all the workshop can change on it, and who asks it. */
@@ -55,7 +68,9 @@ const workshopOptionValidator = v.object({
   hint: v.union(v.string(), v.null()),
   kind: lineOptionKindValidator,
   required: v.boolean(),
-  choices: v.array(choiceValidator),
+  /** What its choices change in a design; null for one asked in words. */
+  shows: v.union(choiceLookKindValidator, v.null()),
+  choices: v.array(lookedChoiceValidator),
   /** The products that ask it: those for sale first, by name. */
   products: v.array(
     v.object({ handle: v.string(), title: v.string(), published: v.boolean() }),
@@ -96,6 +111,14 @@ const optionByHandle = (ctx: QueryCtx, handle: string) =>
 /** A choice's name as the option compares it with its other choices'. */
 const nameOf = (label: string) => label.toLocaleLowerCase("ro");
 
+/** An option's choices, each with how the studio shows it. */
+const lookedChoices = (option: Doc<"lineOptions">) =>
+  option.choices.map((choice) => ({
+    label: choice.label,
+    price: choice.price,
+    look: choiceLook(option.key, choice),
+  }));
+
 /** Every order option the shop has, by name, with how many products ask it. */
 export const list = query({
   args: {},
@@ -118,6 +141,7 @@ export const list = query({
       kind: option.kind,
       required: option.required,
       choices: option.choices,
+      shows: optionLook(option.key),
       askedBy: asked.get(option.handle) ?? 0,
       editedAt: option.editedAt ?? null,
     }));
@@ -143,7 +167,8 @@ export const option = query({
       hint: option.hint ?? null,
       kind: option.kind,
       required: option.required,
-      choices: option.choices,
+      shows: optionLook(option.key),
+      choices: lookedChoices(option),
       products: all
         .filter((product) => product.lineOptions.includes(handle))
         .sort(
@@ -180,10 +205,13 @@ const isBani = (amount: number) =>
 /**
  * Changes an order option from the version the workshop's page showed: its
  * name, the line under it, whether it must be answered, and a select's
- * choices, in order, with what each adds to each one ordered. If someone
- * changed it since, nothing changes (line-option-changed), and the page shows
- * their version. A cart whose answer is no longer one of its choices asks
- * the couple to add the product again; paid orders keep what they chose.
+ * choices, in order, with what each adds to each one ordered and, on an
+ * option that changes a design, its look: one of what the option changes, or
+ * null to show nothing. A choice sent without one keeps jolene.ro's. If
+ * someone changed the option since, nothing changes (line-option-changed),
+ * and the page shows their version. A cart whose answer is no longer one of
+ * its choices asks the couple to add the product again; paid orders keep
+ * what they chose.
  */
 export const save = mutation({
   args: {
@@ -207,10 +235,21 @@ export const save = mutation({
 
     const label = args.label.trim();
     const hint = args.hint.trim();
-    const choices = args.choices.map((choice) => ({
-      label: choice.label.trim(),
-      price: choice.price,
-    }));
+    const shows = optionLook(option.key);
+    const choices = args.choices.map(({ look, ...choice }) => {
+      if (look === undefined || (look === null && shows === null))
+        return { label: choice.label.trim(), price: choice.price };
+      if (look === null)
+        return { label: choice.label.trim(), price: choice.price, look };
+      const parsed = lookSchema.safeParse(look);
+      if (!parsed.success || parsed.data.kind !== shows)
+        throw new ConvexError(errors.invalidInput);
+      return {
+        label: choice.label.trim(),
+        price: choice.price,
+        look: parsed.data,
+      };
+    });
     const names = new Set(choices.map((choice) => nameOf(choice.label)));
     if (
       !label ||
@@ -235,11 +274,15 @@ export const save = mutation({
       hint === (option.hint ?? "") &&
       args.required === option.required &&
       choices.length === option.choices.length &&
-      choices.every(
-        (choice, index) =>
-          choice.label === option.choices[index]?.label &&
-          choice.price === option.choices[index].price,
-      );
+      choices.every((choice, index) => {
+        const was = option.choices[index];
+        return (
+          was !== undefined &&
+          choice.label === was.label &&
+          choice.price === was.price &&
+          sameLook(choiceLook(option.key, choice), choiceLook(option.key, was))
+        );
+      });
     // Saving nothing new leaves it the seed's, if it was.
     if (unchanged) return null;
 

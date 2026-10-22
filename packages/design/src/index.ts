@@ -5,6 +5,7 @@ export * from "./editing";
 export * from "./fields";
 export * from "./fonts";
 export * from "./geometry";
+export * from "./looks";
 export * from "./ops";
 export * from "./palettes";
 export * from "./samples";
