@@ -24,6 +24,8 @@ const HANDLE = 8;
 const HANDLE_HIT = 18;
 /** How far above the top edge the rotation handle sits, in pixels. */
 const ROTATE_OFFSET = 24;
+/** The room the rotation handle takes above a layer, in pixels. */
+export const ROTATE_ROOM = ROTATE_OFFSET + HANDLE_HIT / 2;
 
 export interface Outline {
   id: string;
@@ -90,7 +92,7 @@ export function Overlay({
       })
       .join(" ");
 
-  const bounds = selected.length > 0 ? screenBounds(selected, screen) : null;
+  const bounds = selectionBounds(view, selected);
 
   return (
     <>
@@ -301,13 +303,17 @@ function screenBox(
   };
 }
 
-/** The upright box around the outlines, in the stage's pixels. */
-function screenBounds(
+/** The upright box around the outlines, in the stage's pixels; null for none. */
+export function selectionBounds(
+  view: Viewport,
   outlines: readonly Outline[],
-  screen: (point: { x: number; y: number }) => { x: number; y: number },
-) {
+): Box | null {
+  if (outlines.length === 0) return null;
   const points = outlines.flatMap((outline) =>
-    placementCorners(outline.placement).map(screen),
+    placementCorners(outline.placement).map((point) => ({
+      x: view.x + point.x * view.scale,
+      y: view.y + point.y * view.scale,
+    })),
   );
   const xs = points.map((point) => point.x);
   const ys = points.map((point) => point.y);

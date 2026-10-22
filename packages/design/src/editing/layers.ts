@@ -95,6 +95,27 @@ export function duplicateLayers(
   return { operations, ids: copies };
 }
 
+/**
+ * The operations that delete the layers, all but the locked ones: Jolene's
+ * artwork and fixed text stay until they are unlocked. `kept` names the
+ * layers that stayed.
+ */
+export function removeLayers(
+  document: DesignDocument,
+  target: FaceRef,
+  ids: readonly string[],
+): { operations: Operation[]; kept: string[] } {
+  const layers = layersOf(document, target).filter((layer) =>
+    ids.includes(layer.id),
+  );
+  return {
+    operations: layers
+      .filter((layer) => !layer.locked)
+      .map((layer) => ({ op: "removeLayer", ...target, layer: layer.id })),
+    kept: layers.filter((layer) => layer.locked).map((layer) => layer.id),
+  };
+}
+
 export type Restack = "forward" | "backward" | "front" | "back";
 
 /**

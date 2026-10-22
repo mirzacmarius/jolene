@@ -878,7 +878,7 @@ export default {
     layers: {
       title: "Layers",
       empty: "This side has no layers yet. Add text, a shape or artwork.",
-      hint: "Drag a layer up or down to restack it, or press Alt+↑ and Alt+↓. Double-click to rename it.",
+      hint: "Drag a layer up or down to restack it, or press Alt+↑ and Alt+↓. Double-click to rename it, right-click to duplicate or delete it.",
       rename: "Layer name",
       hide: "Hide",
       show: "Show",
@@ -904,9 +904,9 @@ export default {
       path: "Shape",
     },
     actions: {
+      label: "Selected layers",
       duplicate: "Duplicate",
       delete: "Delete",
-      unlockToDelete: "Unlock the layer to delete it",
     },
     arrange: {
       front: "Bring to front",

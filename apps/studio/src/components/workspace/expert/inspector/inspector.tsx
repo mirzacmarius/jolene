@@ -16,6 +16,7 @@ import type { AssetResolver } from "@jolene/design/react";
 import { memo } from "react";
 import { useI18n } from "@/locales/client";
 import type { Artwork } from "../add-menu";
+import { LayerActionButtons, layerActions } from "../layer-actions";
 import { kindIcons, layerKind, useLayerLabel } from "../layer-label";
 import { FaceSection } from "./face-section";
 import { TextField } from "./fields";
@@ -102,6 +103,7 @@ export const Inspector = memo(function Inspector({
         target={target}
         layer={layer}
         apply={apply}
+        onSelect={onSelect}
       />
       {layer.type === "text" ? (
         <TextSection
@@ -138,34 +140,50 @@ export const Inspector = memo(function Inspector({
         layer={layer}
         apply={apply}
         onPreview={preview}
-        onSelect={onSelect}
       />
     </div>
   );
 });
 
-/** The layer's kind and its name, which can be written over. */
+/**
+ * The layer's kind and its name, which can be written over, with duplicate
+ * and delete always in sight above the rest.
+ */
 function LayerHeader({
   document,
   target,
   layer,
   apply,
+  onSelect,
 }: {
   document: DesignDocument;
   target: FaceRef;
   layer: Layer;
   apply: (operations: Operation[]) => void;
+  onSelect: (ids: string[]) => void;
 }) {
   const t = useI18n();
   const label = useLayerLabel();
   const kind = layerKind(layer);
   const Icon = kindIcons[kind];
   return (
-    <div className="border-b border-border/70 px-4 py-3">
-      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-        <Icon className="size-3.5" aria-hidden />
-        {t(`expert.kind.${kind}`)}
-      </p>
+    <div className="border-b border-border/70 px-4 pt-2 pb-3">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          <Icon className="size-3.5" aria-hidden />
+          {t(`expert.kind.${kind}`)}
+        </p>
+        <LayerActionButtons
+          actions={layerActions({
+            document,
+            target,
+            ids: [layer.id],
+            apply,
+            onSelect,
+          })}
+          className="-mr-1.5"
+        />
+      </div>
       <TextField
         value={layer.name ?? ""}
         placeholder={label({ ...layer, name: undefined } as Layer)}

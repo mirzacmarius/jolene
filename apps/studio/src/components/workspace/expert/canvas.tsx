@@ -3,7 +3,6 @@
 import {
   type Box,
   type DesignDocument,
-  duplicateLayers,
   type FaceName,
   type FaceRef,
   type Frame,
@@ -28,6 +27,7 @@ import {
   unionBounds,
 } from "@jolene/design";
 import { FaceView, type RenderContext } from "@jolene/design/react";
+import { ContextMenu, ContextMenuTrigger } from "@jolene/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,7 +49,9 @@ import {
 } from "react";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { isModifier, isShortcut, isTyping, useShortcutLabel } from "./keyboard";
-import { type Outline, Overlay } from "./overlay";
+import { LayerMenuContent, layerActions } from "./layer-actions";
+import { type Outline, Overlay, selectionBounds } from "./overlay";
+import { SelectionBar } from "./selection-bar";
 import { PX_PER_MM, useViewport } from "./use-viewport";
 
 /** The face's own drawing, which only draws again when the design changes. */
@@ -63,8 +65,8 @@ const HIT_PX = 4;
 const SNAP_PX = 6;
 /** Arrow keys move this far, and ten times as far with Shift, in millimetres. */
 const NUDGE_MM = 0.5;
-/** Copies land this far down and right of their originals, in millimetres. */
-const COPY_OFFSET_MM = 3;
+/** The zoom's pill and its margin, along the stage's bottom edge, in pixels. */
+const ZOOM_INSET = 46;
 const NO_LAYERS: readonly Layer[] = [];
 const NO_GUIDES: readonly SnapGuide[] = [];
 
@@ -205,7 +207,7 @@ export function Canvas({
     { width: piece.width, height: piece.height, bleed },
     `${piece.id}:${face}`,
   );
-  const { view } = viewport;
+  const { view, stageSize } = viewport;
   const snapFace: SnapFace = {
     width: piece.width,
     height: piece.height,
@@ -699,14 +701,38 @@ export function Canvas({
     if (hit?.type === "text") onEditText(hit.id);
   };
 
+  // A right-click on a layer opens its menu, picking it first unless it's
+  // already picked with others; anywhere else on the canvas, nothing opens.
+  const onContextMenu = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const current = sessionRef.current;
+    const hit =
+      view && (!current || current.kind === "press" || current.kind === "nudge")
+        ? hitLayer(shownLayers, toFace(event.clientX, event.clientY), {
+            tolerance: HIT_PX / view.scale,
+          })
+        : undefined;
+    if (!hit) {
+      event.preventDefault();
+      return;
+    }
+    if (!selection.includes(hit.id)) onSelect([hit.id]);
+  };
+
+  // What the bar beside the selection, its menu and the keys do to it.
+  const actions = layerActions({
+    document,
+    target,
+    ids: selection,
+    apply,
+    onSelect,
+  });
+
   // Keys and wheels act on the latest state through this.
   const latest = useRef({
     selection,
     shownLayers,
-    document,
-    target,
-    apply,
     onSelect,
+    actions,
     finish,
     movable,
     placementsOf,
@@ -716,10 +742,8 @@ export function Canvas({
     latest.current = {
       selection,
       shownLayers,
-      document,
-      target,
-      apply,
       onSelect,
+      actions,
       finish,
       movable,
       placementsOf,
@@ -835,24 +859,12 @@ export function Canvas({
       }
       if (sessionRef.current?.kind === "nudge") now.finish(true);
       if (event.key === "Delete" || event.key === "Backspace") {
-        const ids = now.movable(now.selection);
-        if (ids.length === 0) return;
+        if (!now.actions.deletable) return;
         event.preventDefault();
-        now.apply(
-          ids.map((id) => ({ op: "removeLayer", ...now.target, layer: id })),
-        );
-        now.onSelect([]);
+        now.actions.remove();
       } else if (modifier && key === "d" && !event.altKey) {
         event.preventDefault();
-        if (now.selection.length === 0) return;
-        const copies = duplicateLayers(
-          now.document,
-          now.target,
-          now.selection,
-          COPY_OFFSET_MM,
-        );
-        now.apply(copies.operations);
-        now.onSelect(copies.ids);
+        now.actions.duplicate();
       } else if (modifier && key === "a" && !event.altKey) {
         event.preventDefault();
         now.onSelect(
@@ -983,133 +995,162 @@ export function Canvas({
             ? "cursor-move"
             : "cursor-default";
 
+  // The bar beside the selection, while nothing is being dragged.
+  const bounds =
+    view && (!session || session.kind === "press" || session.kind === "nudge")
+      ? selectionBounds(view, outlines)
+      : null;
+
   return (
-    <div
-      ref={stage}
-      role="application"
-      aria-label={t("expert.canvas.label", { face: title })}
-      aria-roledescription={t("expert.canvas.role")}
-      className={cn(
-        "relative min-h-0 flex-1 touch-none overflow-hidden select-none",
-        cursor,
-      )}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-      onLostPointerCapture={onLostPointerCapture}
-      onPointerLeave={() => {
-        if (!sessionRef.current && hovered) onHover(null);
-      }}
-      onDoubleClick={onDoubleClick}
-      onContextMenu={(event) => event.preventDefault()}
-    >
-      {view ? (
-        <>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          ref={stage}
+          role="application"
+          aria-label={t("expert.canvas.label", { face: title })}
+          aria-roledescription={t("expert.canvas.role")}
+          className={cn(
+            "relative min-h-0 flex-1 touch-none overflow-hidden select-none",
+            cursor,
+          )}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
+          onLostPointerCapture={onLostPointerCapture}
+          onPointerLeave={() => {
+            if (!sessionRef.current && hovered) onHover(null);
+          }}
+          onDoubleClick={onDoubleClick}
+          onContextMenu={onContextMenu}
+        >
+          {view ? (
+            <>
+              <div
+                ref={paper}
+                className={cn(
+                  "pointer-events-none absolute top-0 left-0 origin-top-left",
+                  guides
+                    ? "shadow-[0_18px_40px_rgba(43,38,32,0.16)]"
+                    : "drop-shadow-[0_18px_30px_rgba(43,38,32,0.14)]",
+                )}
+                style={{
+                  width: (piece.width + 2 * bleed) * view.scale,
+                  height: (piece.height + 2 * bleed) * view.scale,
+                  transform: `translate(${view.x - bleed * view.scale}px, ${view.y - bleed * view.scale}px)`,
+                }}
+              >
+                <Face
+                  document={shown}
+                  piece={piece.id}
+                  face={face}
+                  context={context}
+                  guides={guides}
+                  title={title}
+                  className="size-full"
+                />
+              </div>
+              <Overlay
+                view={view}
+                selected={outlines}
+                marked={marked}
+                hovered={
+                  hoveredLayer
+                    ? {
+                        frame: hoveredLayer.frame,
+                        rotation: hoveredLayer.rotation,
+                      }
+                    : null
+                }
+                editable={session?.kind === "marquee" ? null : editable}
+                guides={
+                  session?.kind === "move" || session?.kind === "resize"
+                    ? session.guides
+                    : NO_GUIDES
+                }
+                marquee={
+                  session?.kind === "marquee"
+                    ? boxBetween(session.at, session.to)
+                    : null
+                }
+                readout={readout}
+                onHandleDown={onHandleDown}
+              />
+            </>
+          ) : null}
+          {bounds ? (
+            <SelectionBar
+              bounds={bounds}
+              stage={stageSize}
+              bottomInset={ZOOM_INSET}
+              actions={actions}
+              onPointerEnter={() => onHover(null)}
+            />
+          ) : null}
           <div
-            ref={paper}
-            className={cn(
-              "pointer-events-none absolute top-0 left-0 origin-top-left",
-              guides
-                ? "shadow-[0_18px_40px_rgba(43,38,32,0.16)]"
-                : "drop-shadow-[0_18px_30px_rgba(43,38,32,0.14)]",
-            )}
-            style={{
-              width: (piece.width + 2 * bleed) * view.scale,
-              height: (piece.height + 2 * bleed) * view.scale,
-              transform: `translate(${view.x - bleed * view.scale}px, ${view.y - bleed * view.scale}px)`,
+            role="toolbar"
+            aria-label={t("preview.zoom")}
+            className="absolute right-3 bottom-3 flex items-center gap-0.5 rounded-full border border-border/70 bg-card/95 p-0.5 shadow-sm backdrop-blur"
+            onPointerDown={(event) => event.stopPropagation()}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
             }}
           >
-            <Face
-              document={shown}
-              piece={piece.id}
-              face={face}
-              context={context}
-              guides={guides}
-              title={title}
-              className="size-full"
-            />
+            <Tooltip label={t("expert.zoom.out")} shortcut={shortcut("-")}>
+              <button
+                type="button"
+                onClick={() => step(-1)}
+                aria-label={t("expert.zoom.out")}
+                className="flex size-7 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+              >
+                <Minus className="size-3.5" aria-hidden />
+              </button>
+            </Tooltip>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={t("expert.zoom.label", { zoom })}
+                  className="h-7 min-w-14 rounded-full px-2 text-[12px] font-medium tabular-nums outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring/50"
+                >
+                  {zoom} %
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" side="top">
+                <DropdownMenuItem onSelect={() => fitToStage()}>
+                  {t("expert.zoom.fit")}
+                  <Kbd>{shortcut("1", { shift: true, modifier: false })}</Kbd>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => actualSize()}>
+                  {t("expert.zoom.actual")}
+                  <Kbd>{shortcut("0", { shift: true, modifier: false })}</Kbd>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => step(1)}>
+                  {t("expert.zoom.in")}
+                  <Kbd>{shortcut("+")}</Kbd>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => step(-1)}>
+                  {t("expert.zoom.out")}
+                  <Kbd>{shortcut("-")}</Kbd>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Tooltip label={t("expert.zoom.in")} shortcut={shortcut("+")}>
+              <button
+                type="button"
+                onClick={() => step(1)}
+                aria-label={t("expert.zoom.in")}
+                className="flex size-7 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+              >
+                <Plus className="size-3.5" aria-hidden />
+              </button>
+            </Tooltip>
           </div>
-          <Overlay
-            view={view}
-            selected={outlines}
-            marked={marked}
-            hovered={
-              hoveredLayer
-                ? { frame: hoveredLayer.frame, rotation: hoveredLayer.rotation }
-                : null
-            }
-            editable={session?.kind === "marquee" ? null : editable}
-            guides={
-              session?.kind === "move" || session?.kind === "resize"
-                ? session.guides
-                : NO_GUIDES
-            }
-            marquee={
-              session?.kind === "marquee"
-                ? boxBetween(session.at, session.to)
-                : null
-            }
-            readout={readout}
-            onHandleDown={onHandleDown}
-          />
-        </>
-      ) : null}
-      <div
-        className="absolute right-3 bottom-3 flex items-center gap-0.5 rounded-full border border-border/70 bg-card/95 p-0.5 shadow-sm backdrop-blur"
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <Tooltip label={t("expert.zoom.out")} shortcut={shortcut("-")}>
-          <button
-            type="button"
-            onClick={() => step(-1)}
-            aria-label={t("expert.zoom.out")}
-            className="flex size-7 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
-          >
-            <Minus className="size-3.5" aria-hidden />
-          </button>
-        </Tooltip>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              aria-label={t("expert.zoom.label", { zoom })}
-              className="h-7 min-w-14 rounded-full px-2 text-[12px] font-medium tabular-nums outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring/50"
-            >
-              {zoom} %
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top">
-            <DropdownMenuItem onSelect={() => fitToStage()}>
-              {t("expert.zoom.fit")}
-              <Kbd>{shortcut("1", { shift: true, modifier: false })}</Kbd>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => actualSize()}>
-              {t("expert.zoom.actual")}
-              <Kbd>{shortcut("0", { shift: true, modifier: false })}</Kbd>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => step(1)}>
-              {t("expert.zoom.in")}
-              <Kbd>{shortcut("+")}</Kbd>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => step(-1)}>
-              {t("expert.zoom.out")}
-              <Kbd>{shortcut("-")}</Kbd>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Tooltip label={t("expert.zoom.in")} shortcut={shortcut("+")}>
-          <button
-            type="button"
-            onClick={() => step(1)}
-            aria-label={t("expert.zoom.in")}
-            className="flex size-7 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
-          >
-            <Plus className="size-3.5" aria-hidden />
-          </button>
-        </Tooltip>
-      </div>
-    </div>
+        </div>
+      </ContextMenuTrigger>
+      {selection.length > 0 ? <LayerMenuContent actions={actions} /> : null}
+    </ContextMenu>
   );
 }
 

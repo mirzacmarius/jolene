@@ -49,15 +49,25 @@ export const isModifier = (event: { metaKey: boolean; ctrlKey: boolean }) =>
 
 const isMac = () => /Mac|iPhone|iPad/.test(navigator.platform);
 
-/** How shortcuts are written here: "⌘Z" on a Mac, "Ctrl+Z" elsewhere. */
-export function useShortcutLabel() {
-  const mac = useSyncExternalStore(
+/** Whether the visitor types on a Mac; the server can't tell, so it says no. */
+function useMac() {
+  return useSyncExternalStore(
     () => () => {},
     isMac,
     () => false,
   );
+}
+
+/** How shortcuts are written here: "⌘Z" on a Mac, "Ctrl+Z" elsewhere. */
+export function useShortcutLabel() {
+  const mac = useMac();
   return (key: string, { shift = false, modifier = true } = {}) =>
     mac
       ? `${shift ? "⇧" : ""}${modifier ? "⌘" : ""}${key}`
       : [modifier && "Ctrl", shift && "Shift", key].filter(Boolean).join("+");
+}
+
+/** The key that deletes, as the keyboard shows it: ⌫ on a Mac, Delete elsewhere. */
+export function useDeleteKeyLabel() {
+  return useMac() ? "⌫" : "Delete";
 }

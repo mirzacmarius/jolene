@@ -9,11 +9,13 @@ import {
   replaceLayer,
   restackLayers,
 } from "@jolene/design";
+import { ContextMenu, ContextMenuTrigger } from "@jolene/ui/context-menu";
 import { cn } from "@jolene/ui/utils";
 import { Eye, EyeOff, Lock, LockOpen } from "lucide-react";
 import {
   type KeyboardEvent,
   memo,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   useLayoutEffect,
   useRef,
@@ -21,6 +23,7 @@ import {
 } from "react";
 import { useI18n } from "@/locales/client";
 import { AddMenu, type Artwork } from "./add-menu";
+import { LayerMenuContent, layerActions } from "./layer-actions";
 import { kindIcons, layerKind, useLayerLabel } from "./layer-label";
 
 /** How far a row is dragged before it moves, in pixels. */
@@ -36,10 +39,11 @@ interface Drag {
 
 /**
  * The face's layers, the frontmost on top. Click selects (Cmd/Ctrl adds,
- * Shift selects a run), double-click renames, the eye and the lock hide and
- * lock, and a row drags to another place; Alt with the arrows moves the
- * focused one. It draws again only when what it shows changes, not while
- * the canvas or the inspector preview a change.
+ * Shift selects a run), double-click renames, right-click opens the menu
+ * that copies or deletes, the eye and the lock hide and lock, and a row
+ * drags to another place; Alt with the arrows moves the focused one. It
+ * draws again only when what it shows changes, not while the canvas or the
+ * inspector preview a change.
  */
 export const LayersPanel = memo(function LayersPanel({
   document,
@@ -124,6 +128,23 @@ export const LayersPanel = memo(function LayersPanel({
       const { name: _name, ...unnamed } = layer;
       apply(replaceLayer(document, target, unnamed as Layer));
     }
+  };
+
+  // A right-click on a row opens the menu, picking the row first unless it's
+  // already picked with others; between rows, nothing opens.
+  const onContextMenu = (event: ReactMouseEvent<HTMLUListElement>) => {
+    const row =
+      event.target instanceof Element
+        ? event.target.closest<HTMLElement>("li[data-id]")
+        : null;
+    const id = row?.dataset.id;
+    if (!id) {
+      event.preventDefault();
+      return;
+    }
+    if (selection.includes(id)) return;
+    anchor.current = id;
+    onSelect([id]);
   };
 
   const restack = (layer: Layer, how: "forward" | "backward") => {
@@ -222,106 +243,134 @@ export const LayersPanel = memo(function LayersPanel({
           {t("expert.layers.empty")}
         </p>
       ) : (
-        <ul
-          ref={list}
-          aria-label={t("expert.layers.title")}
-          className="min-h-0 flex-1 overflow-y-auto px-2 pb-3"
-        >
-          {rows.map((layer, row) => {
-            const selected = selection.includes(layer.id);
-            const Icon = kindIcons[layerKind(layer)];
-            const name = label(layer);
-            return (
-              <li
-                key={layer.id}
-                className={cn(
-                  "group relative flex h-8 items-center gap-1 rounded-lg pr-1 text-[13px]",
-                  selected
-                    ? "bg-accent text-accent-foreground"
-                    : hovered === layer.id
-                      ? "bg-secondary"
-                      : "hover:bg-secondary/70",
-                  drag?.id === layer.id && drag.gap !== null && "opacity-50",
-                )}
-                onPointerEnter={() => onHover(layer.id)}
-                onPointerLeave={() => onHover(null)}
-              >
-                {drag && drag.gap === row ? <DropLine edge="top" /> : null}
-                {drag && drag.gap === rows.length && row === rows.length - 1 ? (
-                  <DropLine edge="bottom" />
-                ) : null}
-                {renaming === layer.id ? (
-                  <RenameField
-                    initial={layer.name ?? ""}
-                    placeholder={name}
-                    label={t("expert.layers.rename")}
-                    onDone={(value) =>
-                      value === null ? setRenaming(null) : rename(layer, value)
-                    }
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    data-row={layer.id}
-                    aria-pressed={selected}
-                    aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown F2"
-                    title={name}
-                    onClick={(event) => {
-                      if (dragged.current) {
-                        dragged.current = false;
-                        return;
-                      }
-                      choose(layer.id, {
-                        toggle: event.metaKey || event.ctrlKey,
-                        range: event.shiftKey,
-                      });
-                    }}
-                    onDoubleClick={() => setRenaming(layer.id)}
-                    onKeyDown={(event) => onRowKeyDown(event, layer)}
-                    onPointerDown={(event) => onRowPointerDown(event, layer)}
-                    onPointerMove={onRowPointerMove}
-                    onPointerUp={onRowPointerUp}
-                    onPointerCancel={() => setDrag(null)}
+        <ContextMenu>
+          {/* The name being written takes the browser's own menu. */}
+          <ContextMenuTrigger asChild disabled={renaming !== null}>
+            <ul
+              ref={list}
+              aria-label={t("expert.layers.title")}
+              className="min-h-0 flex-1 overflow-y-auto px-2 pb-3"
+              onContextMenu={renaming === null ? onContextMenu : undefined}
+            >
+              {rows.map((layer, row) => {
+                const selected = selection.includes(layer.id);
+                const Icon = kindIcons[layerKind(layer)];
+                const name = label(layer);
+                return (
+                  <li
+                    key={layer.id}
+                    data-id={layer.id}
                     className={cn(
-                      "flex h-full min-w-0 flex-1 items-center gap-2 rounded-lg pl-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                      layer.hidden && "text-muted-foreground",
+                      "group relative flex h-8 items-center gap-1 rounded-lg pr-1 text-[13px]",
+                      selected
+                        ? "bg-accent text-accent-foreground"
+                        : hovered === layer.id
+                          ? "bg-secondary"
+                          : "hover:bg-secondary/70",
+                      drag?.id === layer.id &&
+                        drag.gap !== null &&
+                        "opacity-50",
                     )}
+                    onPointerEnter={() => onHover(layer.id)}
+                    onPointerLeave={() => onHover(null)}
                   >
-                    <Icon
-                      className="size-3.5 shrink-0 text-muted-foreground"
-                      aria-hidden
-                    />
-                    <span className={cn("truncate", layer.hidden && "italic")}>
-                      {name}
-                    </span>
-                  </button>
-                )}
-                <RowToggle
-                  on={layer.hidden}
-                  label={
-                    layer.hidden
-                      ? t("expert.layers.show")
-                      : t("expert.layers.hide")
-                  }
-                  onClick={() => update(layer, { hidden: !layer.hidden })}
-                >
-                  {layer.hidden ? <EyeOff /> : <Eye />}
-                </RowToggle>
-                <RowToggle
-                  on={layer.locked}
-                  label={
-                    layer.locked
-                      ? t("expert.layers.unlock")
-                      : t("expert.layers.lock")
-                  }
-                  onClick={() => update(layer, { locked: !layer.locked })}
-                >
-                  {layer.locked ? <Lock /> : <LockOpen />}
-                </RowToggle>
-              </li>
-            );
-          })}
-        </ul>
+                    {drag && drag.gap === row ? <DropLine edge="top" /> : null}
+                    {drag &&
+                    drag.gap === rows.length &&
+                    row === rows.length - 1 ? (
+                      <DropLine edge="bottom" />
+                    ) : null}
+                    {renaming === layer.id ? (
+                      <RenameField
+                        initial={layer.name ?? ""}
+                        placeholder={name}
+                        label={t("expert.layers.rename")}
+                        onDone={(value) =>
+                          value === null
+                            ? setRenaming(null)
+                            : rename(layer, value)
+                        }
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        data-row={layer.id}
+                        aria-pressed={selected}
+                        aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown F2"
+                        title={name}
+                        onClick={(event) => {
+                          if (dragged.current) {
+                            dragged.current = false;
+                            return;
+                          }
+                          choose(layer.id, {
+                            toggle: event.metaKey || event.ctrlKey,
+                            range: event.shiftKey,
+                          });
+                        }}
+                        onDoubleClick={() => setRenaming(layer.id)}
+                        onKeyDown={(event) => onRowKeyDown(event, layer)}
+                        onPointerDown={(event) =>
+                          onRowPointerDown(event, layer)
+                        }
+                        onPointerMove={onRowPointerMove}
+                        onPointerUp={onRowPointerUp}
+                        onPointerCancel={() => setDrag(null)}
+                        className={cn(
+                          "flex h-full min-w-0 flex-1 items-center gap-2 rounded-lg pl-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                          layer.hidden && "text-muted-foreground",
+                        )}
+                      >
+                        <Icon
+                          className="size-3.5 shrink-0 text-muted-foreground"
+                          aria-hidden
+                        />
+                        <span
+                          className={cn("truncate", layer.hidden && "italic")}
+                        >
+                          {name}
+                        </span>
+                      </button>
+                    )}
+                    <RowToggle
+                      on={layer.hidden}
+                      label={
+                        layer.hidden
+                          ? t("expert.layers.show")
+                          : t("expert.layers.hide")
+                      }
+                      onClick={() => update(layer, { hidden: !layer.hidden })}
+                    >
+                      {layer.hidden ? <EyeOff /> : <Eye />}
+                    </RowToggle>
+                    <RowToggle
+                      on={layer.locked}
+                      label={
+                        layer.locked
+                          ? t("expert.layers.unlock")
+                          : t("expert.layers.lock")
+                      }
+                      onClick={() => update(layer, { locked: !layer.locked })}
+                    >
+                      {layer.locked ? <Lock /> : <LockOpen />}
+                    </RowToggle>
+                  </li>
+                );
+              })}
+            </ul>
+          </ContextMenuTrigger>
+          {selection.length > 0 ? (
+            <LayerMenuContent
+              actions={layerActions({
+                document,
+                target,
+                ids: selection,
+                apply,
+                onSelect,
+              })}
+            />
+          ) : null}
+        </ContextMenu>
       )}
       <p className="border-t border-border/70 px-4 py-2.5 text-[11px] leading-snug text-muted-foreground">
         {t("expert.layers.hint")}
