@@ -43,6 +43,39 @@ export function useShopSells(handle: string | null) {
   return answer?.handle === handle ? answer.sells : undefined;
 }
 
+/** A design the couple approved, with the finishes they picked, to order. */
+export interface ProofLine {
+  proofId: string;
+  quantity: number;
+  options: { name: string; value: string }[];
+  answers: { key: string; value: string }[];
+}
+
+/**
+ * Puts a design the couple approved in the shop's cart (ADR 0021). The shop
+ * keeps the cart, under a cookie of its own on this address, so the studio
+ * asks it to: null once the line is there, else why not, as the cart's
+ * error code, or "unknown" when the shop couldn't be asked.
+ */
+export async function addToCart(line: ProofLine): Promise<string | null> {
+  try {
+    const response = await fetch("/api/cart/proofs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(line),
+    });
+    if (response.ok) return null;
+    const body: unknown = await response.json().catch(() => null);
+    const code =
+      typeof body === "object" && body !== null && "error" in body
+        ? body.error
+        : undefined;
+    return typeof code === "string" ? code : "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
 /** How long the shop gets to refresh its pages after a change. */
 const REFRESH_WAIT = 8000;
 

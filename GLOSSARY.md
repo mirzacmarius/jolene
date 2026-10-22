@@ -143,7 +143,7 @@ _Avoid_: Padding, quiet zone
 ### Ordering
 
 **Proof** (ro: bun de tipar):
-The final version of a design a couple approves before Jolene prints it.
+The final version of a design a couple approves before Jolene prints it. Approving it puts the design in the cart with its finishes; approved again after a change, its new proof takes the design's line.
 _Avoid_: Preview (any view in the studio), draft
 
 **Favours** (ro: mărturii):

@@ -14,11 +14,7 @@ import { useI18n } from "@/locales/client";
  * Starts a design from a template and opens it. A first-time visitor is signed
  * in anonymously on the way, so nobody fills in a form before they design.
  */
-export function StartDesignButton({
-  template,
-  children,
-  ...props
-}: { template: string } & Omit<ComponentProps<typeof Button>, "onClick">) {
+export function useStartDesign(template: string) {
   const t = useI18n();
   const router = useRouter();
   const { isAuthenticated } = useConvexAuth();
@@ -44,13 +40,23 @@ export function StartDesignButton({
       .catch(fail);
   });
 
-  const onClick = () => {
+  const onStart = () => {
     setPending(true);
     if (!isAuthenticated) signIn("anonymous").catch(fail);
   };
 
+  return { pending, start: onStart };
+}
+
+/** A button that starts a design from a template, as above. */
+export function StartDesignButton({
+  template,
+  children,
+  ...props
+}: { template: string } & Omit<ComponentProps<typeof Button>, "onClick">) {
+  const { pending, start } = useStartDesign(template);
   return (
-    <Button {...props} onClick={onClick} disabled={pending || props.disabled}>
+    <Button {...props} onClick={start} disabled={pending || props.disabled}>
       {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : null}
       {children}
     </Button>

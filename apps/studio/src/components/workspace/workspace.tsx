@@ -10,13 +10,19 @@ import {
   productKindLabels,
 } from "@jolene/design";
 import { Button } from "@jolene/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTrigger,
+} from "@jolene/ui/dialog";
 import { Logo } from "@jolene/ui/logo";
 import { SegmentedControl } from "@jolene/ui/segmented-control";
 import { Skeleton } from "@jolene/ui/skeleton";
 import { cn } from "@jolene/ui/utils";
 import { useConvexAuth, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { Check, ChevronLeft, LoaderCircle } from "lucide-react";
+import { Check, ChevronLeft, LoaderCircle, X } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -26,10 +32,11 @@ import { AiDesigner } from "../ai/ai-designer";
 import type { PreviewView } from "../design/design-preview";
 import { usePreviewMode } from "../design/preview-mode";
 import { PreviewStage } from "../design/preview-stage";
+import { ProofOrder } from "../proof/proof-order";
 import { GuidedStart } from "../simple/guided-start";
 import { SuiteStrip } from "../simple/suite-strip";
 import { usePrice } from "../suite/use-price";
-import { ExpertEditor } from "./expert/expert-editor";
+import { ExpertEditor, type ExpertPanel } from "./expert/expert-editor";
 import { ModeSwitch } from "./expert/mode-switch";
 import { useHistory } from "./expert/use-history";
 import { useDesignMode } from "./expert/use-mode";
@@ -80,9 +87,12 @@ function Editor({ data }: { data: DesignData }) {
     track,
   });
   const [tab, setTab] = useState<"details" | "style" | "finishes">("details");
+  const [expertPanel, setExpertPanel] = useState<ExpertPanel>("layers");
   const [viewKey, setViewKey] = useState<ViewKey>("assembly");
   const [guides, setGuides] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  // The order's sheet: the proof beside the order, to approve and add.
+  const [ordering, setOrdering] = useState(false);
   const [previewMode] = usePreviewMode();
 
   const fields = useMemo(
@@ -136,6 +146,19 @@ function Editor({ data }: { data: DesignData }) {
       onChange={update}
     />
   );
+  const finishesPanel =
+    product && order ? (
+      <FinishesPanel
+        designId={designId}
+        eventId={data.event._id}
+        kind={document.kind}
+        document={document}
+        product={product}
+        order={order}
+        apply={history.apply}
+        track={track}
+      />
+    ) : null;
 
   return (
     <div className="flex min-h-dvh flex-col max-lg:pb-(--ai-sheet-height) lg:h-dvh">
@@ -171,22 +194,46 @@ function Editor({ data }: { data: DesignData }) {
             view={view}
             onOpenChange={setAiOpen}
           />
-          <Button asChild size="sm">
-            <Link href={`/studio/design/${designId}/bun-de-tipar`}>
-              {t("design.order")}
-              {order ? (
-                <>
-                  <span
-                    className="hidden h-4 w-px bg-primary-foreground/35 sm:block"
-                    aria-hidden
-                  />
-                  <span className="hidden font-semibold sm:inline">
-                    {price(order.total)}
-                  </span>
-                </>
-              ) : null}
-            </Link>
-          </Button>
+          <Dialog open={ordering} onOpenChange={setOrdering}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                {t("design.order")}
+                {order ? (
+                  <>
+                    <span
+                      className="hidden h-4 w-px bg-primary-foreground/35 sm:block"
+                      aria-hidden
+                    />
+                    <span className="hidden font-semibold sm:inline">
+                      {price(order.total)}
+                    </span>
+                  </>
+                ) : null}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[1060px]">
+              <ProofOrder
+                data={data}
+                sheet
+                onBack={() => setOrdering(false)}
+                onFinishes={() => {
+                  setOrdering(false);
+                  if (mode === "expert") setExpertPanel("finishes");
+                  else setTab("finishes");
+                }}
+              />
+              <DialogClose asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-3 right-3"
+                  aria-label={t("proof.close")}
+                >
+                  <X aria-hidden />
+                </Button>
+              </DialogClose>
+            </DialogContent>
+          </Dialog>
         </div>
       </header>
 
@@ -202,6 +249,9 @@ function Editor({ data }: { data: DesignData }) {
           viewKey={viewKey}
           onViewChange={setViewKey}
           details={details}
+          finishes={finishesPanel}
+          panel={expertPanel}
+          onPanelChange={setExpertPanel}
           inspector={!aiOpen}
           className="lg:pr-(--ai-sheet-width)"
         />
@@ -255,17 +305,8 @@ function Editor({ data }: { data: DesignData }) {
                 className="w-full [&>*]:flex-1"
               />
             </div>
-            {panel === "finishes" && product && order ? (
-              <FinishesPanel
-                designId={designId}
-                eventId={data.event._id}
-                kind={document.kind}
-                document={document}
-                product={product}
-                order={order}
-                apply={history.apply}
-                track={track}
-              />
+            {panel === "finishes" && finishesPanel ? (
+              finishesPanel
             ) : (
               <div className={cn("flex-1 overflow-y-auto p-5")}>
                 {panel === "details" ? (

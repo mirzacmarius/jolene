@@ -143,8 +143,21 @@ export default {
       "The photo on {place} will print blurry, at {dpi} dpi. Use a larger one.",
     missingArtwork:
       "An image on {place} didn't load here. We check every file before printing.",
+    faces: "The design's sides",
+    asPrinted:
+      "Exactly as it prints. What isn't printed, such as the seal or the envelope, is added in the workshop.",
+    yourOrder: "Your order",
+    count: "{count} pieces",
+    diacritics: "Accented letters",
+    asWritten: "As you typed them",
+    perQuantity: "{price} each × {count}",
+    freeDelivery: "Delivery by courier is free: the order is over {freeFrom}.",
+    missing: "Still to choose on the Finishes tab: {options}.",
+    toFinishes: "Choose on Finishes",
     confirm: "We've read everything and want it printed exactly like this.",
     approve: "Approve the proof",
+    approveAndAdd: "Approve and add to cart",
+    add: "Add to cart",
     approving: "Approving…",
     changed:
       "The design changed while you were reading. Look at it again, then approve.",
@@ -152,7 +165,24 @@ export default {
     earlier:
       "You approved an earlier version on {date}. Approve this one to order it.",
     preparing: "Getting your order ready…",
-    order: "Continue to order",
+    adding: "Adding it to your cart…",
+    unavailable:
+      "This product is no longer for sale. Write to us and we'll take your order.",
+    mismatch:
+      "Your choices no longer match the product. Choose again on the Finishes tab.",
+    inCart: "Your design is in the cart",
+    approvedThen:
+      "You approved the proof on {date}. We print it once you've paid.",
+    checkout: "Complete your order",
+    sameEvent: {
+      wedding: "For the same wedding",
+      christening: "For the same christening",
+    },
+    sameDetails: {
+      wedding: "They already have your names and date.",
+      christening: "They already have the child's name and the date.",
+    },
+    close: "Close",
     notOnline:
       "This item can't be ordered online yet. Write to us and we'll take your order; your proof stays approved.",
     write: "Write to us",

@@ -18,6 +18,10 @@ export type ProductValue = ProductOption["values"][number];
 export type LineOption = OrderedProduct["lineOptions"][number];
 export type Choice = LineOption["choices"][number];
 
+/** Whether one of the product's options is its paper, which the studio calls so. */
+export const isPaper = (option: ProductOption) =>
+  option.values.some((value) => value.look?.kind === "paper");
+
 /**
  * Whether the couple may leave an order option out though none of its
  * choices is free, as the shop's "Nu doresc" does.

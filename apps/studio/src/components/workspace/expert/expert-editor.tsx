@@ -51,6 +51,9 @@ function faceOf(key: string): { piece: string; face: FaceName } | null {
 const NO_PREVIEW: ReadonlyMap<string, LayerChanges> = new Map();
 const NO_LAYERS: readonly Layer[] = [];
 
+/** What expert mode's side panel shows. */
+export type ExpertPanel = "layers" | "details" | "finishes";
+
 /**
  * Expert mode: the face's layers on the left, the canvas in the middle, the
  * inspector on the right. The view switcher stays above the canvas: the
@@ -67,6 +70,9 @@ export function ExpertEditor<K extends string>({
   viewKey,
   onViewChange,
   details,
+  finishes,
+  panel: chosen,
+  onPanelChange,
   inspector: showInspector = true,
   className,
 }: {
@@ -83,6 +89,11 @@ export function ExpertEditor<K extends string>({
   onViewChange: (key: K) => void;
   /** The couple's details panel, as simple mode shows it. */
   details: ReactNode;
+  /** The Finisaje tab, as simple mode shows it, while the shop sells the design. */
+  finishes?: ReactNode;
+  /** What the side panel shows: the face's layers, the details or Finisaje. */
+  panel: ExpertPanel;
+  onPanelChange: (panel: ExpertPanel) => void;
   /** False while the AI designer's sheet stands where the inspector is. */
   inspector?: boolean;
   className?: string;
@@ -101,7 +112,7 @@ export function ExpertEditor<K extends string>({
     [pieceId, face],
   );
 
-  const [panel, setPanel] = useState<"layers" | "details">("layers");
+  const panel = chosen === "finishes" && !finishes ? "layers" : chosen;
   const [guides, setGuides] = useState(true);
   // The selection belongs to the face it was made on.
   const [selected, setSelected] = useState<{ view: string; ids: string[] }>({
@@ -189,16 +200,21 @@ export function ExpertEditor<K extends string>({
             <SegmentedControl
               label={t("expert.panels")}
               value={panel}
-              onValueChange={setPanel}
+              onValueChange={onPanelChange}
               options={[
                 { value: "layers", label: t("expert.layers.title") },
                 { value: "details", label: t("design.details") },
+                ...(finishes
+                  ? [{ value: "finishes" as const, label: t("finishes.tab") }]
+                  : []),
               ]}
               className="w-full [&>*]:flex-1"
             />
           </div>
           {panel === "details" ? (
             <div className="min-h-0 flex-1 overflow-y-auto p-5">{details}</div>
+          ) : panel === "finishes" ? (
+            finishes
           ) : piece && target ? (
             <LayersPanel
               document={document}
