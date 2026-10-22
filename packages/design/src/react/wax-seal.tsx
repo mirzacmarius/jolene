@@ -1,4 +1,4 @@
-import { waxColors } from "../catalog";
+import { waxHex } from "../catalog";
 import { type Hex, luminance, mix } from "../color";
 import type { Accessory } from "../schema";
 import { seededRandom, seedOf } from "./grain";
@@ -83,7 +83,7 @@ export function LifelikeWaxSeal({
   motif?: ResolvedAsset;
 }) {
   const r = seal.diameter / 2;
-  const wax = waxColors[seal.color].color as Hex;
+  const wax = waxHex(seal.color) as Hex;
   // Pale wax shades towards warm brown, not grey; dark wax shows its gloss.
   const pale = luminance(wax) > 0.45;
   const shadow: Hex = pale ? "#6b5a45" : "#000000";
@@ -219,7 +219,7 @@ export function SealGlint({
   prefix: string;
 }) {
   const r = seal.diameter / 2;
-  const pale = luminance(waxColors[seal.color].color as Hex) > 0.45;
+  const pale = luminance(waxHex(seal.color) as Hex) > 0.45;
   const id = `${prefix}-seal-${seal.id}-glint`;
   return (
     <g transform={`translate(${seal.x} ${seal.y})`}>

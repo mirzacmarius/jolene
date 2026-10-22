@@ -140,3 +140,135 @@ describe("catalog.suites and catalog.suite", () => {
     ).toBeNull();
   });
 });
+
+describe("catalog.product", () => {
+  test("gives a template's product with each paper's and choice's price and look", async () => {
+    const t = convexTest(schema, modules);
+    await t.action(internal.init.seed, {});
+
+    const product = await t.query(api.catalog.product, {
+      template: "royal-blue-invitatie",
+    });
+    expect(product).toMatchObject({
+      handle: "invitatie-nunta-royal-blue",
+      price: 600,
+      minQuantity: 30,
+    });
+    expect(product?.options).toEqual([
+      {
+        name: "Carton",
+        values: [
+          {
+            name: "Alb mat 300 gr",
+            surcharge: 0,
+            look: { kind: "paper", stock: "smooth-300", color: null },
+          },
+          {
+            name: "Ivory texturat 300 gr",
+            surcharge: 100,
+            look: { kind: "paper", stock: "textured-300", color: "#f4eddc" },
+          },
+          {
+            name: "Alb sidef 300 gr",
+            surcharge: 150,
+            look: { kind: "paper", stock: "pearl-300", color: null },
+          },
+          {
+            name: "Auriu sidef 300 gr",
+            surcharge: 150,
+            look: { kind: "paper", stock: "pearl-300", color: "#e3cf9a" },
+          },
+          {
+            name: "Crem mat 300 gr",
+            surcharge: 100,
+            look: { kind: "paper", stock: "smooth-300", color: "#f3ead6" },
+          },
+        ],
+      },
+    ]);
+    // Preserved flowers and the couple's text change nothing in a design.
+    expect(
+      Object.fromEntries(
+        (product?.lineOptions ?? []).map((option) => [
+          option.key,
+          option.shows,
+        ]),
+      ),
+    ).toEqual({
+      "culoare-sigiliu": "seal",
+      "culoare-plic": "envelope",
+      panglica: "ribbon",
+      "flori-criogenate": null,
+      "margini-invitatie": "corners",
+      "print-interior-plic": "liner",
+      "text-personalizat": null,
+    });
+    const [seal] = product?.lineOptions ?? [];
+    expect(seal?.choices.slice(0, 2)).toEqual([
+      { label: "Fără sigiliu", price: 0, look: { kind: "seal", color: null } },
+      { label: "Alb", price: 150, look: { kind: "seal", color: "#f4f1ea" } },
+    ]);
+    expect(
+      product?.lineOptions.find((option) => option.key === "flori-criogenate")
+        ?.choices,
+    ).toEqual([
+      { label: "Nu doresc", price: 0, look: null },
+      { label: "Flori criogenate", price: 150, look: null },
+    ]);
+  });
+
+  test("shows the team's look for a choice over jolene.ro's", async () => {
+    const t = convexTest(schema, modules);
+    await t.action(internal.init.seed, {});
+    await t.run(async (ctx) => {
+      const seal = await ctx.db
+        .query("lineOptions")
+        .withIndex("by_handle", (q) => q.eq("handle", "culoare-sigiliu"))
+        .unique();
+      if (!seal) throw new Error("culoare-sigiliu is an order option");
+      await ctx.db.patch("lineOptions", seal._id, {
+        choices: [
+          { label: "Fără sigiliu", price: 0 },
+          {
+            label: "Bronz",
+            price: 150,
+            look: { kind: "seal", color: "#7a4a1b" },
+          },
+          { label: "Sidef", price: 150, look: null },
+        ],
+      });
+    });
+
+    const product = await t.query(api.catalog.product, {
+      template: "royal-blue-invitatie",
+    });
+    expect(product?.lineOptions[0]?.choices).toEqual([
+      { label: "Fără sigiliu", price: 0, look: { kind: "seal", color: null } },
+      { label: "Bronz", price: 150, look: { kind: "seal", color: "#7a4a1b" } },
+      { label: "Sidef", price: 150, look: null },
+    ]);
+  });
+
+  test("gives nothing for a template that isn't for sale", async () => {
+    const t = convexTest(schema, modules);
+    await t.action(internal.init.seed, {});
+    await t.run(async (ctx) => {
+      const invitation = await ctx.db
+        .query("products")
+        .withIndex("by_handle", (q) =>
+          q.eq("handle", "invitatie-nunta-royal-blue"),
+        )
+        .unique();
+      if (!invitation) throw new Error("Royal Blue's invitation is for sale");
+      await ctx.db.patch("products", invitation._id, { published: false });
+    });
+
+    for (const template of [
+      "royal-blue-invitatie",
+      // Geometric Flowers' menu isn't one of jolene.ro's products.
+      "geometric-flowers-meniu",
+      "nowhere",
+    ])
+      expect(await t.query(api.catalog.product, { template })).toBeNull();
+  });
+});

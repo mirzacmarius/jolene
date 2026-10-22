@@ -46,6 +46,9 @@ export function LineOptionList() {
                     {t("workshop.lineOptions.edited")}
                   </Badge>
                 ) : null}
+                {option.shows !== null ? (
+                  <Badge>{t("workshop.lineOptions.shown")}</Badge>
+                ) : null}
               </span>
               <span className="line-clamp-2 text-sm text-muted-foreground">
                 {asks(option)}

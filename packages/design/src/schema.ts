@@ -285,7 +285,8 @@ export const accessorySchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("wax-seal"),
     id: idSchema,
-    color: z.enum(waxColorIds),
+    /** One of the catalog's waxes, or a colour of its own (waxHex). */
+    color: z.union([z.enum(waxColorIds), hexSchema]),
     /** Initials pressed into the wax, or the asset key of a motif. */
     motif: z.discriminatedUnion("kind", [
       /** May hold field tokens, such as {{monogram}}. */

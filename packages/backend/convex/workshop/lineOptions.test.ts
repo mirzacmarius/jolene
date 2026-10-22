@@ -111,7 +111,11 @@ describe("the workshop's order options", () => {
       label: "Culoare sigiliu",
       kind: "select",
       required: false,
+      shows: "seal",
     });
+    expect(
+      options.find((option) => option.handle === "flori-criogenate")?.shows,
+    ).toBeNull();
     // Its prices in bani, as the shop keeps them.
     expect(seal?.choices.slice(0, 2)).toEqual([
       { label: "Fără sigiliu", price: 0 },
@@ -240,6 +244,50 @@ describe("the workshop's order options", () => {
     ).toEqual(option);
   });
 
+  test("gives each choice the look the team sets, which the studio shows", async () => {
+    const { t, workshop } = await setUp();
+    const shown = await asShown(workshop, "culoare-sigiliu");
+    // jolene.ro's choices show their wax until the team changes it.
+    expect(shown.choices.slice(0, 3)).toEqual([
+      { label: "Fără sigiliu", price: 0, look: { kind: "seal", color: null } },
+      { label: "Alb", price: 150, look: { kind: "seal", color: "#f4f1ea" } },
+      { label: "Bronz", price: 150, look: { kind: "seal", color: "#8a5a2b" } },
+    ]);
+    await workshop.mutation(api.workshop.lineOptions.save, {
+      ...shown,
+      choices: [
+        ...shown.choices.map((choice) =>
+          choice.label === "Bronz"
+            ? { ...choice, look: { kind: "seal" as const, color: "#7A4A1B" } }
+            : choice.label === "Alb"
+              ? { ...choice, look: null }
+              : choice,
+        ),
+        { label: "Lavandă", price: 150 },
+      ],
+    });
+
+    const option = await workshop.query(api.workshop.lineOptions.option, {
+      handle: "culoare-sigiliu",
+    });
+    expect(option?.choices.slice(0, 3)).toEqual([
+      { label: "Fără sigiliu", price: 0, look: { kind: "seal", color: null } },
+      // Choosing it leaves a design's seal as it is.
+      { label: "Alb", price: 150, look: null },
+      { label: "Bronz", price: 150, look: { kind: "seal", color: "#7a4a1b" } },
+    ]);
+    // A new choice shows nothing until the team gives it a look.
+    expect(option?.choices.at(-1)).toEqual({
+      label: "Lavandă",
+      price: 150,
+      look: null,
+    });
+    const product = await t.query(api.catalog.product, {
+      template: "royal-blue-invitatie",
+    });
+    expect(product?.lineOptions[0]?.choices).toEqual(option?.choices ?? []);
+  });
+
   test("changes what a written one asks, and whether it must be answered", async () => {
     const { t, workshop } = await setUp();
     const shown = await asShown(workshop, "text-personalizat-5");
@@ -304,18 +352,21 @@ describe("the workshop's order options", () => {
 
   test("leaves one the seed's when saving it as it is", async () => {
     const { t, workshop } = await setUp();
-    await workshop.mutation(
-      api.workshop.lineOptions.save,
-      await asShown(workshop, "panglica-5"),
-    );
-    const stored = await t.run((ctx) =>
-      ctx.db
-        .query("lineOptions")
-        .withIndex("by_handle", (q) => q.eq("handle", "panglica-5"))
-        .unique(),
-    );
-    expect(stored?.editedAt).toBeUndefined();
-    expect(stored?.editedBy).toBeUndefined();
+    // One whose choices show in the studio, and one asked in words.
+    for (const handle of ["panglica-5", "flori-criogenate"]) {
+      await workshop.mutation(
+        api.workshop.lineOptions.save,
+        await asShown(workshop, handle),
+      );
+      const stored = await t.run((ctx) =>
+        ctx.db
+          .query("lineOptions")
+          .withIndex("by_handle", (q) => q.eq("handle", handle))
+          .unique(),
+      );
+      expect(stored?.editedAt).toBeUndefined();
+      expect(stored?.editedBy).toBeUndefined();
+    }
   });
 
   test("refuses what an option can't have", async () => {
@@ -344,6 +395,21 @@ describe("the workshop's order options", () => {
       { choices: [none, { ...white, price: -100 }, ...rest] },
       { choices: [none, { ...white, price: 150.5 }, ...rest] },
       { choices: [none, { ...white, price: 10_000_001 }, ...rest] },
+      // A look of something else than a seal, or a colour that isn't one.
+      {
+        choices: [
+          { ...none, look: { kind: "envelope" as const, color: "#ffffff" } },
+          white,
+          ...rest,
+        ],
+      },
+      {
+        choices: [
+          none,
+          { ...white, look: { kind: "seal" as const, color: "alb" } },
+          ...rest,
+        ],
+      },
     ])
       await expect(
         workshop.mutation(api.workshop.lineOptions.save, {
@@ -357,6 +423,17 @@ describe("the workshop's order options", () => {
         handle: "nowhere",
       }),
     ).rejects.toThrow("not-found");
+    // Preserved flowers change nothing in a design.
+    const flowers = await asShown(workshop, "flori-criogenate");
+    await expect(
+      workshop.mutation(api.workshop.lineOptions.save, {
+        ...flowers,
+        choices: flowers.choices.map((choice) => ({
+          ...choice,
+          look: { kind: "seal" as const, color: null },
+        })),
+      }),
+    ).rejects.toThrow("invalid-input");
     expect(await asShown(workshop, "culoare-sigiliu")).toEqual(shown);
   });
 

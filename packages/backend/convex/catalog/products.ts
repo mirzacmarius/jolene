@@ -3,6 +3,9 @@ import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import { photoValidator, photoView } from "../shop/photos";
 import { loadProduct, type PricedProduct } from "../shop/pricing";
+import { lineOptionKindValidator } from "../shop/validators";
+import { choiceLookKindValidator, lookValidator } from "../utils/validators";
+import { choiceLook, optionLook, paperLook } from "./looks";
 
 /**
  * A template's product as the studio's collections show it: what one costs
@@ -70,5 +73,86 @@ export async function productSummary(
     photos: await Promise.all(
       product.images.slice(0, photos).map((image) => photoView(ctx, image)),
     ),
+  };
+}
+
+/** How the studio shows a paper or a choice; null when it shows nothing. */
+const shownValidator = v.union(lookValidator, v.null());
+
+/**
+ * A template's product as the studio asks its order: what one costs, its
+ * minimum order, its papers and the order options its line asks, each paper
+ * and choice with what it adds, in bani, and its look (ADR 0021).
+ */
+export const orderedProductValidator = v.object({
+  handle: v.string(),
+  title: v.string(),
+  /** Each one, before its paper's surcharge and its paid choices. */
+  price: v.number(),
+  compareAtPrice: v.optional(v.number()),
+  minQuantity: v.optional(v.number()),
+  /** Its papers: the couple picks one value of each. */
+  options: v.array(
+    v.object({
+      name: v.string(),
+      values: v.array(
+        v.object({
+          name: v.string(),
+          surcharge: v.number(),
+          look: shownValidator,
+        }),
+      ),
+    }),
+  ),
+  lineOptions: v.array(
+    v.object({
+      key: v.string(),
+      label: v.string(),
+      hint: v.optional(v.string()),
+      kind: lineOptionKindValidator,
+      required: v.boolean(),
+      /** What its choices change in a design; null for one asked in words. */
+      shows: v.union(choiceLookKindValidator, v.null()),
+      choices: v.array(
+        v.object({
+          label: v.string(),
+          price: v.number(),
+          look: shownValidator,
+        }),
+      ),
+    }),
+  ),
+});
+
+/** A product as the studio asks its order, summed up above. */
+export async function orderedProduct(ctx: QueryCtx, product: Doc<"products">) {
+  const { lineOptions } = await loadProduct(ctx, product);
+  return {
+    handle: product.handle,
+    title: product.title,
+    price: product.price,
+    compareAtPrice: product.compareAtPrice,
+    minQuantity: product.minQuantity,
+    options: product.options.map(({ name, values }) => ({
+      name,
+      values: values.map((value) => ({
+        name: value.name,
+        surcharge: value.surcharge,
+        look: paperLook(value.name),
+      })),
+    })),
+    lineOptions: lineOptions.map((option) => ({
+      key: option.key,
+      label: option.label,
+      hint: option.hint,
+      kind: option.kind,
+      required: option.required,
+      shows: optionLook(option.key),
+      choices: option.choices.map((choice) => ({
+        label: choice.label,
+        price: choice.price,
+        look: choiceLook(option.key, choice),
+      })),
+    })),
   };
 }
