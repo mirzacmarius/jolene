@@ -29,12 +29,15 @@ export default {
       "Approve the proof online; Jolene's workshop prints, assembles and sends it all to your door.",
     collectionsTitle: "Collections",
     collectionsLead:
-      "For weddings and christenings: each collection brings an invitation together with everything that goes with it.",
+      "For weddings and christenings: each collection brings an invitation together with everything that goes with it. The photos are from Jolene's workshop; in the corner, the design with your names.",
     occasion: "Occasion",
     allOccasions: "All",
     style: "Style",
     personalise: "Personalise",
     viewCollection: "See the collection",
+    yourNames: "With your names",
+    priceFrom: "{item}: from {price} each",
+    price: "{item}: {price} each",
     pieces: "{count} pieces",
     empty: "Collections appear here once Jolene's catalogue is imported.",
     previewInvitation: "The Forest invitation, a painted forest on its front",
@@ -50,8 +53,31 @@ export default {
   suite: {
     back: "All collections",
     items: "In this collection",
+    itemsLead:
+      "Each one is personalised and ordered on its own, with the same names and date.",
     size: "{width} × {height} mm",
+    sizeWithEnvelope: "{width} × {height} mm, with an envelope",
     notFound: "There's no such collection.",
+    occasion: {
+      wedding: "Wedding collection",
+      christening: "Christening collection",
+    },
+    showing: "What the picture shows",
+    real: "In real life",
+    yourNames: "With your names",
+    photo: "Photo",
+    design: "Design",
+    photos: "The collection's photos",
+    photoOf: "{index} of {count}",
+    photosNote:
+      "The photos are from Jolene's workshop; the last picture is the design, with your names.",
+    from: "from {price} each",
+    each: "{price} each",
+    minimum: "minimum order {count}",
+    seeFirst: "See the design with your names and date before you pay.",
+    arrives: "It reaches you within 7 working days of payment.",
+    delivery:
+      "Courier {courier}, free from {freeFrom}. Free pickup from the workshop in Iași.",
   },
   design: {
     back: "Back to {suite}",

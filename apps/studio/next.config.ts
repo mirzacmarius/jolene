@@ -1,6 +1,7 @@
 import { withMicrofrontends } from "@vercel/microfrontends/next/config";
 import type { NextConfig } from "next";
 import "./src/env";
+import { photoHosts } from "./src/lib/photos";
 
 const nextConfig: NextConfig = {
   // Each page is prerendered into a static shell per language, and a link
@@ -8,6 +9,15 @@ const nextConfig: NextConfig = {
   // on the client.
   cacheComponents: true,
   partialPrefetching: true,
+  // The products' photos, which the collections show first, are up to 2048
+  // pixels a side; the optimizer sends each screen a size that fits it.
+  images: {
+    remotePatterns: photoHosts.map((hostname) => ({
+      protocol: "https",
+      hostname,
+    })),
+    minimumCacheTTL: 31536000,
+  },
   // Reached on its own, without the shop around it, the studio's root is
   // outside the studio; send it there rather than to a 404.
   async redirects() {

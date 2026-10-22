@@ -27,6 +27,7 @@ import type * as ai_validators from "../ai/validators.js";
 import type * as auth from "../auth.js";
 import type * as cart from "../cart.js";
 import type * as catalog from "../catalog.js";
+import type * as catalog_products from "../catalog/products.js";
 import type * as catalog_save from "../catalog/save.js";
 import type * as checkout from "../checkout.js";
 import type * as checkout_delivery from "../checkout/delivery.js";
@@ -120,6 +121,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   cart: typeof cart;
   catalog: typeof catalog;
+  "catalog/products": typeof catalog_products;
   "catalog/save": typeof catalog_save;
   checkout: typeof checkout;
   "checkout/delivery": typeof checkout_delivery;
