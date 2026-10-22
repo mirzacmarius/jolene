@@ -98,6 +98,10 @@ export default {
     seal: "Wax seal",
     language: "Written in",
     order: "Order",
+    starting: "Preparing your design…",
+    unknownItem:
+      "We can't find what you chose in the studio. Choose from the collections.",
+    retry: "Try again",
     ai: "AI designer",
     notFound: "This design doesn't exist, or it was saved in another browser.",
     tooLong: "That's longer than this field holds.",

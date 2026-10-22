@@ -23,6 +23,8 @@ export interface ProductDetails extends ProductCard {
   lineOptions: LineOption[];
   options: ProductOption[];
   tags: string[];
+  /** The studio's template it's designed from: its page leads into the studio, where it's ordered (ADR 0021). */
+  template?: string;
 }
 
 /** What a product is made of, such as its paper: the couple picks one value. */

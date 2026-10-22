@@ -5,6 +5,7 @@ import {
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { type QueryCtx, query } from "./_generated/server";
+import { templateOf } from "./catalog/products";
 import { photoValidator, photoView } from "./shop/photos";
 import { loadProduct } from "./shop/pricing";
 import { lineOptionValidator, productOptionValidator } from "./shop/validators";
@@ -49,6 +50,8 @@ const productValidator = v.object({
   tags: v.array(v.string()),
   /** Bought for one of a couple's events, which its page shows. */
   forEvent: v.boolean(),
+  /** The studio's template a couple designs it from, and orders it through (ADR 0021). */
+  template: v.optional(v.string()),
 });
 
 /** The orders a list can come in: Jolene's, or by price. */
@@ -101,7 +104,8 @@ const feeView = ({ key, label, description, price }: Doc<"fees">) => ({
 
 /**
  * A product on sale, with its photos, its papers, the order options its line
- * asks and the fees an order of it can carry; or null. Prices are in bani.
+ * asks, the fees an order of it can carry and the studio's template it's
+ * designed from, if any; or null. Prices are in bani.
  */
 export const product = query({
   args: { handle: v.string() },
@@ -112,18 +116,20 @@ export const product = query({
       .withIndex("by_handle", (q) => q.eq("handle", handle))
       .unique();
     if (!product?.published) return null;
-    const [images, { lineOptions, fees }, categories] = await Promise.all([
-      Promise.all(product.images.map((image) => photoView(ctx, image))),
-      loadProduct(ctx, product),
-      Promise.all(
-        product.categories.map((category) =>
-          ctx.db
-            .query("categories")
-            .withIndex("by_handle", (q) => q.eq("handle", category))
-            .unique(),
+    const [images, { lineOptions, fees }, categories, template] =
+      await Promise.all([
+        Promise.all(product.images.map((image) => photoView(ctx, image))),
+        loadProduct(ctx, product),
+        Promise.all(
+          product.categories.map((category) =>
+            ctx.db
+              .query("categories")
+              .withIndex("by_handle", (q) => q.eq("handle", category))
+              .unique(),
+          ),
         ),
-      ),
-    ]);
+        templateOf(ctx, product.handle),
+      ]);
     return {
       handle: product.handle,
       title: product.title,
@@ -140,6 +146,7 @@ export const product = query({
       ),
       tags: product.tags,
       forEvent: product.forEvent === true,
+      template: template?.slug,
     };
   },
 });
