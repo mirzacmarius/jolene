@@ -6,37 +6,37 @@ import {
   type Operation,
   type Piece,
   type PieceShape,
-  paletteTokens,
   type StockId,
   stocks,
 } from "@jolene/design";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { StylePanel } from "../../style-panel";
-import {
-  ColorField,
-  HexField,
-  NumberField,
-  Row,
-  Section,
-  Select,
-} from "./fields";
+import { ColorField, NumberField, Row, Section, Select } from "./fields";
 
 type ShapeKind = PieceShape["kind"];
 
 /**
- * With nothing selected: the piece and the face themselves (the paper, its
- * colour, the printed background, the cut), the palette's five colours, and
- * simple mode's style choices for the whole design.
+ * With nothing selected: the piece and the face themselves (the paper and
+ * its colour, the printed background, the cut, the corners), then simple
+ * mode's style choices for the whole design, with each of the palette's
+ * five colours. What the Finisaje tab picks for a design the shop sells,
+ * such as its paper, only the Finisaje tab asks (ADR 0021).
  */
 export function FaceSection({
   document,
   piece,
   face,
+  ordered,
+  orderedCorners,
   apply,
 }: {
   document: DesignDocument;
   piece: Piece;
   face: FaceName;
+  /** The shop sells the design: the Finisaje tab picks its paper and wax. */
+  ordered: boolean;
+  /** Its product's order options pick the corners too, on the Finisaje tab. */
+  orderedCorners: boolean;
   apply: (operations: Operation[]) => void;
 }) {
   const t = useI18n();
@@ -65,26 +65,30 @@ export function FaceSection({
         <p className="text-[12px] leading-relaxed text-muted-foreground">
           {t("expert.face.lead")}
         </p>
-        <Row label={t("expert.face.stock")} htmlFor={id("stock")}>
-          <Select
-            id={id("stock")}
-            value={piece.stock}
-            options={(Object.keys(stocks) as StockId[]).map((stock) => ({
-              value: stock,
-              label: stocks[stock].labels[locale],
-            }))}
-            onChange={(stock) => update({ stock })}
-          />
-        </Row>
-        <Row label={t("expert.face.paperColor")} htmlFor={id("paper")}>
-          <ColorField
-            id={id("paper")}
-            value={piece.paper}
-            palette={document.theme.palette}
-            noneLabel={t("expert.face.paperOwn")}
-            onChange={(paper) => update({ paper })}
-          />
-        </Row>
+        {ordered ? null : (
+          <>
+            <Row label={t("expert.face.stock")} htmlFor={id("stock")}>
+              <Select
+                id={id("stock")}
+                value={piece.stock}
+                options={(Object.keys(stocks) as StockId[]).map((stock) => ({
+                  value: stock,
+                  label: stocks[stock].labels[locale],
+                }))}
+                onChange={(stock) => update({ stock })}
+              />
+            </Row>
+            <Row label={t("expert.face.paperColor")} htmlFor={id("paper")}>
+              <ColorField
+                id={id("paper")}
+                value={piece.paper}
+                palette={document.theme.palette}
+                noneLabel={t("expert.face.paperOwn")}
+                onChange={(paper) => update({ paper })}
+              />
+            </Row>
+          </>
+        )}
         <Row label={t("expert.face.background")} htmlFor={id("background")}>
           <ColorField
             id={id("background")}
@@ -110,7 +114,7 @@ export function FaceSection({
             />
           )}
         </Row>
-        {shape.kind === "rect" ? (
+        {shape.kind === "rect" && !orderedCorners ? (
           <Row label={t("expert.face.radius")} htmlFor={id("radius")}>
             <NumberField
               id={id("radius")}
@@ -139,26 +143,8 @@ export function FaceSection({
         ) : null}
       </Section>
 
-      <Section title={t("expert.face.palette")}>
-        {paletteTokens.map((token) => (
-          <Row
-            key={token}
-            label={t(`expert.palette.${token}`)}
-            htmlFor={id(`palette-${token}`)}
-          >
-            <HexField
-              id={id(`palette-${token}`)}
-              value={document.theme.palette[token]}
-              onChange={(color) =>
-                apply([{ op: "setPalette", palette: { [token]: color } }])
-              }
-            />
-          </Row>
-        ))}
-      </Section>
-
       <div className="px-4 py-5">
-        <StylePanel document={document} apply={apply} />
+        <StylePanel document={document} apply={apply} ordered={ordered} face />
       </div>
     </>
   );

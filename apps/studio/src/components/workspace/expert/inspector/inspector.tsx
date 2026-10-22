@@ -35,6 +35,8 @@ export const Inspector = memo(function Inspector({
   document,
   piece,
   face,
+  ordered,
+  orderedCorners,
   selection,
   onSelect,
   fields,
@@ -47,6 +49,10 @@ export const Inspector = memo(function Inspector({
   document: DesignDocument;
   piece: Piece;
   face: FaceName;
+  /** The shop sells the design: the Finisaje tab picks its paper and wax. */
+  ordered: boolean;
+  /** Its product's order options pick the corners too, on the Finisaje tab. */
+  orderedCorners: boolean;
   selection: readonly string[];
   onSelect: (ids: string[]) => void;
   fields: Fields;
@@ -70,6 +76,8 @@ export const Inspector = memo(function Inspector({
         document={document}
         piece={piece}
         face={face}
+        ordered={ordered}
+        orderedCorners={orderedCorners}
         apply={apply}
       />
     );

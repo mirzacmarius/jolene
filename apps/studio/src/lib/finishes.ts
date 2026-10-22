@@ -86,6 +86,10 @@ export const chosenOptions = (product: OrderedProduct) =>
     (option) => option.kind === "select" && option.choices.length > 0,
   );
 
+/** Whether one of them picks the corners, as Margini invitație does. */
+export const picksCorners = (product: OrderedProduct) =>
+  chosenOptions(product).some((option) => option.shows === "corners");
+
 /**
  * What the couple orders of their design: each option's value and each
  * order option's choice, how many, and what one and all of them cost, in

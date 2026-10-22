@@ -71,6 +71,8 @@ export function ExpertEditor<K extends string>({
   onViewChange,
   details,
   finishes,
+  ordered,
+  orderedCorners,
   panel: chosen,
   onPanelChange,
   inspector: showInspector = true,
@@ -91,6 +93,13 @@ export function ExpertEditor<K extends string>({
   details: ReactNode;
   /** The Finisaje tab, as simple mode shows it, while the shop sells the design. */
   finishes?: ReactNode;
+  /**
+   * The shop sells the design, or may: the Finisaje tab picks its paper and
+   * wax, which the inspector doesn't ask again.
+   */
+  ordered: boolean;
+  /** Its product's order options pick the corners too, on the Finisaje tab. */
+  orderedCorners: boolean;
   /** What the side panel shows: the face's layers, the details or Finisaje. */
   panel: ExpertPanel;
   onPanelChange: (panel: ExpertPanel) => void;
@@ -349,6 +358,8 @@ export function ExpertEditor<K extends string>({
               document={document}
               piece={piece}
               face={face}
+              ordered={ordered}
+              orderedCorners={orderedCorners}
               selection={selection}
               onSelect={select}
               fields={fields}
@@ -360,7 +371,11 @@ export function ExpertEditor<K extends string>({
             />
           ) : (
             <div className="p-5">
-              <StylePanel document={document} apply={history.apply} />
+              <StylePanel
+                document={document}
+                apply={history.apply}
+                ordered={ordered}
+              />
             </div>
           )}
         </aside>

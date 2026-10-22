@@ -4,7 +4,13 @@ import {
   eucaliptMenu,
   parseDocument,
 } from "@jolene/design";
-import { guestCount, type OrderedProduct, orderOf } from "./finishes";
+import {
+  guestCount,
+  type LineOption,
+  type OrderedProduct,
+  orderOf,
+  picksCorners,
+} from "./finishes";
 
 // A cotton card under a vellum band closed with a sage seal, in an envelope.
 const invitation = parseDocument(eucaliptInvitation);
@@ -207,6 +213,39 @@ describe("orderOf", () => {
       "flori-criogenate": "Nu doresc",
     });
     expect(order.quantity).toBe(30);
+  });
+});
+
+describe("picksCorners", () => {
+  const margins: LineOption = {
+    key: "margini-invitatie",
+    label: "Margini invitație",
+    hint: undefined,
+    kind: "select",
+    required: false,
+    shows: "corners",
+    choices: [
+      {
+        label: "Margini drepte",
+        price: 0,
+        look: { kind: "corners", radius: 0 },
+      },
+      {
+        label: "Colțuri rotunjite",
+        price: 100,
+        look: { kind: "corners", radius: 4 },
+      },
+    ],
+  };
+
+  test("only an order option that shows the corners picks them", () => {
+    expect(picksCorners(product)).toBe(false);
+    expect(
+      picksCorners({
+        ...product,
+        lineOptions: [...product.lineOptions, margins],
+      }),
+    ).toBe(true);
   });
 });
 
