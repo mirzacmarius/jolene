@@ -72,14 +72,21 @@ export async function loadProduct(
   };
 }
 
+/** What a product's price reads of it, as the cart and the studio have it. */
+export type Pricing = {
+  product: Pick<Doc<"products">, "price" | "compareAtPrice" | "options">;
+  lineOptions: Pick<Doc<"lineOptions">, "key" | "kind" | "choices">[];
+};
+
 /**
  * What one of a line costs, in bani: the product's price, its options'
  * surcharges and its paid choices. Values and choices that aren't the
- * product's add nothing; `problems` names them.
+ * product's add nothing; `problems` names them. The studio prices a
+ * design's picks with it too (ADR 0021).
  */
 export function unitPrice(
-  { product, lineOptions }: PricedProduct,
-  line: LineChoices,
+  { product, lineOptions }: Pricing,
+  line: Pick<LineChoices, "options" | "answers">,
 ) {
   const surcharges = product.options.reduce((sum, option) => {
     const picked = line.options.find((o) => o.name === option.name);

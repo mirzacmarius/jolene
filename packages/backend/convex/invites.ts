@@ -266,6 +266,32 @@ export const dashboard = query({
 });
 
 /**
+ * How big the event's guest list is, for the studio to say beside how many
+ * invitations the couple orders: its families and the people in them. Null
+ * without a guest list, or for anyone who doesn't manage the event.
+ */
+export const listSize = query({
+  args: { eventId: v.id("events") },
+  returns: v.union(
+    v.object({ households: v.number(), seats: v.number() }),
+    v.null(),
+  ),
+  handler: async (ctx, { eventId }) => {
+    const user = await viewerAccount(ctx);
+    const event = await ctx.db.get("events", eventId);
+    if (!user || !event || !(await eventRole(ctx, event, user._id)))
+      return null;
+    const invite = await inviteOf(ctx, event._id);
+    const households = invite ? await householdsOf(ctx, invite) : [];
+    if (households.length === 0) return null;
+    return {
+      households: households.length,
+      seats: households.reduce((sum, household) => sum + household.seats, 0),
+    };
+  },
+});
+
+/**
  * The event's invitation designs as the couple's page draws them, and the
  * version guests see. A partner sees them here, though the designs
  * themselves open only for the event's owner.

@@ -20,6 +20,7 @@ import { Check, ChevronLeft, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { orderOf } from "@/lib/finishes";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 import { AiDesigner } from "../ai/ai-designer";
 import type { PreviewView } from "../design/design-preview";
@@ -27,11 +28,13 @@ import { usePreviewMode } from "../design/preview-mode";
 import { PreviewStage } from "../design/preview-stage";
 import { GuidedStart } from "../simple/guided-start";
 import { SuiteStrip } from "../simple/suite-strip";
+import { usePrice } from "../suite/use-price";
 import { ExpertEditor } from "./expert/expert-editor";
 import { ModeSwitch } from "./expert/mode-switch";
 import { useHistory } from "./expert/use-history";
 import { useDesignMode } from "./expert/use-mode";
 import { FieldsPanel } from "./fields-panel";
+import { FinishesPanel } from "./finishes-panel";
 import { StylePanel } from "./style-panel";
 import { useApply, useFieldDrafts, useSaving } from "./use-design";
 
@@ -62,6 +65,7 @@ type ViewKey = "assembly" | `${string}:${FaceName}`;
 function Editor({ data }: { data: DesignData }) {
   const t = useI18n();
   const locale = useCurrentLocale();
+  const price = usePrice();
   const document = data.design.document as DesignDocument;
   const designId = data.design._id;
   const { saving, track } = useSaving();
@@ -75,7 +79,7 @@ function Editor({ data }: { data: DesignData }) {
     saved: data.event.fields,
     track,
   });
-  const [tab, setTab] = useState<"details" | "style">("details");
+  const [tab, setTab] = useState<"details" | "style" | "finishes">("details");
   const [viewKey, setViewKey] = useState<ViewKey>("assembly");
   const [guides, setGuides] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
@@ -86,6 +90,18 @@ function Editor({ data }: { data: DesignData }) {
     [document.occasion, document.language, values],
   );
   const used = useMemo(() => fieldKeysUsed(document), [document]);
+
+  // The product the design is ordered as, while the shop sells it: its picks
+  // are on the Finisaje tab, and what they come to on the Order button.
+  const product = useQuery(api.catalog.product, {
+    template: data.template.slug,
+  });
+  const finishes = data.design.finishes;
+  const order = useMemo(
+    () => (product ? orderOf(document, product, finishes) : null),
+    [document, product, finishes],
+  );
+  const panel = tab === "finishes" && !product ? "details" : tab;
 
   const views = [
     { value: "assembly" as ViewKey, label: t("design.together") },
@@ -158,6 +174,17 @@ function Editor({ data }: { data: DesignData }) {
           <Button asChild size="sm">
             <Link href={`/studio/design/${designId}/bun-de-tipar`}>
               {t("design.order")}
+              {order ? (
+                <>
+                  <span
+                    className="hidden h-4 w-px bg-primary-foreground/35 sm:block"
+                    aria-hidden
+                  />
+                  <span className="hidden font-semibold sm:inline">
+                    {price(order.total)}
+                  </span>
+                </>
+              ) : null}
             </Link>
           </Button>
         </div>
@@ -216,24 +243,44 @@ function Editor({ data }: { data: DesignData }) {
             <div className="border-b border-border/70 p-3">
               <SegmentedControl
                 label={t("design.details")}
-                value={tab}
+                value={panel}
                 onValueChange={setTab}
                 options={[
                   { value: "details", label: t("design.details") },
                   { value: "style", label: t("design.style") },
+                  ...(product
+                    ? [{ value: "finishes" as const, label: t("finishes.tab") }]
+                    : []),
                 ]}
                 className="w-full [&>*]:flex-1"
               />
             </div>
-            <div className={cn("flex-1 overflow-y-auto p-5")}>
-              {tab === "details" ? (
-                <GuidedStart data={data} values={values} onChange={update}>
-                  {details}
-                </GuidedStart>
-              ) : (
-                <StylePanel document={document} apply={history.apply} />
-              )}
-            </div>
+            {panel === "finishes" && product && order ? (
+              <FinishesPanel
+                designId={designId}
+                eventId={data.event._id}
+                kind={document.kind}
+                document={document}
+                product={product}
+                order={order}
+                apply={history.apply}
+                track={track}
+              />
+            ) : (
+              <div className={cn("flex-1 overflow-y-auto p-5")}>
+                {panel === "details" ? (
+                  <GuidedStart data={data} values={values} onChange={update}>
+                    {details}
+                  </GuidedStart>
+                ) : (
+                  <StylePanel
+                    document={document}
+                    apply={history.apply}
+                    ordered={product !== null}
+                  />
+                )}
+              </div>
+            )}
           </aside>
         </div>
       )}

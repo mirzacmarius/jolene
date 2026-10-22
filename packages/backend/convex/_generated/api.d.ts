@@ -38,6 +38,7 @@ import type * as checkout_visitor from "../checkout/visitor.js";
 import type * as crons from "../crons.js";
 import type * as designs from "../designs.js";
 import type * as designs_apply from "../designs/apply.js";
+import type * as designs_finishes from "../designs/finishes.js";
 import type * as designs_versions from "../designs/versions.js";
 import type * as emails from "../emails.js";
 import type * as events from "../events.js";
@@ -133,6 +134,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   designs: typeof designs;
   "designs/apply": typeof designs_apply;
+  "designs/finishes": typeof designs_finishes;
   "designs/versions": typeof designs_versions;
   emails: typeof emails;
   events: typeof events;

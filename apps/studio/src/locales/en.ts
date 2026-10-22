@@ -105,6 +105,22 @@ export default {
     badTime: "Write the time as 18:30.",
     invalid: "That change didn't fit the design.",
   },
+  finishes: {
+    tab: "Finishes",
+    included: "included",
+    extraEach: "+{price} each",
+    each: "{price} each",
+    choose: "To choose",
+    none: "None",
+    quantity: "Quantity",
+    fewer: "Fewer",
+    more: "More",
+    minimum: "Minimum {count}.",
+    families: "Families on your guest list: {count}.",
+    people: "People on your guest list: {count}.",
+    elsewhere:
+      "Choose the paper, the wax seal and the rest of your order on the Finishes tab, at the shop's prices.",
+  },
   proof: {
     title: "Proof",
     back: "Back to the design",

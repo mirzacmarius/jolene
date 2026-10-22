@@ -51,14 +51,19 @@ type WaxSeal = Extract<Accessory, { kind: "wax-seal" }>;
 
 /**
  * Simple mode's choices: a palette, the finish of the names, the paper and
- * the wax. Each is one click, and each is an operation on the design.
+ * the wax. Each is one click, and each is an operation on the design. A
+ * design the shop sells has its paper and wax picked on the Finisaje tab
+ * instead, from what its product offers (ADR 0021).
  */
 export function StylePanel({
   document,
   apply,
+  ordered = false,
 }: {
   document: DesignDocument;
   apply: (operations: Operation[]) => void;
+  /** The shop sells the design: the Finisaje tab picks its paper and wax. */
+  ordered?: boolean;
 }) {
   const t = useI18n();
   const locale = useCurrentLocale();
@@ -85,7 +90,7 @@ export function StylePanel({
               onSelect={() =>
                 apply([
                   { op: "setPalette", palette: preset.palette },
-                  ...(seal
+                  ...(seal && !ordered
                     ? [
                         {
                           op: "setAccessory" as const,
@@ -136,7 +141,7 @@ export function StylePanel({
         </Section>
       ) : null}
 
-      {card ? (
+      {card && !ordered ? (
         <Section title={t("design.paper")}>
           <div className="grid gap-2">
             {cardStocks.map((stock) => {
@@ -171,7 +176,7 @@ export function StylePanel({
         </Section>
       ) : null}
 
-      {seal ? (
+      {seal && !ordered ? (
         <Section title={t("design.seal")}>
           <div className="grid grid-cols-5 gap-x-1 gap-y-4">
             {(Object.keys(waxColors) as WaxColor[]).map((color) => (
@@ -194,6 +199,12 @@ export function StylePanel({
             ))}
           </div>
         </Section>
+      ) : null}
+
+      {ordered ? (
+        <p className="text-sm text-muted-foreground">
+          {t("finishes.elsewhere")}
+        </p>
       ) : null}
     </div>
   );

@@ -106,6 +106,22 @@ export default {
     badTime: "Scrieți ora ca 18:30.",
     invalid: "Modificarea nu s-a potrivit cu designul.",
   },
+  finishes: {
+    tab: "Finisaje",
+    included: "inclus",
+    extraEach: "+{price} / buc.",
+    each: "{price} / buc.",
+    choose: "De ales",
+    none: "Nu doresc",
+    quantity: "Cantitate",
+    fewer: "Mai puține",
+    more: "Mai multe",
+    minimum: "Minim {count} buc.",
+    families: "Familii pe lista voastră de invitați: {count}.",
+    people: "Persoane pe lista voastră de invitați: {count}.",
+    elsewhere:
+      "Hârtia, sigiliul și restul comenzii le alegeți pe fila Finisaje, la prețurile magazinului.",
+  },
   proof: {
     title: "Bun de tipar",
     back: "Înapoi la design",

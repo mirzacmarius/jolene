@@ -174,6 +174,10 @@ _Avoid_: Add-ons, upsell
 What choosing one of a product's papers, or a choice of an order option, does to a design in the studio, so it shows what the couple orders: the paper and its colour, the seal's wax or no seal, the ribbon or none, the envelope's colour, its printed liner, the corners. The workshop sets each choice's on its order option's page; a choice without one, such as preserved flowers, is ordered in words only.
 _Avoid_: Effect, preview (any view in the studio), style (a collection's)
 
+**Finishes** (ro: finisaje; code: finishes):
+What a couple picks on the studio's Finisaje tab to order a design: one of its product's papers, a choice of each order option and how many. A pick with a look changes the design as an edit does. The design keeps the picks, and while it no longer shows one, as after an undo, the choice it shows is ordered instead.
+_Avoid_: Options (a product's), extras (what they add), customisation
+
 **Minimum order** (ro: comandă minimă; code: minQuantity):
 The smallest quantity of a product Jolene takes an order for, such as 30 invitations.
 _Avoid_: MOQ
