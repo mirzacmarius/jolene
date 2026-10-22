@@ -144,8 +144,22 @@ export default {
       "Fotografia de pe {place} va ieși neclară, la {dpi} dpi. Folosiți una mai mare.",
     missingArtwork:
       "O imagine de pe {place} nu s-a încărcat aici. Verificăm fiecare fișier înainte de tipar.",
+    faces: "Fețele designului",
+    asPrinted:
+      "Exact cum se tipărește. Ce nu e tipar, ca sigiliul sau plicul, se adaugă în atelier.",
+    yourOrder: "Comanda voastră",
+    count: "{count} buc.",
+    diacritics: "Diacritice",
+    asWritten: "Așa cum le-ați scris",
+    perQuantity: "{price} / buc. × {count}",
+    freeDelivery:
+      "Livrarea prin curier e gratuită: comanda trece de {freeFrom}.",
+    missing: "Pe fila Finisaje mai e de ales: {options}.",
+    toFinishes: "Alegeți pe Finisaje",
     confirm: "Am citit tot și vrem să fie tipărit exact așa.",
     approve: "Aprobați bunul de tipar",
+    approveAndAdd: "Aprobați și adăugați în coș",
+    add: "Adăugați în coș",
     approving: "Se aprobă…",
     changed:
       "Designul s-a schimbat cât citeați. Uitați-vă din nou, apoi aprobați.",
@@ -153,7 +167,24 @@ export default {
     earlier:
       "Ați aprobat o variantă anterioară pe {date}. Aprobați-o pe aceasta ca să o comandați.",
     preparing: "Pregătim comanda…",
-    order: "Continuați comanda",
+    adding: "Se adaugă în coș…",
+    unavailable:
+      "Acest produs nu mai e de vânzare. Scrieți-ne și preluăm noi comanda.",
+    mismatch:
+      "Alegerile nu se mai potrivesc produsului. Alegeți din nou pe fila Finisaje.",
+    inCart: "Designul vostru e în coș",
+    approvedThen:
+      "Ați aprobat bunul de tipar pe {date}. Îl tipărim după plată.",
+    checkout: "Finalizați comanda",
+    sameEvent: {
+      wedding: "Pentru aceeași nuntă",
+      christening: "Pentru același botez",
+    },
+    sameDetails: {
+      wedding: "Au deja numele și data voastră.",
+      christening: "Au deja numele copilului și data.",
+    },
+    close: "Închideți",
     notOnline:
       "Acest articol nu se poate comanda încă online. Scrieți-ne și preluăm noi comanda; bunul de tipar rămâne aprobat.",
     write: "Scrieți-ne",

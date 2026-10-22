@@ -111,11 +111,12 @@ export function unitPrice(
 /**
  * Why a line can't be ordered as it is, if anything stops it. A product
  * bought for an event, as the digital invitation is, also needs its event,
- * with the invitation not yet open to every guest.
+ * with the invitation not yet open to every guest. A line with a proof
+ * needs no text answered: the proof has the couple's own (ADR 0021).
  */
 export function problems(
   { product, lineOptions }: PricedProduct,
-  line: LineChoices,
+  line: LineChoices & Pick<Doc<"cartLines">, "proofId">,
   event?: { unlocked: boolean } | null,
 ): LineProblem[] {
   if (!product.published) return [{ kind: "unavailable" }];
@@ -133,7 +134,9 @@ export function problems(
   for (const option of lineOptions) {
     const answer = line.answers.find((a) => a.key === option.key)?.value;
     if (!answer) {
-      if (option.required) found.push({ kind: "missing", label: option.label });
+      const answered = line.proofId !== undefined && option.kind === "text";
+      if (option.required && !answered)
+        found.push({ kind: "missing", label: option.label });
     } else if (
       option.kind === "select" &&
       !option.choices.some((choice) => choice.label === answer)

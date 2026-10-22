@@ -161,6 +161,151 @@ describe("cart.add", () => {
   });
 });
 
+describe("cart.addProof", () => {
+  /** A couple's design of Classic Roses' invitation, to approve proofs of. */
+  async function rosesDesign(t: Awaited<ReturnType<typeof seeded>>) {
+    const template = await t.run((ctx) =>
+      ctx.db
+        .query("templates")
+        .filter((q) => q.eq(q.field("shopifyProductHandle"), roses.handle))
+        .first(),
+    );
+    if (!template) throw new Error("Classic Roses' invitation is a template");
+    const ownerId = await t.run((ctx) =>
+      ctx.db.insert("users", { isAnonymous: true }),
+    );
+    const designId = await t
+      .withIdentity({ subject: `${ownerId}|session` })
+      .mutation(api.designs.start, { template: template.slug });
+    return (revision: number) =>
+      t.run((ctx) =>
+        ctx.db.insert("proofs", {
+          designId,
+          ownerId,
+          templateId: template._id,
+          kind: template.kind,
+          revision,
+          document: template.document,
+          fields: {},
+          approvedAt: Date.UTC(2026, 9, 22),
+        }),
+      );
+  }
+
+  /** What the couple picked on the Finisaje tab, as the studio sends it. */
+  const finishes = {
+    token,
+    quantity: 30,
+    options: [{ name: "Carton", value: "Ivory texturat 300 gr" }],
+    answers: [
+      { key: "culoare-sigiliu", value: "Alb" },
+      { key: "panglica", value: "Panglică mătase" },
+    ],
+  };
+
+  test("orders the design as its product, with no text to type or fee for diacritics", async () => {
+    const t = await seeded();
+    const proofId = await (await rosesDesign(t))(0);
+    await t.mutation(api.cart.addProof, { ...finishes, proofId });
+    const cart = await t.query(api.cart.get, { token });
+    expect(cart?.lines).toMatchObject([
+      {
+        handle: roses.handle,
+        quantity: 30,
+        options: finishes.options,
+        answers: [
+          { label: "Culoare sigiliu", value: "Alb" },
+          { label: "Panglică", value: "Panglică mătase" },
+        ],
+        fees: [],
+        proof: { id: proofId, product: roses.handle },
+        price: 1050,
+        total: 31_500,
+        problems: [],
+      },
+    ]);
+    expect(cart?.fees).toEqual([]);
+    expect(cart?.total).toBe(31_500);
+  });
+
+  test("holds a design once: a new proof of it takes its line", async () => {
+    const t = await seeded();
+    const prove = await rosesDesign(t);
+    const first = await prove(0);
+    await t.mutation(api.cart.addProof, { ...finishes, proofId: first });
+    // Approved again, unchanged, with more of them.
+    await t.mutation(api.cart.addProof, {
+      ...finishes,
+      proofId: first,
+      quantity: 50,
+    });
+    // An old link to the product page, with the text typed again.
+    await t.mutation(api.cart.add, { ...roses, proofId: first });
+    expect((await t.query(api.cart.get, { token }))?.lines).toHaveLength(2);
+
+    const second = await prove(1);
+    await t.mutation(api.cart.addProof, {
+      ...finishes,
+      proofId: second,
+      quantity: 80,
+    });
+    expect((await t.query(api.cart.get, { token }))?.lines).toMatchObject([
+      { quantity: 80, proof: { id: second }, fees: [] },
+    ]);
+
+    // Another design is a line of its own.
+    const other = await (await rosesDesign(t))(0);
+    await t.mutation(api.cart.addProof, { ...finishes, proofId: other });
+    expect(
+      (await t.query(api.cart.get, { token }))?.lines.map((line) => [
+        line.proof?.id,
+        line.quantity,
+      ]),
+    ).toEqual([
+      [second, 80],
+      [other, 30],
+    ]);
+  });
+
+  test("refuses what couldn't be ordered as it is", async () => {
+    const t = await seeded();
+    const proofId = await (await rosesDesign(t))(0);
+    await expectError(
+      t.mutation(api.cart.addProof, { ...finishes, proofId: "nothing" }),
+      errors.notFound,
+    );
+    await expectError(
+      t.mutation(api.cart.addProof, { ...finishes, proofId, token: "short" }),
+      errors.notFound,
+    );
+    for (const line of [
+      // Under the minimum order.
+      { ...finishes, quantity: 10 },
+      { ...finishes, options: [] },
+      { ...finishes, options: [{ name: "Carton", value: "Carton vechi" }] },
+      { ...finishes, answers: [{ key: "culoare-sigiliu", value: "Violet" }] },
+      { ...finishes, answers: [{ key: "gravura", value: "Da" }] },
+    ])
+      await expectError(
+        t.mutation(api.cart.addProof, { ...line, proofId }),
+        errors.invalidLine,
+      );
+    await t.run(async (ctx) => {
+      const product = await ctx.db
+        .query("products")
+        .withIndex("by_handle", (q) => q.eq("handle", roses.handle))
+        .unique();
+      if (product)
+        await ctx.db.patch("products", product._id, { published: false });
+    });
+    await expectError(
+      t.mutation(api.cart.addProof, { ...finishes, proofId }),
+      errors.productUnavailable,
+    );
+    expect(await t.query(api.cart.get, { token })).toBeNull();
+  });
+});
+
 describe("cart.get", () => {
   test("says what stops a line being ordered", async () => {
     const t = await seeded();

@@ -1,7 +1,5 @@
 "use server";
 
-import { randomBytes } from "node:crypto";
-
 import { api } from "@jolene/backend/convex/_generated/api";
 import { errors } from "@jolene/backend/convex/utils/errors";
 import { fetchMutation, fetchQuery } from "convex/nextjs";
@@ -9,9 +7,8 @@ import { ConvexError } from "convex/values";
 import { cookies } from "next/headers";
 
 import { CART_COOKIE } from "@/lib/cart";
+import { cartToken } from "@/lib/cart/server";
 import type { CartActionResult, CartLine, CartLineInput } from "@/lib/cart/types";
-
-const CART_MAX_AGE_SECONDS = 60 * 60 * 24 * 90;
 
 function describeError(error: unknown): string {
   const code = error instanceof ConvexError ? error.data : undefined;
@@ -36,22 +33,9 @@ async function changeCart(
   return { cart: await fetchQuery(api.cart.get, { token }) };
 }
 
-// The token is the cart's only key, so it's long, random and out of the page's reach.
 export async function addToCartAction(line: CartLineInput): Promise<CartActionResult> {
-  const store = await cookies();
-  let token = store.get(CART_COOKIE)?.value;
-  if (!token) {
-    token = randomBytes(32).toString("base64url");
-    store.set(CART_COOKIE, token, {
-      httpOnly: true,
-      maxAge: CART_MAX_AGE_SECONDS,
-      path: "/",
-      sameSite: "lax",
-      secure: true,
-    });
-  }
-  const cartToken = token;
-  return changeCart(cartToken, () =>
+  const token = await cartToken();
+  return changeCart(token, () =>
     fetchMutation(api.cart.add, {
       answers: line.answers,
       eventId: line.eventId,
@@ -60,7 +44,7 @@ export async function addToCartAction(line: CartLineInput): Promise<CartActionRe
       options: line.options,
       proofId: line.proofId,
       quantity: line.quantity,
-      token: cartToken,
+      token,
     }),
   );
 }

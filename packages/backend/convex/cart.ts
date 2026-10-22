@@ -7,6 +7,7 @@ import {
   type QueryCtx,
   query,
 } from "./_generated/server";
+import { productOf } from "./catalog/products";
 import { courierPrice, FREE_DELIVERY_FROM } from "./checkout/delivery";
 import { checkoutOpen } from "./checkout/open";
 import { eventForShop, eventForShopValidator } from "./invites/shop";
@@ -102,6 +103,22 @@ async function linesOf(ctx: QueryCtx, cartId: Id<"carts">) {
     .query("cartLines")
     .withIndex("by_cartId", (q) => q.eq("cartId", cartId))
     .take(100);
+}
+
+/** The cart's lines of a design: those whose proof is one of its proofs. */
+async function linesOfDesign(
+  ctx: QueryCtx,
+  cartId: Id<"carts">,
+  designId: Id<"designs">,
+) {
+  const lines = await linesOf(ctx, cartId);
+  const designs = await Promise.all(
+    lines.map(
+      async (line) =>
+        line.proofId && (await ctx.db.get("proofs", line.proofId))?.designId,
+    ),
+  );
+  return lines.filter((_, index) => designs[index] === designId);
 }
 
 async function lineInCart(
@@ -324,6 +341,54 @@ export const add = mutation({
         ),
       });
     else await ctx.db.insert("cartLines", { cartId, ...wanted });
+    return null;
+  },
+});
+
+/**
+ * Puts a design the couple approved in the studio in the cart, as its
+ * template's product with the finishes they picked there (ADR 0021). The
+ * proof answers the text, and pays no fee for diacritics, which the couple
+ * typed themselves. A cart holds a design once: approving it again, as after
+ * a change, puts the new proof and finishes on the design's line rather than
+ * ordering it twice. Refuses what couldn't be ordered as it is.
+ */
+export const addProof = mutation({
+  args: {
+    token: v.string(),
+    proofId: v.string(),
+    quantity: v.number(),
+    options: v.array(pickedValidator),
+    answers: v.array(answerValidator),
+  },
+  returns: v.null(),
+  handler: async (ctx, { token, proofId: rawProofId, ...choices }) => {
+    if (token.length < MIN_TOKEN_LENGTH) throw new ConvexError(errors.notFound);
+    const proofId = ctx.db.normalizeId("proofs", rawProofId);
+    const proof = proofId && (await ctx.db.get("proofs", proofId));
+    if (!proofId || !proof) throw new ConvexError(errors.notFound);
+    const template = await ctx.db.get("templates", proof.templateId);
+    const product = template && (await productOf(ctx, template));
+    if (!product || product.forEvent)
+      throw new ConvexError(errors.productUnavailable);
+    const priced = await loadProduct(ctx, product);
+    const line = normalizeLine(priced, { ...choices, fees: [] });
+    if (!line || problems(priced, { ...line, proofId }).length > 0)
+      throw new ConvexError(errors.invalidLine);
+
+    const now = Date.now();
+    const cart = await findCart(ctx, token);
+    const cartId =
+      cart?._id ?? (await ctx.db.insert("carts", { token, updatedAt: now }));
+    if (cart) await ctx.db.patch("carts", cart._id, { updatedAt: now });
+
+    const wanted = { cartId, productId: product._id, ...line, proofId };
+    const [earlier, ...more] = cart
+      ? await linesOfDesign(ctx, cart._id, proof.designId)
+      : [];
+    for (const other of more) await ctx.db.delete("cartLines", other._id);
+    if (earlier) await ctx.db.replace("cartLines", earlier._id, wanted);
+    else await ctx.db.insert("cartLines", wanted);
     return null;
   },
 });

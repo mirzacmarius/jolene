@@ -1,6 +1,6 @@
 # Couples approve a proof, and the shop carries it to the order
 
-Its product page step is superseded by [ADR 0021](0021-couples-order-a-design-from-the-studio.md): the studio asks the order beside the design, and approving the proof adds the line to the cart.
+Its product page step is superseded by [ADR 0021](0021-couples-order-a-design-from-the-studio.md): the studio asks the order beside the design, and approving the proof adds the line to the cart, where a design approved again keeps one line, with its new proof.
 
 A couple orders from their design's proof, at `/studio/design/<id>/bun-de-tipar`: every face of the design, flat, with their own details and nothing filled in for them, beside what to look at before it prints. The studio finds that with the checks the print file runs (`checkDesign` in `packages/design`, which `packages/print` uses too), measuring the words with the browser's own fonts once they have loaded: lines past the safe margin or too long for their box, details left empty, letters no face has, photos not given or under 300 dpi.
 

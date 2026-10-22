@@ -21,6 +21,7 @@ import {
   canSkip,
   chosenOptions,
   guestCount,
+  isPaper,
   type LineOption,
   type Order,
   type OrderedProduct,
@@ -66,7 +67,7 @@ export function FinishesPanel({
 
   return (
     <>
-      <div className="flex-1 space-y-7 overflow-y-auto p-5">
+      <div className="min-h-0 flex-1 space-y-7 overflow-y-auto p-5">
         {product.options.map((option) => (
           <ValuesSection
             key={option.name}
@@ -103,7 +104,7 @@ export function FinishesPanel({
 }
 
 /** What a pick adds to each one ordered, or that it's included. */
-function useAdds() {
+export function useAdds() {
   const t = useI18n();
   const price = usePrice();
   return {
@@ -140,11 +141,10 @@ function ValuesSection({
 }) {
   const t = useI18n();
   const adds = useAdds();
-  const papers = option.values.some((value) => value.look?.kind === "paper");
   const chosen = option.values.find((value) => value.name === picked);
   return (
     <Section
-      title={papers ? t("design.paper") : option.name}
+      title={isPaper(option) ? t("design.paper") : option.name}
       summary={
         chosen
           ? `${chosen.name} · ${adds.each(chosen.surcharge)}`
