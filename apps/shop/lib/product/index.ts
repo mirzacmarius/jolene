@@ -43,6 +43,7 @@ export function toProductDetails(product: ConvexProduct): ProductDetails {
     options: product.options,
     price: product.price,
     tags: product.tags,
+    template: product.template,
     title: product.title,
   };
 }

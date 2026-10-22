@@ -13,8 +13,17 @@ import { useI18n } from "@/locales/client";
 /**
  * Starts a design from a template and opens it. A first-time visitor is signed
  * in anonymously on the way, so nobody fills in a form before they design.
+ * A page that starts one on arrival gives way to it (`replace`), so going back
+ * leaves the design rather than starting another, and says why it failed
+ * itself (`onFail`); otherwise a toast says so.
  */
-export function useStartDesign(template: string) {
+export function useStartDesign(
+  template: string,
+  {
+    replace = false,
+    onFail,
+  }: { replace?: boolean; onFail?: (error: unknown) => void } = {},
+) {
   const t = useI18n();
   const router = useRouter();
   const { isAuthenticated } = useConvexAuth();
@@ -24,10 +33,11 @@ export function useStartDesign(template: string) {
   // One design per click, however often the effect below runs.
   const requested = useRef(false);
 
-  const fail = () => {
+  const fail = (error: unknown) => {
     requested.current = false;
     setPending(false);
-    toast.error(t("common.error"));
+    if (onFail) onFail(error);
+    else toast.error(t("common.error"));
   };
 
   // The design starts once the session is in place: a mutation sent while a
@@ -36,7 +46,11 @@ export function useStartDesign(template: string) {
     if (!pending || !isAuthenticated || requested.current) return;
     requested.current = true;
     start({ template })
-      .then((designId) => router.push(`/studio/design/${designId}`))
+      .then((designId) => {
+        const path = `/studio/design/${designId}`;
+        if (replace) router.replace(path);
+        else router.push(path);
+      })
       .catch(fail);
   });
 

@@ -54,9 +54,13 @@ export function productToMarkdown(product: ProductDetails): string {
     sections.push("");
   }
 
+  sections.push("## Buy", "");
+  // A product the studio designs is ordered from its design there (ADR 0021).
+  if (product.template)
+    sections.push(
+      `- Design it in the studio, then order it: ${new URL(`/studio/design/nou/${product.template}`, siteUrl)}`,
+    );
   sections.push(
-    "## Buy",
-    "",
     `- Shop: ${new URL(`/products/${product.handle}`, siteUrl)}`,
     "",
     "---",

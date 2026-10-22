@@ -127,6 +127,10 @@ export default defineSchema({
       "suiteId",
       "retired",
       "sortOrder",
+    ])
+    .index("by_shopifyProductHandle_and_retired", [
+      "shopifyProductHandle",
+      "retired",
     ]),
 
   /**

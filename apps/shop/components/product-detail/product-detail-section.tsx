@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { type ComponentProps, Suspense } from "react";
 
 import { InviteImage } from "@/components/invite/invite-card";
 import { BreadcrumbSchema } from "@/components/schema/breadcrumb-schema";
@@ -13,6 +13,7 @@ import { ProductInfoDescription } from "./product-info";
 import { ProductMedia } from "./product-media";
 import { PurchaseForm } from "./purchase-form";
 import { ProductSchema } from "./schema";
+import { StudioOrder } from "./studio-order";
 
 interface ProductDetailSectionProps {
   /** Read from the page's ?event= for a product bought for an event, as the proof is. */
@@ -45,9 +46,15 @@ export function ProductDetailSection({ event, product, proof }: ProductDetailSec
         )}
         <div className="grid gap-10 lg:sticky lg:top-20 lg:col-span-4">
           <h1 className="text-foreground text-3xl">{product.title}</h1>
-          <Suspense fallback={<PurchaseForm disabled product={product} />}>
-            <ResolvedPurchaseForm event={event} product={product} proof={proof} />
-          </Suspense>
+          {product.template ? (
+            <Suspense fallback={<StudioOrder product={product} template={product.template} />}>
+              <ResolvedStudioOrder product={product} proof={proof} template={product.template} />
+            </Suspense>
+          ) : (
+            <Suspense fallback={<PurchaseForm disabled product={product} />}>
+              <ResolvedPurchaseForm event={event} product={product} proof={proof} />
+            </Suspense>
+          )}
           <ProductInfoDescription descriptionHtml={product.descriptionHtml} />
         </div>
       </div>
@@ -65,6 +72,20 @@ async function ResolvedInviteImage({ event }: Pick<ProductDetailSectionProps, "e
 async function ResolvedPurchaseForm({ event, product, proof }: ProductDetailSectionProps) {
   const [resolvedEvent, resolvedProof] = await Promise.all([event, proof]);
   return <PurchaseForm event={resolvedEvent} product={product} proof={resolvedProof} />;
+}
+
+// A link that still carries a proof, from before the studio added designs to the cart itself, keeps its form.
+async function ResolvedStudioOrder({
+  product,
+  proof,
+  template,
+}: Pick<ProductDetailSectionProps, "proof"> & ComponentProps<typeof StudioOrder>) {
+  const resolvedProof = await proof;
+  return resolvedProof ? (
+    <PurchaseForm product={product} proof={resolvedProof} />
+  ) : (
+    <StudioOrder product={product} template={template} />
+  );
 }
 
 export function ProductDetailSkeleton() {

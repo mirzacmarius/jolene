@@ -37,6 +37,22 @@ export async function productOf(
 }
 
 /**
+ * The template a couple designs a product from in the studio, where they
+ * order it (ADR 0021); null for a product the shop's own page orders.
+ */
+export async function templateOf(
+  ctx: QueryCtx,
+  handle: string,
+): Promise<Doc<"templates"> | null> {
+  return await ctx.db
+    .query("templates")
+    .withIndex("by_shopifyProductHandle_and_retired", (q) =>
+      q.eq("shopifyProductHandle", handle).eq("retired", undefined),
+    )
+    .first();
+}
+
+/**
  * The least and the most one of a product can cost, in bani: every paper
  * must be picked, an order option only when it's required.
  */

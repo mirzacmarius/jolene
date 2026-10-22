@@ -119,6 +119,29 @@ describe("shop.product", () => {
     expect(await t.query(api.shop.product, { handle: "nowhere" })).toBeNull();
   });
 
+  test("names the template a product is designed from in the studio", async () => {
+    const t = await seeded();
+    expect(
+      await t.query(api.shop.product, { handle: "invitatie-nunta-royal-blue" }),
+    ).toMatchObject({ template: "royal-blue-invitatie" });
+    const luna = await t.query(api.shop.product, { handle: "18207" });
+    expect(luna?.template).toBeUndefined();
+
+    // A template its collection no longer lists starts no design.
+    await t.run(async (ctx) => {
+      const template = await ctx.db
+        .query("templates")
+        .withIndex("by_slug", (q) => q.eq("slug", "royal-blue-invitatie"))
+        .unique();
+      if (template)
+        await ctx.db.patch("templates", template._id, { retired: true });
+    });
+    const retired = await t.query(api.shop.product, {
+      handle: "invitatie-nunta-royal-blue",
+    });
+    expect(retired?.template).toBeUndefined();
+  });
+
   test("shows the digital invitation, which no list or search shows", async () => {
     const t = await seeded();
     expect(

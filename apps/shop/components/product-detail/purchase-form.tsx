@@ -41,21 +41,25 @@ export function PurchaseForm({ disabled = false, event, product, proof }: Purcha
   const drawer = useCartDrawer();
   const errorId = useId();
   const minQuantity = product.minQuantity ?? 1;
+  // A proof has the couple's own text, diacritics too: its line asks for neither (ADR 0021).
+  const lineOptions = proof
+    ? product.lineOptions.filter((option) => option.kind !== "text")
+    : product.lineOptions;
+  const offeredFees = proof ? [] : product.fees;
   const [selected, setSelected] = useState(() => getDefaultSelectedOptions(product.options));
-  const [answers, setAnswers] = useState(() => getDefaultAnswers(product.lineOptions));
+  const [answers, setAnswers] = useState(() => getDefaultAnswers(lineOptions));
   const [fees, setFees] = useState<string[]>([]);
   const [quantity, setQuantity] = useState(minQuantity);
   const [error, setError] = useState<string>();
   const [isAdding, setAdding] = useState(false);
 
   // As convex/shop/pricing.ts prices the line: the paper's surcharge and the paid choices on each piece.
-  const addOns =
-    getSurcharges(product.options, selected) + getExtrasPerItem(product.lineOptions, answers);
+  const addOns = getSurcharges(product.options, selected) + getExtrasPerItem(lineOptions, answers);
   const price = product.price + addOns;
-  const feesTotal = product.fees
+  const feesTotal = offeredFees
     .filter((fee) => fees.includes(fee.key))
     .reduce((sum, fee) => sum + fee.price, 0);
-  const missing = getMissingOptions(product.lineOptions, answers);
+  const missing = getMissingOptions(lineOptions, answers);
   // Sold only with the studio's event, and only while its invitation isn't open to every guest.
   const unsellable = product.forEvent && (!event || event.unlocked);
 
@@ -65,7 +69,7 @@ export function PurchaseForm({ disabled = false, event, product, proof }: Purcha
     setAdding(true);
     setError(undefined);
     const problem = await add({
-      answers: toCartAnswers(product.lineOptions, answers),
+      answers: toCartAnswers(lineOptions, answers),
       fees,
       handle: product.handle,
       options: product.options.flatMap((option) =>
@@ -118,7 +122,7 @@ export function PurchaseForm({ disabled = false, event, product, proof }: Purcha
         <LineOptionsFields
           answers={answers}
           chosenFees={fees}
-          fees={product.fees}
+          fees={offeredFees}
           onAnswer={(key, value) => setAnswers((current) => ({ ...current, [key]: value }))}
           onFee={(key, chosen) =>
             setFees((current) => [
@@ -126,7 +130,7 @@ export function PurchaseForm({ disabled = false, event, product, proof }: Purcha
               ...(chosen ? [key] : []),
             ])
           }
-          options={product.lineOptions}
+          options={lineOptions}
         />
         <div className="grid gap-2.5">
           {missing.length ? (
