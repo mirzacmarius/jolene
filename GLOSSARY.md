@@ -323,3 +323,9 @@ _Avoid_: Attendee
 **Meal** (ro: meniu; code: meal):
 What a guest chooses to eat, from those the couple offers.
 _Avoid_: Menu in code (the printed item)
+
+### The site
+
+**Site password** (ro: parola site-ului; code: gate):
+What the shop and the studio ask for before anything else while Jolene isn't public, which Jolene's team gives the people who may look around. A browser that gave it is let in for 30 days. Guests' invitations don't ask for it.
+_Avoid_: Login, PIN, access code

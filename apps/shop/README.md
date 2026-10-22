@@ -13,7 +13,7 @@ bun run dev:shop   # http://localhost:3000
 bun run dev        # the shop, the studio and Convex, together at http://localhost:3024
 ```
 
-The shop needs one variable, `NEXT_PUBLIC_CONVEX_URL`, and production takes `SHOP_SECRET` too, the secret it shares with Convex for opening Stripe's page (see `.env.example`).
+The shop needs one variable, `NEXT_PUBLIC_CONVEX_URL`, and production takes `SHOP_SECRET` too, the secret it shares with Convex for opening Stripe's page, and `SITE_PASSWORD` while the site isn't public (see `.env.example`).
 
 ## Checks
 

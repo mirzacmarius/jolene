@@ -18,6 +18,7 @@
         "@base-ui/react": "1.9.0",
         "@jolene/backend": "workspace:*",
         "@jolene/design": "workspace:*",
+        "@jolene/gate": "workspace:*",
         "@jolene/products": "workspace:*",
         "@jolene/suites": "workspace:*",
         "@tailwindcss/turbopack": "4.3.3",
@@ -53,6 +54,7 @@
         "@convex-dev/auth": "^0.0.96",
         "@jolene/backend": "workspace:*",
         "@jolene/design": "workspace:*",
+        "@jolene/gate": "workspace:*",
         "@jolene/i18n": "workspace:*",
         "@jolene/print": "workspace:*",
         "@jolene/products": "workspace:*",
@@ -122,6 +124,18 @@
       },
       "peerDependencies": {
         "react": "19.3.1",
+      },
+    },
+    "packages/gate": {
+      "name": "@jolene/gate",
+      "version": "0.1.0",
+      "dependencies": {
+        "@jolene/i18n": "workspace:*",
+      },
+      "devDependencies": {
+        "@jolene/typescript": "workspace:*",
+        "@types/bun": "^1.4.3",
+        "typescript": "^5.9.3",
       },
     },
     "packages/i18n": {
@@ -376,6 +390,8 @@
     "@jolene/backend": ["@jolene/backend@workspace:packages/backend"],
 
     "@jolene/design": ["@jolene/design@workspace:packages/design"],
+
+    "@jolene/gate": ["@jolene/gate@workspace:packages/gate"],
 
     "@jolene/i18n": ["@jolene/i18n@workspace:packages/i18n"],
 
