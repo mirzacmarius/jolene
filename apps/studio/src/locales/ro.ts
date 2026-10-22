@@ -350,6 +350,15 @@ export default {
       "Atelierul e pentru echipa Jolene: vă trimitem un cod pe email ca să intrați.",
     notAllowed:
       "Adresa {email} nu e pe lista atelierului. Conectați-vă cu alt email sau cereți să fie adăugată.",
+    googleLead:
+      "Atelierul e pentru echipa Jolene: intrați cu contul Google al unei adrese de pe lista atelierului.",
+    googleNow:
+      "Atelierul se deschide acum cu Google: intrați cu contul Google al adresei {email}.",
+    google: "Continuați cu Google",
+    googleOpening: "Se deschide Google…",
+    googleThere:
+      "Google vă aduce înapoi doar pe {host}, așa că intrați de acolo.",
+    goThere: "Mergeți la {host}",
     empty: "Nicio comandă încă. Apar aici imediat ce plătește un client.",
     loadMore: "Arată mai multe",
     allOrders: "Toate comenzile",
@@ -991,6 +1000,8 @@ export default {
     tooMany:
       "Ați cerut multe coduri într-un timp scurt. Așteptați câteva minute și încercați din nou.",
     unavailable: "Conectarea prin email nu este încă pregătită.",
+    useGoogle: "Această adresă intră cu Google, din {workshop}.",
+    workshop: "atelier",
     signedInAs: "Conectat ca {email}",
     signOut: "Deconectare",
     invites: "Invitații digitale",

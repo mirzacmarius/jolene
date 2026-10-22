@@ -85,6 +85,7 @@ import type * as utils_limits from "../utils/limits.js";
 import type * as utils_validators from "../utils/validators.js";
 import type * as workshop from "../workshop.js";
 import type * as workshop_categories from "../workshop/categories.js";
+import type * as workshop_google from "../workshop/google.js";
 import type * as workshop_lineOptions from "../workshop/lineOptions.js";
 import type * as workshop_products from "../workshop/products.js";
 import type * as workshop_proofs from "../workshop/proofs.js";
@@ -178,6 +179,7 @@ declare const fullApi: ApiFromModules<{
   "utils/validators": typeof utils_validators;
   workshop: typeof workshop;
   "workshop/categories": typeof workshop_categories;
+  "workshop/google": typeof workshop_google;
   "workshop/lineOptions": typeof workshop_lineOptions;
   "workshop/products": typeof workshop_products;
   "workshop/proofs": typeof workshop_proofs;

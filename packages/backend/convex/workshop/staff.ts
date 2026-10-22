@@ -1,7 +1,9 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError } from "convex/values";
+import type { Id } from "../_generated/dataModel";
 import { env, type QueryCtx } from "../_generated/server";
 import { errors } from "../utils/errors";
+import { googleOrigins, googleSignIn } from "./google";
 
 /** The addresses in WORKSHOP_EMAILS, in lower case. */
 function workshopEmails() {
@@ -13,22 +15,53 @@ function workshopEmails() {
   );
 }
 
+/** Whether `email` is one of the addresses the workshop opens to. */
+export function isWorkshopAddress(email: string): boolean {
+  return workshopEmails().has(email.trim().toLowerCase());
+}
+
+/**
+ * Whether Google vouches for the account's address: the account signed in
+ * with a Google account whose address, as Google verified it, is this one.
+ */
+async function googleVouches(
+  ctx: QueryCtx,
+  userId: Id<"users">,
+  email: string,
+) {
+  const accounts = await ctx.db
+    .query("authAccounts")
+    .withIndex("userIdAndProvider", (q) =>
+      q.eq("userId", userId).eq("provider", "google"),
+    )
+    .take(10);
+  return accounts.some(
+    (account) => account.emailVerified?.toLowerCase() === email.toLowerCase(),
+  );
+}
+
 /**
  * Who the workshop sees signed in: no one with an account, as for a couple
  * designing without one, or an account and whether it's one of the
- * workshop's. Accounts sign in with a code sent to their address (auth.ts),
- * which proves it's theirs.
+ * workshop's. A code sent to the address (auth.ts) proves it's theirs until
+ * the deployment has Google's client; then Google must vouch for it, and the
+ * workshop's addresses get no codes (accounts.sendCode).
  */
 export async function workshopAccess(ctx: QueryCtx) {
+  const google = googleSignIn() ? { origins: googleOrigins() } : null;
   const userId = await getAuthUserId(ctx);
   const user = userId ? await ctx.db.get("users", userId) : null;
-  if (!user?.email) return { signedIn: false as const };
+  if (!userId || !user?.email) return { signedIn: false as const, google };
+  const listed =
+    user.emailVerificationTime !== undefined && isWorkshopAddress(user.email);
   return {
     signedIn: true as const,
     email: user.email,
+    listed,
     allowed:
-      user.emailVerificationTime !== undefined &&
-      workshopEmails().has(user.email.toLowerCase()),
+      listed &&
+      (google === null || (await googleVouches(ctx, userId, user.email))),
+    google,
   };
 }
 

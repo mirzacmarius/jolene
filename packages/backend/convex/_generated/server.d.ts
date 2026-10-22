@@ -36,6 +36,8 @@ type Env = {
   readonly AI_MODEL: string | undefined;
   readonly AI_STAND_IN: string | undefined;
   readonly ANTHROPIC_API_KEY: string | undefined;
+  readonly AUTH_GOOGLE_ID: string | undefined;
+  readonly AUTH_GOOGLE_SECRET: string | undefined;
   readonly AUTH_LOG_CODES: string | undefined;
   readonly COLETE_ONLINE_ADDRESS_ID: string | undefined;
   readonly COLETE_ONLINE_CLIENT_ID: string | undefined;

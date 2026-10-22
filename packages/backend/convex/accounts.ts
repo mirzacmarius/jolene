@@ -18,6 +18,8 @@ import {
 } from "./emails";
 import { errors } from "./utils/errors";
 import { rateLimiter } from "./utils/limits";
+import { googleSignIn } from "./workshop/google";
+import { isWorkshopAddress } from "./workshop/staff";
 
 /**
  * Couples design without an account, and sign in to one when their work
@@ -66,6 +68,10 @@ export const sendCode = internalMutation({
   args: { email: v.string(), code: v.string() },
   returns: v.null(),
   handler: async (ctx, { email, code }) => {
+    // Once the team signs in with Google, a code can't stand in for Google's
+    // word on a workshop address (docs/adr/0021).
+    if (googleSignIn() && isWorkshopAddress(email))
+      throw new ConvexError(errors.useGoogle);
     const mine = await rateLimiter.limit(ctx, "signInCode", { key: email });
     const everyone = await rateLimiter.limit(ctx, "signInCodes");
     if (!mine.ok || !everyone.ok) throw new ConvexError(errors.tooMany);

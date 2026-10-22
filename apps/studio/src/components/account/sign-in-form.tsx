@@ -8,7 +8,8 @@ import { Label } from "@jolene/ui/label";
 import { useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { LoaderCircle } from "lucide-react";
-import { type FormEvent, useId, useState } from "react";
+import Link from "next/link";
+import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { POLICIES } from "@/lib/shop";
 import { useCurrentLocale, useI18n } from "@/locales/client";
 
@@ -32,7 +33,7 @@ export function SignInForm({ lead }: { lead?: string }) {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
-  const [problem, setProblem] = useState<string | null>(null);
+  const [problem, setProblem] = useState<ReactNode>(null);
   const emailId = useId();
   const codeId = useId();
 
@@ -43,9 +44,17 @@ export function SignInForm({ lead }: { lead?: string }) {
         ? t("account.tooMany")
         : data === "email-unavailable"
           ? t("account.unavailable")
-          : step.kind === "code"
-            ? t("account.wrongCode")
-            : t("common.error"),
+          : data === "use-google"
+            ? t("account.useGoogle", {
+                workshop: (
+                  <Link href="/studio/atelier" className={LINK}>
+                    {t("account.workshop")}
+                  </Link>
+                ),
+              })
+            : step.kind === "code"
+              ? t("account.wrongCode")
+              : t("common.error"),
     );
   };
 

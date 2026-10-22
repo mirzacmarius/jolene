@@ -157,11 +157,14 @@ describe("the workshop", () => {
     const { couple, workshop, signIn } = await setUp();
     expect(await couple.query(api.workshop.access, {})).toEqual({
       signedIn: false,
+      google: null,
     });
     expect(await workshop.query(api.workshop.access, {})).toEqual({
       signedIn: true,
       email: "atelier@jolene.ro",
+      listed: true,
       allowed: true,
+      google: null,
     });
     const stranger = await signIn({
       email: "someone@example.com",
