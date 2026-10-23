@@ -426,3 +426,155 @@ describe("designs", () => {
     expect((await stranger.query(api.designs.mine, {})).designs).toEqual([]);
   });
 });
+
+/** The first bytes of a JPEG, which is all the check reads. */
+const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46])
+  .buffer;
+
+describe("the viewing link", () => {
+  test("shows a design to anyone with it, with the details it reads, until it's turned off", async () => {
+    const { t, couple, stranger } = await setUp();
+    const designId = await couple.mutation(api.designs.start, {
+      template: "sample-place-card",
+    });
+    const started = await couple.query(api.designs.get, { designId });
+    expect(started?.design.viewCode).toBeUndefined();
+    await couple.mutation(api.events.setFields, {
+      eventId: started?.event._id as never,
+      fields: {
+        partner1: "Ioana",
+        partner2: "Andrei",
+        guestName: "Familia Ionescu",
+        tableName: "7",
+        rsvpContact: "0722 123 456",
+      },
+    });
+    expect(
+      await t.query(api.designs.view, { code: "nobodys-link" }),
+    ).toBeNull();
+
+    const code = await couple.mutation(api.designs.setViewLink, {
+      designId,
+      on: true,
+    });
+    if (!code) throw new Error("no code");
+    expect(code).toHaveLength(12);
+    // Turning it on again keeps the same link.
+    expect(
+      await couple.mutation(api.designs.setViewLink, { designId, on: true }),
+    ).toBe(code);
+    expect(
+      (await couple.query(api.designs.get, { designId }))?.design.viewCode,
+    ).toBe(code);
+
+    // Whoever has the link sees the design, with only the details it reads.
+    const shown = await t.query(api.designs.view, { code });
+    expect(shown).toMatchObject({
+      kind: "place-card",
+      occasion: "wedding",
+      suite: { ro: "Eucalipt", en: "Eucalyptus" },
+      revision: 1,
+      image: null,
+    });
+    expect(shown?.fields).toEqual({
+      guestName: "Familia Ionescu",
+      tableName: "7",
+    });
+    expect(shown?.hosts.ro).toContain("Ioana");
+    expect(shown?.hosts.ro).toContain("Andrei");
+
+    // Only the couple turns it off.
+    await expect(
+      stranger.mutation(api.designs.setViewLink, { designId, on: false }),
+    ).rejects.toThrow("not-found");
+    expect(await t.query(api.designs.view, { code })).not.toBeNull();
+    expect(
+      await couple.mutation(api.designs.setViewLink, { designId, on: false }),
+    ).toBeNull();
+    expect(await t.query(api.designs.view, { code })).toBeNull();
+    expect(
+      (await couple.query(api.designs.get, { designId }))?.design.viewCode,
+    ).toBeUndefined();
+    // Turned on again, the old link stays dead.
+    const again = await couple.mutation(api.designs.setViewLink, {
+      designId,
+      on: true,
+    });
+    expect(again).not.toBe(code);
+    expect(again).toHaveLength(12);
+    expect(await t.query(api.designs.view, { code })).toBeNull();
+  });
+
+  test("keeps one picture of the design, which goes with the link", async () => {
+    const { t, couple, stranger } = await setUp();
+    const designId = await couple.mutation(api.designs.start, {
+      template: "sample-invitation",
+    });
+    const imageOf = () =>
+      t.run(async (ctx) => (await ctx.db.get("designs", designId))?.viewImage);
+    // No picture is stored while the link is off.
+    await expect(
+      couple.action(api.designs.attachViewImage, {
+        designId,
+        revision: 1,
+        image: jpeg,
+      }),
+    ).rejects.toThrow("not-found");
+    expect(await imageOf()).toBeNull();
+
+    const code = await couple.mutation(api.designs.setViewLink, {
+      designId,
+      on: true,
+    });
+    if (!code) throw new Error("no code");
+    await expect(
+      stranger.action(api.designs.attachViewImage, {
+        designId,
+        revision: 1,
+        image: jpeg,
+      }),
+    ).rejects.toThrow("not-found");
+    await expect(
+      couple.action(api.designs.attachViewImage, {
+        designId,
+        revision: 1,
+        image: new TextEncoder().encode("<svg/>").buffer,
+      }),
+    ).rejects.toThrow("invalid-image");
+
+    await couple.action(api.designs.attachViewImage, {
+      designId,
+      revision: 1,
+      image: jpeg,
+    });
+    const first = await imageOf();
+    expect(
+      await t.run((ctx) => ctx.db.system.get("_storage", first as never)),
+    ).toMatchObject({ size: jpeg.byteLength });
+    const shown = await t.query(api.designs.view, { code });
+    expect(shown?.image).toBeString();
+    expect(
+      (await couple.query(api.designs.get, { designId }))?.design
+        .viewImageRevision,
+    ).toBe(1);
+
+    // A new picture replaces the old one, whose file goes.
+    await couple.action(api.designs.attachViewImage, {
+      designId,
+      revision: 2,
+      image: jpeg,
+    });
+    const second = await imageOf();
+    expect(second).not.toBe(first);
+    expect(
+      await t.run((ctx) => ctx.db.system.get("_storage", first as never)),
+    ).toBeNull();
+
+    // Turning the link off deletes the picture with it.
+    await couple.mutation(api.designs.setViewLink, { designId, on: false });
+    expect(await imageOf()).toBeNull();
+    expect(
+      await t.run((ctx) => ctx.db.system.get("_storage", second as never)),
+    ).toBeNull();
+  });
+});

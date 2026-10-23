@@ -1,35 +1,36 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { assetKeys, type DesignDocument } from "@jolene/design";
+import { assetKeys, type DesignDocument, fieldKeysUsed } from "@jolene/design";
 import { ConvexError, v } from "convex/values";
+import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { type MutationCtx, mutation, query } from "./_generated/server";
+import { action, type MutationCtx, mutation, query } from "./_generated/server";
+import { requireOwnDesign } from "./designs/access";
 import { applyToDesign } from "./designs/apply";
 import { MOST_PICKS, PICK_LENGTH, withPick } from "./designs/finishes";
 import { saveRevision } from "./designs/versions";
+import { viewCode } from "./designs/viewing";
 import { latestEvent } from "./events";
+import { hosts } from "./invites/text";
 import schema from "./schema";
 import { MAX_QUANTITY } from "./shop/pricing";
 import { answerValidator, pickedValidator } from "./shop/validators";
 import { resolveAssets, resolvedAssetValidator } from "./utils/assets";
 import { requireUser } from "./utils/auth";
 import { errors } from "./utils/errors";
-import { authorValidator, labelsValidator } from "./utils/validators";
+import { imageType } from "./utils/images";
+import {
+  authorValidator,
+  documentValidator,
+  fieldsValidator,
+  labelsValidator,
+  languageValidator,
+  occasionValidator,
+  productKindValidator,
+} from "./utils/validators";
 
 /** Stored documents were checked against the design schema when saved. */
 const documentOf = (stored: { document: unknown }) =>
   stored.document as DesignDocument;
-
-/** One of the signed-in visitor's designs; anyone else's reads as not found. */
-export async function requireOwnDesign(
-  ctx: MutationCtx,
-  designId: Id<"designs">,
-) {
-  const ownerId = await requireUser(ctx);
-  const design = await ctx.db.get("designs", designId);
-  if (!design || design.ownerId !== ownerId)
-    throw new ConvexError(errors.notFound);
-  return design;
-}
 
 /**
  * A new design of the event, a copy of the template, whose first version is
@@ -327,5 +328,133 @@ export const restore = mutation({
       author: "person",
       restoredFrom: version.revision,
     });
+  },
+});
+
+/** The largest picture of a design kept for its link, well above what the studio sends. */
+const MAX_VIEW_IMAGE_BYTES = 4 * 1024 * 1024;
+
+/**
+ * Turns the design's viewing link on, with a code of its own, or off (docs/
+ * adr/0023). Anyone with the link sees the design with the couple's details,
+ * as the studio shows it, and changes nothing; off, the link stops working
+ * and the picture made for it goes. On again, it gets a new code.
+ */
+export const setViewLink = mutation({
+  args: { designId: v.id("designs"), on: v.boolean() },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, { designId, on }) => {
+    const design = await requireOwnDesign(ctx, designId);
+    if (on) {
+      if (design.viewCode) return design.viewCode;
+      const code = viewCode();
+      await ctx.db.patch("designs", designId, { viewCode: code });
+      return code;
+    }
+    if (design.viewImage) await ctx.storage.delete(design.viewImage);
+    await ctx.db.patch("designs", designId, {
+      viewCode: undefined,
+      viewImage: undefined,
+      viewImageRevision: undefined,
+    });
+    return null;
+  },
+});
+
+/**
+ * A design by its viewing link, for anyone who has it: the document, the
+ * couple's details the document reads and nothing else of theirs, the files
+ * it draws, and the picture for the link's preview. Null for a code no
+ * design has, or one the couple turned off.
+ */
+export const view = query({
+  args: { code: v.string() },
+  returns: v.union(
+    v.object({
+      kind: productKindValidator,
+      occasion: occasionValidator,
+      language: languageValidator,
+      document: documentValidator,
+      fields: fieldsValidator,
+      /** Who the design is from, in each language. */
+      hosts: labelsValidator,
+      suite: labelsValidator,
+      revision: v.number(),
+      image: v.union(v.string(), v.null()),
+      assets: v.array(resolvedAssetValidator),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, { code }) => {
+    const design = await ctx.db
+      .query("designs")
+      .withIndex("by_viewCode", (q) => q.eq("viewCode", code))
+      .unique();
+    if (!design) return null;
+    const event = await ctx.db.get("events", design.eventId);
+    const template = await ctx.db.get("templates", design.templateId);
+    const suite = template && (await ctx.db.get("suites", template.suiteId));
+    if (!event || !template || !suite) return null;
+    const document = documentOf(design);
+    // The monogram is drawn from the names when none is typed.
+    const keys = new Set(fieldKeysUsed(document));
+    if (keys.has("monogram"))
+      for (const key of ["partner1", "partner2", "child"]) keys.add(key);
+    const fields: Record<string, string> = {};
+    for (const key of keys) {
+      const value = event.fields[key];
+      if (value !== undefined) fields[key] = value;
+    }
+    return {
+      kind: design.kind,
+      occasion: event.occasion,
+      language: document.language,
+      document: design.document,
+      fields,
+      hosts: hosts(event),
+      suite: suite.name,
+      revision: design.revision,
+      image: design.viewImage
+        ? await ctx.storage.getUrl(design.viewImage)
+        : null,
+      // The owner's own files, such as their photos, show to whoever they
+      // gave the link.
+      assets: await resolveAssets(ctx, assetKeys(document), design.ownerId),
+    };
+  },
+});
+
+/**
+ * Keeps the studio's picture of the design for its viewing link, drawn by
+ * the browser that turned the link on: WhatsApp and the like show it beside
+ * the link. The bytes come through the action, so the picture is one the
+ * server stored, and no storage id can be injected.
+ */
+export const attachViewImage = action({
+  args: {
+    designId: v.id("designs"),
+    revision: v.number(),
+    image: v.bytes(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args): Promise<null> => {
+    const type = imageType(args.image);
+    if (!type || args.image.byteLength > MAX_VIEW_IMAGE_BYTES)
+      throw new ConvexError(errors.invalidImage);
+    await ctx.runQuery(internal.designs.viewing.check, {
+      designId: args.designId,
+    });
+    const image = await ctx.storage.store(new Blob([args.image], { type }));
+    try {
+      await ctx.runMutation(internal.designs.viewing.setImage, {
+        designId: args.designId,
+        image,
+        revision: args.revision,
+      });
+    } catch (error) {
+      await ctx.storage.delete(image);
+      throw error;
+    }
+    return null;
   },
 });
