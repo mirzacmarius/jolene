@@ -23,6 +23,7 @@ import type * as ai_request from "../ai/request.js";
 import type * as ai_run from "../ai/run.js";
 import type * as ai_standIn from "../ai/standIn.js";
 import type * as ai_tools from "../ai/tools.js";
+import type * as ai_uploads from "../ai/uploads.js";
 import type * as ai_validators from "../ai/validators.js";
 import type * as auth from "../auth.js";
 import type * as cart from "../cart.js";
@@ -119,6 +120,7 @@ declare const fullApi: ApiFromModules<{
   "ai/run": typeof ai_run;
   "ai/standIn": typeof ai_standIn;
   "ai/tools": typeof ai_tools;
+  "ai/uploads": typeof ai_uploads;
   "ai/validators": typeof ai_validators;
   auth: typeof auth;
   cart: typeof cart;

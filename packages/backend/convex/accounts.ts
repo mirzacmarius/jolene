@@ -58,15 +58,33 @@ export const me = query({
 });
 
 /**
- * Sends a sign-in code, from Convex Auth's email provider (auth.ts). An
- * address gets a few codes an hour, and everyone together a few hundred, so
+ * The mailbox an address reaches, to count the codes sent to it: written in
+ * lower case, without a +tag, and for Gmail without dots, all of which reach
+ * the same inbox.
+ */
+export function mailbox(email: string): string {
+  const address = email.trim().toLowerCase();
+  const at = address.lastIndexOf("@");
+  if (at < 0) return address;
+  const domain = address.slice(at + 1);
+  const local = address.slice(0, at).split("+")[0] as string;
+  return domain === "gmail.com" || domain === "googlemail.com"
+    ? `${local.replaceAll(".", "")}@gmail.com`
+    : `${local}@${domain}`;
+}
+
+/**
+ * Sends a sign-in code, from Convex Auth's email provider (auth.ts). A
+ * mailbox gets a few codes an hour, and everyone together a few hundred, so
  * no one can mail the world through the studio.
  */
 export const sendCode = internalMutation({
   args: { email: v.string(), code: v.string() },
   returns: v.null(),
   handler: async (ctx, { email, code }) => {
-    const mine = await rateLimiter.limit(ctx, "signInCode", { key: email });
+    const mine = await rateLimiter.limit(ctx, "signInCode", {
+      key: mailbox(email),
+    });
     const everyone = await rateLimiter.limit(ctx, "signInCodes");
     if (!mine.ok || !everyone.ok) throw new ConvexError(errors.tooMany);
     if (env.AUTH_LOG_CODES === "1" && !emailConfigured()) {

@@ -285,6 +285,16 @@ export default defineSchema({
   }).index("by_designId_and_thread", ["designId", "thread"]),
 
   /**
+   * A drawing of a design the studio stored for the AI designer
+   * (ai.uploadImage) that no message or rendering has taken yet. Taking it
+   * removes it from here; one left an hour is deleted.
+   */
+  aiUploads: defineTable({
+    ownerId: v.id("users"),
+    storageId: v.id("_storage"),
+  }).index("by_storageId", ["storageId"]),
+
+  /**
    * Simple mode's AI flow over one event's collection: the AI designer writes
    * the wording of each item the couple chose and lays it out, each in its
    * design's own conversation. The first item (the invitation, when chosen)

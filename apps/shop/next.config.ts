@@ -7,17 +7,41 @@ import { withShopConfig } from "./lib/config/server";
 
 const POSTS = `:post(${blog.map(({ slug }) => slug).join("|")})`;
 
+// The host of the Convex deployment the shop is built against, whose storage keeps the photos the workshop uploads; a local backend, over http, has none.
+function convexHost() {
+  try {
+    const url = new URL(process.env.NEXT_PUBLIC_CONVEX_URL ?? "");
+    return url.protocol === "https:" ? url.hostname : null;
+  } catch {
+    return null;
+  }
+}
+
+const convex = convexHost();
+
+// What every page sends: no other site may frame it to trick a click, browsers take each file as the type it says, links elsewhere carry only the address's origin, and no page may ask for the camera, the microphone or the visitor's location.
+const securityHeaders = [
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+];
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  async headers() {
+    return [{ headers: securityHeaders, source: "/:path*" }];
+  },
   images: {
     deviceSizes: [1320, 1920],
     imageSizes: [],
     minimumCacheTTL: 31536000,
-    // The catalog's photos load from the photo store (ADR 0016), and a photo put in Convex's storage from there; jolene.ro stays allowed until it closes.
+    // The catalog's photos load from the photo store (ADR 0016), and a photo put in Convex's storage from there: this deployment's alone, so no one has their own pictures optimized and served from Jolene's address. jolene.ro stays allowed until it closes.
     remotePatterns: [
       { hostname: "tnmeb8t2pe4ritq0.public.blob.vercel-storage.com", protocol: "https" },
       { hostname: "jolene.ro", protocol: "https" },
-      { hostname: "*.convex.cloud", protocol: "https" },
+      ...(convex ? [{ hostname: convex, protocol: "https" as const }] : []),
     ],
     unoptimized: !!process.env.V0_CALLBACK_URL,
   },

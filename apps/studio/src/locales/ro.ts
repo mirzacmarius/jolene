@@ -1237,6 +1237,8 @@ export default {
     emailUnavailable: "Emailurile nu pot pleca încă: Jolene le pregătește.",
     lockedSend:
       "Până o deblocați, doar primele {count} familii o pot deschide.",
+    trialEmails:
+      "Până o deblocați, invitația pleacă pe email doar de câteva ori pe zi. Trimiteți-o pe WhatsApp sau încercați din nou mâine.",
     takeReply: "Notați răspunsul lor",
     takeReplyLead: "Ați primit răspunsul la telefon? Notați-l aici.",
     summary: "Confirmări",

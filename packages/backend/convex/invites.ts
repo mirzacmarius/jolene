@@ -647,7 +647,7 @@ export const history = query({
  * Emails families their invitation, from the couple's names at Jolene's
  * address, with replies going to the couple. Families without an email are
  * left out. Before the invitation is paid for, only the trial families get
- * one.
+ * one, and an account sends a few a day.
  */
 export const sendEmails = mutation({
   args: {
@@ -656,7 +656,7 @@ export const sendEmails = mutation({
   },
   returns: v.number(),
   handler: async (ctx, args) => {
-    const { event, invite } = await requireInvite(ctx, args.inviteId);
+    const { user, event, invite } = await requireInvite(ctx, args.inviteId);
     const base = inviteBaseUrl();
     if (!base || !invite.published) throw new ConvexError(errors.notFound);
     const allowed = invite.unlocked
@@ -682,6 +682,13 @@ export const sendEmails = mutation({
         key: invite._id,
       });
       if (!limit.ok) throw new ConvexError(errors.tooMany);
+      if (allowed) {
+        const mine = await rateLimiter.limit(ctx, "trialEmail", {
+          key: user._id,
+        });
+        const everyone = await rateLimiter.limit(ctx, "trialEmails");
+        if (!mine.ok || !everyone.ok) throw new ConvexError(errors.trialEmails);
+      }
       const language = household.language ?? invite.language;
       const email = invitationEmail({
         occasion: event.occasion,

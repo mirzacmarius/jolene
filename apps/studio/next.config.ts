@@ -28,10 +28,28 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/studio/api/print-files/[order]/[line]": ["./public/studio/art/**/*"],
   },
-  // Jolene's artwork: each file's name carries a hash of its content, so a
-  // changed file is a new address and browsers can keep every one for good.
   async headers() {
     return [
+      // Every page, as the shop's: no other site may frame it to trick a
+      // click, browsers take each file as the type it says, links elsewhere
+      // carry only the address's origin, and no page may ask for the camera,
+      // the microphone or the visitor's location.
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+        ],
+      },
+      // Jolene's artwork: each file's name carries a hash of its content, so
+      // a changed file is a new address and browsers can keep every one for
+      // good.
       {
         source: "/studio/art/:path*",
         headers: [

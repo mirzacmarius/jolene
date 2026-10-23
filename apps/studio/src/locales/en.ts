@@ -1231,6 +1231,8 @@ export default {
     emailUnavailable: "Emails can't go out yet: Jolene is setting them up.",
     lockedSend:
       "Until you unlock it, only the first {count} families can open it.",
+    trialEmails:
+      "Until you unlock it, the invitation goes by email only a few times a day. Send it on WhatsApp, or try again tomorrow.",
     takeReply: "Note their reply",
     takeReplyLead: "Took a reply on the phone? Note it here.",
     summary: "Replies",

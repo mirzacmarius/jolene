@@ -18,22 +18,13 @@ import {
   eucaliptInvitation,
   eucalyptusArtwork,
 } from "@jolene/design";
-import { Glob } from "bun";
 import { ConvexError } from "convex/values";
-import { convexTest } from "convex-test";
+import { testConvex } from "../test/convex";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { MAX_SNAPSHOT_BYTES } from "./ai/config";
 import { type ModelClient, setTestModelClient } from "./ai/model";
 import { play } from "./ai/standIn";
-import schema from "./schema";
-
-// convex-test loads the functions from this map, as Vite's import.meta.glob
-// would build it.
-const modules = Object.fromEntries(
-  [...new Glob("**/*.ts").scanSync(import.meta.dir)]
-    .filter((path) => !path.endsWith(".test.ts"))
-    .map((path) => [`./${path}`, () => import(`./${path}`)]),
-);
 
 const sample = {
   suite: {
@@ -85,7 +76,7 @@ afterEach(() => {
 });
 
 async function setUp() {
-  const t = convexTest(schema, modules);
+  const t = testConvex();
   await t.mutation(internal.catalog.save.suite, sample);
   const signIn = async () => {
     const userId = await t.run((ctx) =>
@@ -101,6 +92,10 @@ async function setUp() {
 }
 
 type Setup = Awaited<ReturnType<typeof setUp>>;
+
+/** Stores a drawing of the design as the studio does, for `as` to send. */
+const drawing = (as: Setup["couple"], image: Uint8Array = pixel) =>
+  as.action(api.ai.uploadImage, { image: image.slice().buffer });
 
 /** Sends the couple's words and lets the reply run to its end. */
 async function talk({ t, couple, designId }: Setup, text: string) {
@@ -370,9 +365,7 @@ describe("the AI designer", () => {
       answer({ content: [text("Cu plăcere.")] }),
     );
     const send = async (text: string, view = "card:front") => {
-      const snapshot = await setup.t.run((ctx) =>
-        ctx.storage.store(new Blob([pixel], { type: "image/png" })),
-      );
+      const snapshot = await drawing(setup.couple);
       await setup.couple.mutation(api.ai.send, {
         designId: setup.designId,
         text,
@@ -891,10 +884,7 @@ describe("the AI designer", () => {
       }),
       "ai-unavailable",
     );
-    await expectError(
-      setup.couple.mutation(api.ai.generateUploadUrl, {}),
-      "ai-unavailable",
-    );
+    await expectError(drawing(setup.couple), "ai-unavailable");
   });
 
   test("fails a request the API turns away, and runs it again on retry", async () => {
@@ -1145,9 +1135,7 @@ describe("looking at the design", () => {
     });
     const toolUseId = waiting.rendering?.toolUseId ?? "";
 
-    const snapshot = await setup.t.run((ctx) =>
-      ctx.storage.store(new Blob([pixel], { type: "image/png" })),
-    );
+    const snapshot = await drawing(setup.couple);
     const answered = await setup.couple.mutation(api.ai.answerRendering, {
       messageId: waiting._id,
       toolUseId,
@@ -1272,5 +1260,121 @@ describe("looking at the design", () => {
     expect(result?.is_error).toBe(true);
     expect(result?.content).toContain("No studio answered");
     expect((await replyOf(setup)).status).toBe("done");
+  });
+
+  test("reports only the design's own text layers", async () => {
+    const setup = await setUp();
+    const requests = fakeModel(
+      answer({ content: [call("look_at_design", {})], stop: "tool_use" }),
+      answer({ content: [text("Arată bine.")] }),
+    );
+    await talk(setup, "Cum arată?");
+    const waiting = await replyOf(setup);
+    const fit = {
+      piece: "card",
+      face: "front" as const,
+      layer: "names",
+      size: 20,
+      styleSize: 24,
+      overflows: false,
+      outsideSafeArea: false,
+    };
+    await setup.couple.mutation(api.ai.answerRendering, {
+      messageId: waiting._id,
+      toolUseId: waiting.rendering?.toolUseId ?? "",
+      revision: 1,
+      view: "card:front",
+      layers: [
+        fit,
+        { ...fit, layer: "x".repeat(100_000) },
+        { ...fit, piece: "nowhere" },
+        { ...fit, face: "back" },
+        // A shape, not words.
+        { ...fit, layer: "border" },
+      ],
+    });
+    await setup.t.finishAllScheduledFunctions(() => {});
+    expect(parsed(resultsIn(requests[1])[0]).textFit).toEqual([fit]);
+  });
+});
+
+describe("drawings of the design", () => {
+  /** The snapshot the couple's latest message keeps, if any. */
+  const sent = async (setup: Setup, snapshot: Id<"_storage">) => {
+    await setup.couple.mutation(api.ai.send, {
+      designId: setup.designId,
+      text: "Cum arată?",
+      locale: "ro",
+      view: "card:front",
+      snapshot,
+    });
+    await setup.t.finishAllScheduledFunctions(() => {});
+    const messages = await setup.t.run((ctx) =>
+      ctx.db
+        .query("aiMessages")
+        .withIndex("by_designId", (q) => q.eq("designId", setup.designId))
+        .collect(),
+    );
+    return messages.filter((message) => message.role === "couple").at(-1)
+      ?.snapshot;
+  };
+
+  test("keeps only PNGs and JPEGs small enough to send", async () => {
+    const setup = await setUp();
+    await expectError(
+      drawing(setup.couple, new TextEncoder().encode("<svg></svg>")),
+      "invalid-image",
+    );
+    const large = new Uint8Array(MAX_SNAPSHOT_BYTES + 1);
+    large.set(pixel);
+    await expectError(drawing(setup.couple, large), "invalid-image");
+    expect(
+      await setup.t.run((ctx) => ctx.db.system.query("_storage").collect()),
+    ).toEqual([]);
+  });
+
+  test("goes with a message only once, and only the visitor's own", async () => {
+    const setup = await setUp();
+    fakeModel(
+      answer({ content: [text("Bună ziua.")] }),
+      answer({ content: [text("Da.")] }),
+      answer({ content: [text("Tot așa.")] }),
+      answer({ content: [text("La fel.")] }),
+    );
+    const own = await drawing(setup.couple);
+    expect(await sent(setup, own)).toBe(own);
+    // Taken already.
+    expect(await sent(setup, own)).toBeUndefined();
+    // Stored by something else, such as a proof's picture.
+    const stored = await setup.t.run((ctx) =>
+      ctx.storage.store(new Blob([pixel], { type: "image/png" })),
+    );
+    expect(await sent(setup, stored)).toBeUndefined();
+    const someoneElse = await drawing(await setup.signIn());
+    expect(await sent(setup, someoneElse)).toBeUndefined();
+  });
+
+  test("deletes those nothing took after an hour", async () => {
+    const setup = await setUp();
+    fakeModel(answer({ content: [text("Bună ziua.")] }));
+    const taken = await drawing(setup.couple);
+    await sent(setup, taken);
+    const left = await drawing(setup.couple);
+    setSystemTime(new Date(Date.now() + 61 * 60 * 1000));
+    await setup.t.mutation(internal.ai.uploads.forget, {});
+    const file = (id: Id<"_storage">) =>
+      setup.t.run((ctx) => ctx.db.system.get("_storage", id));
+    expect(await file(left)).toBeNull();
+    expect(await file(taken)).not.toBeNull();
+    expect(
+      await setup.t.run((ctx) => ctx.db.query("aiUploads").collect()),
+    ).toEqual([]);
+  });
+
+  test("stores a few dozen at a time for each visitor", async () => {
+    const setup = await setUp();
+    for (let i = 0; i < 40; i++) await drawing(setup.couple);
+    await expectError(drawing(setup.couple), "too-many");
+    expect(await drawing(await setup.signIn())).toBeDefined();
   });
 });
