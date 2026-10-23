@@ -67,9 +67,11 @@ export function SendMenu({
       toast.error(
         code === "email-unavailable"
           ? t("invite.emailUnavailable")
-          : code === "too-many"
-            ? t("account.tooMany")
-            : t("common.error"),
+          : code === "trial-emails"
+            ? t("invite.trialEmails")
+            : code === "too-many"
+              ? t("account.tooMany")
+              : t("common.error"),
       );
     }
   };

@@ -3,7 +3,7 @@
 import { api } from "@jolene/backend/convex/_generated/api";
 import type { Id } from "@jolene/backend/convex/_generated/dataModel";
 import type { DesignDocument, Fields } from "@jolene/design";
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { useCallback } from "react";
 import type { AssetLink, PreviewView } from "../design/design-preview";
 import { takeSnapshot, viewName, viewNamed } from "./snapshot";
@@ -33,24 +33,13 @@ export interface RenderingRequest {
  */
 const claimed = new Set<string>();
 
-/** Uploads a drawing of the design, for a message or a rendering. */
+/** Stores a drawing of the design, for a message or a rendering. */
 export function useUploadImage() {
-  const generateUploadUrl = useMutation(api.ai.generateUploadUrl);
+  const uploadImage = useAction(api.ai.uploadImage);
   return useCallback(
-    async (image: Blob) => {
-      const url = await generateUploadUrl();
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": image.type },
-        body: image,
-      });
-      if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
-      const { storageId } = (await response.json()) as {
-        storageId: Id<"_storage">;
-      };
-      return storageId;
-    },
-    [generateUploadUrl],
+    async (image: Blob) =>
+      await uploadImage({ image: await image.arrayBuffer() }),
+    [uploadImage],
   );
 }
 

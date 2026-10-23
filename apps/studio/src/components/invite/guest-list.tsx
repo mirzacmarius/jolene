@@ -192,7 +192,9 @@ export function GuestList({
           ? t("invite.emailUnavailable")
           : code === "invite-locked"
             ? t("invite.lockedSend", { count: data.trial })
-            : t("common.error"),
+            : code === "trial-emails"
+              ? t("invite.trialEmails")
+              : t("common.error"),
       );
     }
   };

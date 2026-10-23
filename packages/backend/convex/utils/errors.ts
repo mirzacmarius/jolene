@@ -56,6 +56,11 @@ export const errors = {
    * families can open it, for the couple to try.
    */
   inviteLocked: "invite-locked",
+  /**
+   * An invitation on trial went by email as often as a day allows, from the
+   * account or from everyone together; unlocked, it goes to every family.
+   */
+  trialEmails: "trial-emails",
   /** The reply date has passed; the couple takes replies themselves now. */
   replyClosed: "reply-closed",
   /** Paying online isn't set up on this deployment yet (no Stripe key). */

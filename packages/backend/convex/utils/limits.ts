@@ -1,12 +1,13 @@
-import { HOUR, MINUTE, RateLimiter } from "@convex-dev/rate-limiter";
+import { DAY, HOUR, MINUTE, RateLimiter } from "@convex-dev/rate-limiter";
 import { components } from "../_generated/api";
 
 /**
  * How often visitors may do what costs Jolene or bothers someone else:
- * emails sent, what guests write without signing in, and calls to Stripe.
+ * emails sent, what guests write without signing in, calls to Stripe and
+ * files stored.
  */
 export const rateLimiter = new RateLimiter(components.rateLimiter, {
-  /** Sign-in codes sent to one address. */
+  /** Sign-in codes sent to one mailbox (accounts.ts). */
   signInCode: { kind: "token bucket", rate: 6, period: HOUR, capacity: 3 },
   /** Sign-in codes sent to anyone, so no one can mail the world through us. */
   signInCodes: { kind: "token bucket", rate: 600, period: HOUR, capacity: 60 },
@@ -21,6 +22,18 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
     period: HOUR,
     capacity: 600,
   },
+  /**
+   * Emails of invitations on trial that one account sends: enough for a
+   * couple to try theirs on its first families, too few to mail strangers
+   * through Jolene by changing those families' addresses.
+   */
+  trialEmail: { kind: "token bucket", rate: 10, period: DAY, capacity: 10 },
+  /** Emails of invitations on trial that everyone sends, likewise. */
+  trialEmails: { kind: "token bucket", rate: 300, period: DAY, capacity: 100 },
+  /** Drawings of a design one visitor sends the AI designer (ai.uploadImage). */
+  aiUpload: { kind: "token bucket", rate: 120, period: HOUR, capacity: 40 },
+  /** Drawings everyone sends it, so no one fills Convex's storage through us. */
+  aiUploads: { kind: "token bucket", rate: 1200, period: HOUR, capacity: 200 },
   /** Partner links a couple makes, each one replacing the one before. */
   partnerLink: { kind: "token bucket", rate: 10, period: MINUTE, capacity: 5 },
   /** Stripe checkout pages opened for one cart. */

@@ -17,6 +17,7 @@ import { isSlug, romanianDate, slugify, suggestedSlug } from "./invites/codes";
 import { monthsAfter } from "./invites/forget";
 import { type PaidLine, unlockPaid } from "./invites/unlock";
 import type { HouseholdInput, ReplyInput } from "./invites/validators";
+import { rateLimiter } from "./utils/limits";
 
 const sample = {
   suite: {
@@ -242,6 +243,29 @@ describe("accounts", () => {
         });
       for (let i = 0; i < 3; i++) await ask();
       expect(await errorOf(ask())).toBe("too-many");
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  test("count a mailbox's codes however its address is written", async () => {
+    const { visit } = await setUp();
+    const anonymous = await visit({ isAnonymous: true });
+    const log = spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const ask = (email: string) =>
+        errorOf(
+          anonymous.as.action(api.auth.signIn, {
+            provider: "email",
+            params: { email },
+          }),
+        );
+      expect(await ask("jolene.test@gmail.com")).toBeNull();
+      expect(await ask("Jolene.Test@Gmail.com")).toBeNull();
+      expect(await ask("jolenetest+nunta@googlemail.com")).toBeNull();
+      expect(await ask("j.olenetest@gmail.com")).toBe("too-many");
+      // Another mailbox has codes of its own.
+      expect(await ask("jolene.test@example.com")).toBeNull();
     } finally {
       log.mockRestore();
     }
@@ -648,6 +672,30 @@ describe("digital invitations", () => {
         }),
       ),
     ).toBe("email-unavailable");
+  });
+
+  test("email an invitation on trial a few times a day", async () => {
+    const { t, owner, inviteId, eventId, householdIds } = await withInvite();
+    await owner.as.mutation(api.households.update, {
+      householdId: householdIds[0] as Id<"households">,
+      household: { ...family("Familia 1"), email: "ioana@example.com" },
+    });
+    const send = () =>
+      errorOf(
+        owner.as.mutation(api.invites.sendEmails, {
+          inviteId,
+          householdIds: householdIds as Id<"households">[],
+        }),
+      );
+    // The account has sent the day's emails of invitations on trial.
+    await t.run((ctx) =>
+      rateLimiter.limit(ctx, "trialEmail", { key: owner.userId, count: 10 }),
+    );
+    expect(await send()).toBe("trial-emails");
+    // Once it's paid for, the invitation goes to as many as the couple asks:
+    // here as far as Resend, which isn't set up.
+    await paid(t, "1007", [{ ...bought, event: eventId }]);
+    expect(await send()).toBe("email-unavailable");
   });
 
   test("show a bounced email on its family", async () => {

@@ -3,7 +3,7 @@ import type { DesignDocument } from "@jolene/design";
 import { ConvexError, type Infer, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { type MutationCtx, mutation, query } from "./_generated/server";
+import { action, type MutationCtx, mutation, query } from "./_generated/server";
 import { aiConfig, MAX_MESSAGE_LENGTH, MAX_SNAPSHOT_BYTES } from "./ai/config";
 import { describeView, detailsKey } from "./ai/context";
 import {
@@ -22,7 +22,8 @@ import {
   shownView,
   storedImage,
 } from "./ai/reply";
-import { closeRendering, resumeWithRendering } from "./ai/run";
+import { closeRendering, imageType, resumeWithRendering } from "./ai/run";
+import { takeUpload } from "./ai/uploads";
 import {
   aiChangeValidator,
   aiErrorValidator,
@@ -60,23 +61,6 @@ async function requireOwnMessage(
   if (!message || message.ownerId !== ownerId)
     throw new ConvexError(errors.notFound);
   return message;
-}
-
-/**
- * A rendering the studio uploaded, if it can go to the model: a PNG or JPEG
- * (its bytes are checked when sent) small enough for the API.
- */
-async function imageFile(ctx: MutationCtx, storageId: Id<"_storage">) {
-  const file = await ctx.db.system.get("_storage", storageId);
-  if (
-    !file ||
-    file.size > MAX_SNAPSHOT_BYTES ||
-    (file.contentType !== undefined &&
-      file.contentType !== "image/png" &&
-      file.contentType !== "image/jpeg")
-  )
-    return undefined;
-  return storageId;
 }
 
 const shownMessage = v.object({
@@ -162,14 +146,32 @@ export const availability = query({
   },
 });
 
-/** Where the studio uploads a rendering of the design to send with a message. */
-export const generateUploadUrl = mutation({
-  args: {},
-  returns: v.string(),
-  handler: async (ctx) => {
-    await requireUser(ctx);
-    if (!aiConfig().configured) throw new ConvexError(errors.aiUnavailable);
-    return await ctx.storage.generateUploadUrl();
+/**
+ * Stores a drawing of the design the studio made, for a message or a
+ * rendering to take (send, answerRendering): a PNG or JPEG small enough for
+ * the API. The studio sends the picture itself rather than uploading a file,
+ * so the AI designer only ever sees pictures stored here, and one nothing
+ * takes is deleted (ai/uploads.ts).
+ */
+export const uploadImage = action({
+  args: { image: v.bytes() },
+  returns: v.id("_storage"),
+  handler: async (ctx, args): Promise<Id<"_storage">> => {
+    const type = imageType(new Uint8Array(args.image));
+    if (!type || args.image.byteLength > MAX_SNAPSHOT_BYTES)
+      throw new ConvexError(errors.invalidImage);
+    const ownerId: Id<"users"> = await ctx.runMutation(
+      internal.ai.uploads.allow,
+      {},
+    );
+    const storageId = await ctx.storage.store(new Blob([args.image], { type }));
+    try {
+      await ctx.runMutation(internal.ai.uploads.keep, { ownerId, storageId });
+    } catch (error) {
+      await ctx.storage.delete(storageId);
+      throw error;
+    }
+    return storageId;
   },
 });
 
@@ -185,7 +187,7 @@ export const send = mutation({
     locale: languageValidator,
     /** What the studio shows: "assembly", or one face as "piece:face". */
     view: v.optional(v.string()),
-    /** The studio's rendering of that view (generateUploadUrl). */
+    /** The studio's rendering of that view (uploadImage). */
     snapshot: v.optional(v.id("_storage")),
   },
   returns: v.id("aiMessages"),
@@ -199,7 +201,8 @@ export const send = mutation({
     const latest = await latestMessage(ctx, design._id);
     if (latest && isWorking(latest)) throw new ConvexError(errors.aiBusy);
     await checkLimits(ctx, design.ownerId, config, Date.now());
-    const snapshot = args.snapshot && (await imageFile(ctx, args.snapshot));
+    const snapshot =
+      args.snapshot && (await takeUpload(ctx, design.ownerId, args.snapshot));
     const reply = await queueReply(ctx, {
       design,
       text,
@@ -376,6 +379,20 @@ const textFitValidator = v.object({
 /** Text layers a rendering's report lists at most. */
 const MAX_REPORTED_LAYERS = 60;
 
+/** Whether a rendering's report names one of the design's text layers. */
+function isTextLayerOf(
+  document: DesignDocument,
+  fit: Infer<typeof textFitValidator>,
+) {
+  return document.pieces.some(
+    (piece) =>
+      piece.id === fit.piece &&
+      (piece[fit.face]?.layers ?? []).some(
+        (layer) => layer.id === fit.layer && layer.type === "text",
+      ),
+  );
+}
+
 /**
  * The studio's answer to a reply that asked to see the design
  * (look_at_design): a rendering of the view it shows and how each text sits,
@@ -402,7 +419,8 @@ export const answerRendering = mutation({
       return false;
     const design = await ctx.db.get("designs", message.designId);
     if (!design) return false;
-    const snapshot = args.snapshot && (await imageFile(ctx, args.snapshot));
+    const snapshot =
+      args.snapshot && (await takeUpload(ctx, message.ownerId, args.snapshot));
     if (!snapshot && !args.layers) {
       await resumeWithRendering(ctx, message, {
         type: "tool_result",
@@ -413,7 +431,8 @@ export const answerRendering = mutation({
       });
       return true;
     }
-    const view = shownView(args.view, design.document as DesignDocument);
+    const document = design.document as DesignDocument;
+    const view = shownView(args.view, document);
     const event = await ctx.db.get("events", design.eventId);
     const report = {
       revision: args.revision,
@@ -421,7 +440,11 @@ export const answerRendering = mutation({
       ...(args.layers
         ? {
             measuredWith: "fonts",
-            textFit: args.layers.slice(0, MAX_REPORTED_LAYERS),
+            // The design's own layers alone, so the report sent to the
+            // model is never longer than the design.
+            textFit: args.layers
+              .filter((fit) => isTextLayerOf(document, fit))
+              .slice(0, MAX_REPORTED_LAYERS),
           }
         : {}),
     };

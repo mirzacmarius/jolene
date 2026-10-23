@@ -30,6 +30,14 @@ crons.interval(
 /** Resend's copies of the emails it sent, after 30 days. */
 crons.interval("forget sent emails", { hours: 24 }, internal.emails.forget, {});
 
+/** Drawings the studio stored for the AI designer that no message took. */
+crons.interval(
+  "forget unsent AI drawings",
+  { hours: 1 },
+  internal.ai.uploads.forget,
+  {},
+);
+
 /** Photos the workshop uploaded for a product and never saved on it. */
 crons.interval(
   "forget unsaved product photos",
