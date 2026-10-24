@@ -32,6 +32,7 @@ import { AiDesigner } from "../ai/ai-designer";
 import type { PreviewView } from "../design/design-preview";
 import { usePreviewMode } from "../design/preview-mode";
 import { PreviewStage } from "../design/preview-stage";
+import { ViewLink } from "../design/view-link";
 import { ProofOrder } from "../proof/proof-order";
 import { GuidedStart } from "../simple/guided-start";
 import { SuiteStrip } from "../simple/suite-strip";
@@ -192,6 +193,15 @@ function Editor({ data }: { data: DesignData }) {
         </span>
         <div className="ml-auto flex items-center gap-2">
           <ModeSwitch mode={mode} onChange={choose} />
+          <ViewLink
+            designId={designId}
+            revision={data.design.revision}
+            code={data.design.viewCode}
+            pictured={data.design.viewImageDrawn}
+            document={document}
+            fields={fields}
+            assets={data.assets}
+          />
           <AiDesigner
             designId={designId}
             revision={data.design.revision}

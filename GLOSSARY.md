@@ -36,6 +36,10 @@ _Avoid_: Bucket, CDN, media library
 A couple's own copy of a template, which they change in the studio and order. It belongs to one event.
 _Avoid_: Project, draft, customization
 
+**Viewing link** (ro: link de vizionare; code: viewCode):
+A link the couple turns on for a design to show it to parents and friends: whoever has it sees the design with the couple's details, as the studio shows it, and changes nothing. The couple turns it off any time.
+_Avoid_: Share, public link, preview link (the preview is what the studio draws)
+
 **Event** (ro: eveniment):
 A couple's wedding or christening as the studio knows it: the details every one of their designs shares, so the names typed on the invitation are already on the menu.
 _Avoid_: Order, party

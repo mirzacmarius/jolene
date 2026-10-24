@@ -30,7 +30,7 @@ import {
   aiRoleValidator,
   aiStatusValidator,
 } from "./ai/validators";
-import { requireOwnDesign } from "./designs";
+import { requireOwnDesign } from "./designs/access";
 import { saveRevision } from "./designs/versions";
 import { afterReply, beginOnItsOwn, waitAgain } from "./simple/compose";
 import { requireUser } from "./utils/auth";

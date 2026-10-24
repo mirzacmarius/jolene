@@ -201,6 +201,39 @@ export function fieldKeysUsed(document: DesignDocument): string[] {
   );
 }
 
+/** The document as it prints: its hidden layers left out. */
+export function withoutHiddenLayers(document: DesignDocument): DesignDocument {
+  return {
+    ...document,
+    pieces: document.pieces.map((piece) => {
+      const shown = { ...piece };
+      for (const face of faceNames) {
+        const side = piece[face];
+        if (side)
+          shown[face] = {
+            ...side,
+            layers: side.layers.filter((layer) => !layer.hidden),
+          };
+      }
+      return shown;
+    }),
+  };
+}
+
+/**
+ * The details a design shows: those its visible words and wax seal read,
+ * and the names its monogram is drawn from while none is typed. A hidden
+ * layer doesn't print, so what it reads isn't shown.
+ */
+export function fieldKeysShown(document: DesignDocument): string[] {
+  const shown = new Set(fieldKeysUsed(withoutHiddenLayers(document)));
+  if (shown.has("monogram"))
+    for (const key of ["partner1", "partner2", "child"]) shown.add(key);
+  return Object.keys(fieldsFor(document.occasion)).filter((key) =>
+    shown.has(key),
+  );
+}
+
 /** The longest value each kind of field holds. */
 export const fieldLengths: Record<FieldKind, number> = {
   text: 160,

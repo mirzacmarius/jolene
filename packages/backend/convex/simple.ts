@@ -18,7 +18,8 @@ import {
   queueReply,
 } from "./ai/reply";
 import { aiErrorValidator, aiStatusValidator } from "./ai/validators";
-import { createDesign, requireOwnDesign } from "./designs";
+import { createDesign } from "./designs";
+import { requireOwnDesign } from "./designs/access";
 import { collectionDesigns, itemName, wroteDesign } from "./simple/compose";
 import { MAX_LINE_LENGTH, offersTone, toneValidator } from "./simple/tones";
 import { resolveAssets, resolvedAssetValidator } from "./utils/assets";

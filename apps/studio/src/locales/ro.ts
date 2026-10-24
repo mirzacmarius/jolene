@@ -108,6 +108,25 @@ export default {
     badDate: "Alegeți data din calendar.",
     badTime: "Scrieți ora ca 18:30.",
     invalid: "Modificarea nu s-a potrivit cu designul.",
+    view: {
+      show: "Arătați-l",
+      title: "Link de vizionare",
+      lead: "Oricine are linkul vede designul cu detaliile voastre, așa cum îl vedeți voi, fără să-l poată schimba.",
+      signIn:
+        "Conectați-vă ca să trimiteți un link: rămâne în contul vostru, ca să-l puteți opri de pe orice dispozitiv.",
+      signInButton: "Conectați-vă",
+      on: "Porniți linkul",
+      starting: "Se pornește…",
+      off: "Opriți linkul",
+      offNote:
+        "Oprit, linkul nu mai funcționează pentru nimeni dintre cei cărora l-ați trimis. Pornit din nou, e un link nou.",
+      copy: "Copiați linkul",
+      copied: "Linkul e copiat.",
+      whatsapp: "WhatsApp",
+      open: "Deschideți-l",
+      message: "Uitați-vă la designul nostru din Studio Jolene: {link}",
+      failed: "Linkul nu s-a putut schimba. Încercați din nou.",
+    },
   },
   finishes: {
     tab: "Finisaje",
@@ -411,6 +430,17 @@ export default {
     zoomIn: "Măriți",
     zoomOut: "Micșorați",
     fit: "Vedeți tot",
+  },
+  view: {
+    from: "Un design de la {hosts}, din Studio Jolene.",
+    fromUnnamed: "Un design din Studio Jolene.",
+    showing: "Vedere",
+    notFound:
+      "Linkul nu mai funcționează: cuplul l-a oprit, sau n-a existat niciodată.",
+    browse: "Vedeți colecțiile",
+    yours: "Creați-vă propria papetărie",
+    yoursLead:
+      "Alegeți o colecție, scrieți-vă numele și vedeți-o pe loc, ca pe aceasta.",
   },
   myDesigns: {
     title: "Designurile mele",

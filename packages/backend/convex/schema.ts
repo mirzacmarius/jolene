@@ -167,10 +167,24 @@ export default defineSchema({
     revision: v.number(),
     /** What the couple picked to order it, once they pick something. */
     finishes: v.optional(finishesValidator),
+    /**
+     * The code of its viewing link, while the couple keeps one on: anyone
+     * with the link sees the design with the couple's details, as the studio
+     * shows it, and changes nothing.
+     */
+    viewCode: v.optional(v.string()),
+    /** The studio's picture of it, for the link's preview where it's shared. */
+    viewImage: v.optional(v.id("_storage")),
+    /**
+     * What the picture was drawn from, as the studio names it: the design's
+     * revision and the details it shows, which change apart.
+     */
+    viewImageDrawn: v.optional(v.string()),
     updatedAt: v.number(),
   })
     .index("by_ownerId_and_updatedAt", ["ownerId", "updatedAt"])
-    .index("by_eventId", ["eventId"]),
+    .index("by_eventId", ["eventId"])
+    .index("by_viewCode", ["viewCode"]),
 
   /**
    * Saved versions of a design, to go back to. A person's edits a few minutes

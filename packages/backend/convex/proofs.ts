@@ -4,8 +4,9 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { action, mutation, type QueryCtx, query } from "./_generated/server";
-import { requireOwnDesign } from "./designs";
+import { requireOwnDesign } from "./designs/access";
 import { errors } from "./utils/errors";
+import { imageType } from "./utils/images";
 import {
   fieldsValidator,
   labelsValidator,
@@ -162,14 +163,6 @@ export const summary = query({
     return proofId && (await summarize(ctx, proofId));
   },
 });
-
-/** A picture's type from its first bytes: PNG or JPEG, else null. */
-function imageType(bytes: ArrayBuffer) {
-  const [a, b, c, d] = new Uint8Array(bytes.slice(0, 4));
-  if (a === 0x89 && b === 0x50 && c === 0x4e && d === 0x47) return "image/png";
-  if (a === 0xff && b === 0xd8 && c === 0xff) return "image/jpeg";
-  return null;
-}
 
 /**
  * Keeps the studio's picture of a proof for the shop and the workshop,
