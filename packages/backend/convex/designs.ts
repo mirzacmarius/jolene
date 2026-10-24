@@ -1,5 +1,10 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { assetKeys, type DesignDocument, fieldKeysUsed } from "@jolene/design";
+import {
+  assetKeys,
+  type DesignDocument,
+  fieldKeysShown,
+  withoutHiddenLayers,
+} from "@jolene/design";
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -8,8 +13,9 @@ import { requireOwnDesign } from "./designs/access";
 import { applyToDesign } from "./designs/apply";
 import { MOST_PICKS, PICK_LENGTH, withPick } from "./designs/finishes";
 import { saveRevision } from "./designs/versions";
-import { viewCode } from "./designs/viewing";
+import { MAX_DRAWN_LENGTH, viewCode } from "./designs/viewing";
 import { latestEvent } from "./events";
+import { requireAccount } from "./invites/access";
 import { hosts } from "./invites/text";
 import schema from "./schema";
 import { MAX_QUANTITY } from "./shop/pricing";
@@ -338,7 +344,9 @@ const MAX_VIEW_IMAGE_BYTES = 4 * 1024 * 1024;
  * Turns the design's viewing link on, with a code of its own, or off (docs/
  * adr/0023). Anyone with the link sees the design with the couple's details,
  * as the studio shows it, and changes nothing; off, the link stops working
- * and the picture made for it goes. On again, it gets a new code.
+ * and the picture made for it goes. On again, it gets a new code. Only an
+ * account turns it on: a link sent to others outlives a browser's anonymous
+ * session, and the couple must be able to turn it off from anywhere.
  */
 export const setViewLink = mutation({
   args: { designId: v.id("designs"), on: v.boolean() },
@@ -346,6 +354,7 @@ export const setViewLink = mutation({
   handler: async (ctx, { designId, on }) => {
     const design = await requireOwnDesign(ctx, designId);
     if (on) {
+      await requireAccount(ctx);
       if (design.viewCode) return design.viewCode;
       const code = viewCode();
       await ctx.db.patch("designs", designId, { viewCode: code });
@@ -355,17 +364,18 @@ export const setViewLink = mutation({
     await ctx.db.patch("designs", designId, {
       viewCode: undefined,
       viewImage: undefined,
-      viewImageRevision: undefined,
+      viewImageDrawn: undefined,
     });
     return null;
   },
 });
 
 /**
- * A design by its viewing link, for anyone who has it: the document, the
- * couple's details the document reads and nothing else of theirs, the files
- * it draws, and the picture for the link's preview. Null for a code no
- * design has, or one the couple turned off.
+ * A design by its viewing link, for anyone who has it: the document as it
+ * prints, without its hidden layers, the couple's details it shows and
+ * nothing else of theirs, the files it draws, and the picture for the
+ * link's preview. Null for a code no design has, or one the couple turned
+ * off.
  */
 export const view = query({
   args: { code: v.string() },
@@ -395,13 +405,9 @@ export const view = query({
     const template = await ctx.db.get("templates", design.templateId);
     const suite = template && (await ctx.db.get("suites", template.suiteId));
     if (!event || !template || !suite) return null;
-    const document = documentOf(design);
-    // The monogram is drawn from the names when none is typed.
-    const keys = new Set(fieldKeysUsed(document));
-    if (keys.has("monogram"))
-      for (const key of ["partner1", "partner2", "child"]) keys.add(key);
+    const document = withoutHiddenLayers(documentOf(design));
     const fields: Record<string, string> = {};
-    for (const key of keys) {
+    for (const key of fieldKeysShown(document)) {
       const value = event.fields[key];
       if (value !== undefined) fields[key] = value;
     }
@@ -409,7 +415,7 @@ export const view = query({
       kind: design.kind,
       occasion: event.occasion,
       language: document.language,
-      document: design.document,
+      document,
       fields,
       hosts: hosts(event),
       suite: suite.name,
@@ -426,14 +432,16 @@ export const view = query({
 
 /**
  * Keeps the studio's picture of the design for its viewing link, drawn by
- * the browser that turned the link on: WhatsApp and the like show it beside
- * the link. The bytes come through the action, so the picture is one the
- * server stored, and no storage id can be injected.
+ * the couple's browser: WhatsApp and the like show it beside the link.
+ * `drawn` names what it was drawn from, for the studio to tell when the
+ * design or the details it shows have changed since. The bytes come
+ * through the action, so the picture is one the server stored, and no
+ * storage id can be injected.
  */
 export const attachViewImage = action({
   args: {
     designId: v.id("designs"),
-    revision: v.number(),
+    drawn: v.string(),
     image: v.bytes(),
   },
   returns: v.null(),
@@ -441,7 +449,9 @@ export const attachViewImage = action({
     const type = imageType(args.image);
     if (!type || args.image.byteLength > MAX_VIEW_IMAGE_BYTES)
       throw new ConvexError(errors.invalidImage);
-    await ctx.runQuery(internal.designs.viewing.check, {
+    if (args.drawn.length > MAX_DRAWN_LENGTH)
+      throw new ConvexError(errors.invalidInput);
+    await ctx.runMutation(internal.designs.viewing.allow, {
       designId: args.designId,
     });
     const image = await ctx.storage.store(new Blob([args.image], { type }));
@@ -449,7 +459,7 @@ export const attachViewImage = action({
       await ctx.runMutation(internal.designs.viewing.setImage, {
         designId: args.designId,
         image,
-        revision: args.revision,
+        drawn: args.drawn,
       });
     } catch (error) {
       await ctx.storage.delete(image);

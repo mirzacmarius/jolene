@@ -100,7 +100,7 @@ export const LEGAL_PAGE_ORDER: readonly LegalPageKey[] = [
   "cookies",
 ];
 
-const UPDATED_AT = new Date("2026-10-21T00:00:00Z");
+const UPDATED_AT = new Date("2026-10-24T00:00:00Z");
 
 export function formatUpdatedAt(language: LegalLanguage): string {
   return new Intl.DateTimeFormat(language === "ro" ? "ro-RO" : "en-GB", {

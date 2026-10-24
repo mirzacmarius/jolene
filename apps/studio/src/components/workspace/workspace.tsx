@@ -197,7 +197,7 @@ function Editor({ data }: { data: DesignData }) {
             designId={designId}
             revision={data.design.revision}
             code={data.design.viewCode}
-            pictured={data.design.viewImageRevision}
+            pictured={data.design.viewImageDrawn}
             document={document}
             fields={fields}
             assets={data.assets}

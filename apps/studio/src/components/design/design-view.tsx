@@ -90,7 +90,8 @@ export function DesignView({ code }: { code: string }) {
         <div className="min-w-0">
           <h1 className="truncate font-display text-xl">{title}</h1>
         </div>
-        <Button asChild size="sm" className="ml-auto">
+        {/* On a phone the title takes the room; the footer offers the same. */}
+        <Button asChild size="sm" className="ml-auto hidden sm:inline-flex">
           <Link href="/studio#colectii">{t("view.yours")}</Link>
         </Button>
       </header>

@@ -45,9 +45,10 @@ export function TermsEn() {
       </p>
       <p>
         The words and photos you add must be yours or yours to use, and must not break the law or
-        anyone’s rights. We use them only to show you your design, print it, deliver it and, for the
-        digital invitation, show it to your guests. We may refuse to print content that breaks these
-        rules; if we do, we refund what you paid for it.
+        anyone’s rights. We use them only to show you your design, print it, deliver it, show it
+        through a viewing link you turn on to whoever you give the link and, for the digital
+        invitation, show it to your guests. We may refuse to print content that breaks these rules;
+        if we do, we refund what you paid for it.
       </p>
 
       <h2>The proof</h2>
@@ -230,9 +231,10 @@ export function TermsRo() {
       <p>
         Textele și fotografiile pe care le adăugați trebuie să fie ale dumneavoastră sau să aveți
         dreptul să le folosiți și nu pot încălca legea sau drepturile altcuiva. Le folosim doar ca
-        să vă arătăm designul, să-l tipărim, să vi-l livrăm și, pentru invitația digitală, să-l
-        arătăm invitaților dumneavoastră. Putem refuza să tipărim un conținut care nu respectă
-        aceste reguli; în acest caz vă rambursăm ce ați plătit pentru el.
+        să vă arătăm designul, să-l tipărim, să vi-l livrăm, să-l arătăm prin linkul de vizionare pe
+        care îl porniți celor cărora le dați linkul și, pentru invitația digitală, să-l arătăm
+        invitaților dumneavoastră. Putem refuza să tipărim un conținut care nu respectă aceste
+        reguli; în acest caz vă rambursăm ce ați plătit pentru el.
       </p>
 
       <h2>Bunul de tipar</h2>

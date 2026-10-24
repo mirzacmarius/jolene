@@ -34,6 +34,10 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   aiUpload: { kind: "token bucket", rate: 120, period: HOUR, capacity: 40 },
   /** Drawings everyone sends it, so no one fills Convex's storage through us. */
   aiUploads: { kind: "token bucket", rate: 1200, period: HOUR, capacity: 200 },
+  /** Pictures of a design one couple stores for its viewing link. */
+  viewImage: { kind: "token bucket", rate: 60, period: HOUR, capacity: 20 },
+  /** Pictures of designs everyone stores, so no one fills Convex's storage. */
+  viewImages: { kind: "token bucket", rate: 1200, period: HOUR, capacity: 200 },
   /** Partner links a couple makes, each one replacing the one before. */
   partnerLink: { kind: "token bucket", rate: 10, period: MINUTE, capacity: 5 },
   /** Stripe checkout pages opened for one cart. */

@@ -175,8 +175,11 @@ export default defineSchema({
     viewCode: v.optional(v.string()),
     /** The studio's picture of it, for the link's preview where it's shared. */
     viewImage: v.optional(v.id("_storage")),
-    /** The design's revision the picture shows. */
-    viewImageRevision: v.optional(v.number()),
+    /**
+     * What the picture was drawn from, as the studio names it: the design's
+     * revision and the details it shows, which change apart.
+     */
+    viewImageDrawn: v.optional(v.string()),
     updatedAt: v.number(),
   })
     .index("by_ownerId_and_updatedAt", ["ownerId", "updatedAt"])

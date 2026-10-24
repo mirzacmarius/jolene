@@ -111,15 +111,20 @@ export default {
     view: {
       show: "Show it",
       title: "Viewing link",
-      lead: "Anyone with the link sees the design with your details, just as you see it, and can't change it. Turn it off any time.",
+      lead: "Anyone with the link sees the design with your details, just as you see it, and can't change it.",
+      signIn:
+        "Sign in to share a link: it stays with your account, so you can turn it off from any device.",
+      signInButton: "Sign in",
       on: "Turn the link on",
       starting: "Turning on…",
       off: "Turn the link off",
+      offNote:
+        "Turning it off stops the link for everyone you've sent it to. On again, it's a new link.",
       copy: "Copy the link",
       copied: "Link copied.",
       whatsapp: "WhatsApp",
       open: "Open it",
-      message: "Have a look at our design from Studio Jolene: {link}",
+      message: "Have a look at our design from Jolene Studio: {link}",
       failed: "The link couldn't be changed. Try again.",
     },
   },
@@ -425,8 +430,8 @@ export default {
     fit: "See it all",
   },
   view: {
-    from: "{hosts} are showing you their design from Studio Jolene.",
-    fromUnnamed: "A design from Studio Jolene.",
+    from: "A design from {hosts}, made in Jolene Studio.",
+    fromUnnamed: "A design made in Jolene Studio.",
     showing: "View",
     notFound:
       "This link no longer works: the couple turned it off, or it never existed.",

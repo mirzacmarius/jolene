@@ -41,7 +41,9 @@ export function PrivacyEn() {
         the couple or the child, the date and time, the ceremony and reception venues, the names of
         the godparents and parents, the details for replies), the photos you upload and the proofs
         you approve. Without an account, they are tied to the browser you work in. We use them to
-        provide the studio and prepare your order, which is the contract you ask for.
+        provide the studio and prepare your order, which is the contract you ask for. When you turn
+        on a design’s viewing link, whoever has the link sees that design with the details and
+        photos it shows, until you turn the link off.
       </p>
 
       <h3>Your account</h3>
@@ -198,9 +200,9 @@ export function PrivacyEn() {
       <h2>Security</h2>
       <p>
         The website uses encrypted connections (HTTPS), only the people who need your data can reach
-        it, and Stripe processes payments. Your order’s page, your proof and your invitation open
-        from links with long codes that are hard to guess: anyone with such a link sees what it
-        shows, so share it only with the people it is meant for.
+        it, and Stripe processes payments. Your order’s page, your proof, your invitation and your
+        design’s viewing link open from links with long codes that are hard to guess: anyone with
+        such a link sees what it shows, so share it only with the people it is meant for.
       </p>
 
       <h2>Children</h2>
@@ -261,7 +263,9 @@ export function PrivacyRo() {
         mirilor sau al copilului, data și ora, locurile ceremoniei și ale petrecerii, numele nașilor
         și ale părinților, datele pentru confirmări), fotografiile pe care le încărcați și bunurile
         de tipar aprobate. Fără cont, ele sunt legate de browserul în care lucrați. Temeiul este
-        contractul: vă oferim studioul și pregătim comanda, la cererea dumneavoastră.
+        contractul: vă oferim studioul și pregătim comanda, la cererea dumneavoastră. Când porniți
+        linkul de vizionare al unui design, oricine are linkul vede designul cu detaliile și
+        fotografiile pe care le arată, până opriți linkul.
       </p>
 
       <h3>Contul</h3>
@@ -421,9 +425,10 @@ export function PrivacyRo() {
       <h2>Securitate</h2>
       <p>
         Site-ul folosește conexiuni criptate (HTTPS), la date au acces doar oamenii care au nevoie
-        de ele, iar plățile le procesează Stripe. Pagina comenzii, bunul de tipar și invitația se
-        deschid din linkuri cu coduri lungi, greu de ghicit: oricine are un astfel de link vede ce
-        arată el, așa că trimiteți-l doar celor cărora le este destinat.
+        de ele, iar plățile le procesează Stripe. Pagina comenzii, bunul de tipar, invitația și
+        linkul de vizionare al designului se deschid din linkuri cu coduri lungi, greu de ghicit:
+        oricine are un astfel de link vede ce arată el, așa că trimiteți-l doar celor cărora le este
+        destinat.
       </p>
 
       <h2>Copiii</h2>

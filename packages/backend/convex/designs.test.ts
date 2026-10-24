@@ -10,6 +10,7 @@ import {
 import { suites } from "@jolene/suites";
 import { Glob } from "bun";
 import { convexTest } from "convex-test";
+import { testConvex } from "../test/convex";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
@@ -66,16 +67,23 @@ const other = {
 };
 
 async function setUp() {
-  const t = convexTest(schema, modules);
+  // With the rate limiter, which the viewing link's pictures go through.
+  const t = testConvex();
   await t.mutation(internal.catalog.save.suite, sample);
-  const signIn = async () => {
+  const signIn = async (email?: string) => {
     const userId = await t.run((ctx) =>
-      ctx.db.insert("users", { isAnonymous: true }),
+      ctx.db.insert("users", email ? { email } : { isAnonymous: true }),
     );
     // Convex Auth's subject is the user id and the session id.
     return t.withIdentity({ subject: `${userId}|session` });
   };
-  return { t, couple: await signIn(), stranger: await signIn() };
+  return {
+    t,
+    couple: await signIn(),
+    stranger: await signIn(),
+    /** A couple signed in to an account, as the viewing link asks. */
+    account: await signIn("ana@example.ro"),
+  };
 }
 
 beforeEach(() => setSystemTime());
@@ -432,8 +440,22 @@ const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46])
   .buffer;
 
 describe("the viewing link", () => {
-  test("shows a design to anyone with it, with the details it reads, until it's turned off", async () => {
-    const { t, couple, stranger } = await setUp();
+  test("needs an account to turn on", async () => {
+    const { couple } = await setUp();
+    const designId = await couple.mutation(api.designs.start, {
+      template: "sample-place-card",
+    });
+    await expect(
+      couple.mutation(api.designs.setViewLink, { designId, on: true }),
+    ).rejects.toThrow("account-needed");
+    // Off needs nothing: there is no link to turn off.
+    expect(
+      await couple.mutation(api.designs.setViewLink, { designId, on: false }),
+    ).toBeNull();
+  });
+
+  test("shows a design to anyone with it, with the details it shows, until it's turned off", async () => {
+    const { t, account: couple, stranger } = await setUp();
     const designId = await couple.mutation(api.designs.start, {
       template: "sample-place-card",
     });
@@ -483,6 +505,23 @@ describe("the viewing link", () => {
     expect(shown?.hosts.ro).toContain("Ioana");
     expect(shown?.hosts.ro).toContain("Andrei");
 
+    // A hidden line doesn't print, so neither it nor what it reads goes.
+    await couple.mutation(api.designs.apply, {
+      designId,
+      operations: [
+        {
+          op: "updateLayer",
+          piece: "card",
+          face: "front",
+          layer: "table",
+          set: { hidden: true },
+        },
+      ],
+    });
+    const hidden = await t.query(api.designs.view, { code });
+    expect(hidden?.fields).toEqual({ guestName: "Familia Ionescu" });
+    expect(JSON.stringify(hidden?.document)).not.toContain("tableName");
+
     // Only the couple turns it off.
     await expect(
       stranger.mutation(api.designs.setViewLink, { designId, on: false }),
@@ -506,7 +545,7 @@ describe("the viewing link", () => {
   });
 
   test("keeps one picture of the design, which goes with the link", async () => {
-    const { t, couple, stranger } = await setUp();
+    const { t, account: couple, stranger } = await setUp();
     const designId = await couple.mutation(api.designs.start, {
       template: "sample-invitation",
     });
@@ -516,7 +555,7 @@ describe("the viewing link", () => {
     await expect(
       couple.action(api.designs.attachViewImage, {
         designId,
-        revision: 1,
+        drawn: "1:a",
         image: jpeg,
       }),
     ).rejects.toThrow("not-found");
@@ -530,21 +569,29 @@ describe("the viewing link", () => {
     await expect(
       stranger.action(api.designs.attachViewImage, {
         designId,
-        revision: 1,
+        drawn: "1:a",
         image: jpeg,
       }),
     ).rejects.toThrow("not-found");
     await expect(
       couple.action(api.designs.attachViewImage, {
         designId,
-        revision: 1,
+        drawn: "1:a",
         image: new TextEncoder().encode("<svg/>").buffer,
       }),
     ).rejects.toThrow("invalid-image");
 
+    await expect(
+      couple.action(api.designs.attachViewImage, {
+        designId,
+        drawn: "x".repeat(101),
+        image: jpeg,
+      }),
+    ).rejects.toThrow("invalid-input");
+
     await couple.action(api.designs.attachViewImage, {
       designId,
-      revision: 1,
+      drawn: "1:a",
       image: jpeg,
     });
     const first = await imageOf();
@@ -555,13 +602,13 @@ describe("the viewing link", () => {
     expect(shown?.image).toBeString();
     expect(
       (await couple.query(api.designs.get, { designId }))?.design
-        .viewImageRevision,
-    ).toBe(1);
+        .viewImageDrawn,
+    ).toBe("1:a");
 
     // A new picture replaces the old one, whose file goes.
     await couple.action(api.designs.attachViewImage, {
       designId,
-      revision: 2,
+      drawn: "1:b",
       image: jpeg,
     });
     const second = await imageOf();
@@ -576,5 +623,21 @@ describe("the viewing link", () => {
     expect(
       await t.run((ctx) => ctx.db.system.get("_storage", second as never)),
     ).toBeNull();
+  });
+
+  test("stores a few pictures a couple at a time", async () => {
+    const { account: couple } = await setUp();
+    const designId = await couple.mutation(api.designs.start, {
+      template: "sample-invitation",
+    });
+    await couple.mutation(api.designs.setViewLink, { designId, on: true });
+    const attach = (drawn: string) =>
+      couple.action(api.designs.attachViewImage, {
+        designId,
+        drawn,
+        image: jpeg,
+      });
+    for (let picture = 0; picture < 20; picture++) await attach(`${picture}`);
+    await expect(attach("20")).rejects.toThrow("too-many");
   });
 });

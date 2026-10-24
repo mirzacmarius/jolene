@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { fieldKeysUsed } from "./fields";
+import { fieldKeysShown, fieldKeysUsed, withoutHiddenLayers } from "./fields";
 import { applyOperations } from "./ops";
 import {
   eucaliptFields,
@@ -247,6 +247,36 @@ test("lists the fields a design reads, seal included, in the occasion's order", 
   ]);
   expect(keys).toContain("monogram");
   expect(keys).not.toContain("menu");
+});
+
+test("shows only what prints: no hidden layer, and the names behind a monogram", () => {
+  const card = parseDocument(eucaliptPlaceCard);
+  expect(fieldKeysShown(card)).toEqual(["guestName", "tableName"]);
+  const hidden = applyOperations(card, [
+    {
+      op: "updateLayer",
+      piece: "card",
+      face: "front",
+      layer: "table",
+      set: { hidden: true },
+    },
+  ]);
+  if (!hidden.ok) throw new Error(hidden.error);
+  expect(fieldKeysShown(hidden.document)).toEqual(["guestName"]);
+  // Every word is still there to edit; the printed document leaves it out.
+  expect(fieldKeysUsed(hidden.document)).toContain("tableName");
+  const printed = withoutHiddenLayers(hidden.document);
+  expect(
+    printed.pieces[0]?.front?.layers.map((layer) => layer.id),
+  ).not.toContain("table");
+  expect(hidden.document.pieces[0]?.front?.layers).toHaveLength(
+    card.pieces[0]?.front?.layers.length ?? 0,
+  );
+  // The monogram is drawn from the names while none is typed.
+  const shown = fieldKeysShown(invitation);
+  expect(shown).toContain("monogram");
+  expect(shown).toContain("partner1");
+  expect(shown).toContain("partner2");
 });
 
 test("switches the language dates are spelled in", () => {
