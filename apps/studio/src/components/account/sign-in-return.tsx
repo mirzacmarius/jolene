@@ -32,6 +32,24 @@ export function useSignInReturn() {
 }
 
 /**
+ * The lock Convex Auth's provider holds, across the browser's tabs, while it
+ * refreshes the session's token (`browserMutex` in @convex-dev/auth's
+ * react/client.tsx).
+ */
+const REFRESH_LOCK = "__convexAuthRefreshToken";
+
+/**
+ * Runs `trade` once no refresh of the session's token is under way. The
+ * provider refreshes the anonymous session's token as soon as the server
+ * takes it, and a code traded meanwhile ends that session: the refresh
+ * would come back empty and sign the visitor out of the new account.
+ */
+async function betweenRefreshes<T>(trade: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator === "undefined" ? undefined : navigator.locks;
+  return locks ? await locks.request(REFRESH_LOCK, trade) : await trade();
+}
+
+/**
  * Finishes a sign-in that comes back to the page with a code in its address,
  * as one through Google does. It waits for the browser's own session, the
  * anonymous one a visitor designs in, and trades the code under it, so that
@@ -59,7 +77,7 @@ export function SignInReturnProvider({ children }: { children: ReactNode }) {
       return;
     }
     // Only Google's sign-in comes back to a page; its code alone signs in.
-    signIn("google", { code }).then(
+    betweenRefreshes(() => signIn("google", { code })).then(
       ({ signingIn }) => setState(signingIn ? "none" : "refused"),
       () => setState("refused"),
     );
