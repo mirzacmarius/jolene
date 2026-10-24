@@ -277,6 +277,7 @@ describe("accounts", () => {
       kind: "account",
       email: "ana@example.com",
       emailSignIn: true,
+      googleSignIn: false,
     });
     const anonymous = await visit({ isAnonymous: true });
     expect(await anonymous.as.query(api.accounts.me, {})).toMatchObject({

@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { SignInReturnProvider } from "@/components/account/sign-in-return";
 import { env } from "@/env";
 
 const convex = new ConvexReactClient(env.NEXT_PUBLIC_CONVEX_URL);
@@ -48,15 +49,17 @@ function SessionSwitch({ onSwitch }: { onSwitch: () => void }) {
  * when they start their first design, and keeps the session in this browser.
  * Nothing the server renders depends on who is signed in, so every page
  * prerenders and the session is the client's alone. When the session
- * changes under it, the provider starts again with the new one.
+ * changes under it, the provider starts again with the new one. A sign-in
+ * that comes back with a code in the address waits for that session
+ * (SignInReturnProvider), rather than the provider trading the code first.
  */
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
   const [start, setStart] = useState(0);
   const restart = useCallback(() => setStart((count) => count + 1), []);
   return (
-    <ConvexAuthProvider key={start} client={convex}>
+    <ConvexAuthProvider key={start} client={convex} shouldHandleCode={false}>
       <SessionSwitch onSwitch={restart} />
-      {children}
+      <SignInReturnProvider>{children}</SignInReturnProvider>
     </ConvexAuthProvider>
   );
 }

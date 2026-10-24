@@ -45,15 +45,20 @@ export const me = query({
     email: v.union(v.string(), v.null()),
     /** Sign-in codes can go out from this deployment. */
     emailSignIn: v.boolean(),
+    /** The workshop's team can sign in with Google here (auth.ts). */
+    googleSignIn: v.boolean(),
   }),
   handler: async (ctx) => {
-    const emailSignIn = emailConfigured() || env.AUTH_LOG_CODES === "1";
+    const ways = {
+      emailSignIn: emailConfigured() || env.AUTH_LOG_CODES === "1",
+      googleSignIn: Boolean(env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET),
+    };
     const userId = await getAuthUserId(ctx);
     const user = userId ? await ctx.db.get("users", userId) : null;
-    if (!user) return { kind: "none" as const, email: null, emailSignIn };
+    if (!user) return { kind: "none" as const, email: null, ...ways };
     if (user.isAnonymous || !user.email)
-      return { kind: "anonymous" as const, email: null, emailSignIn };
-    return { kind: "account" as const, email: user.email, emailSignIn };
+      return { kind: "anonymous" as const, email: null, ...ways };
+    return { kind: "account" as const, email: user.email, ...ways };
   },
 });
 

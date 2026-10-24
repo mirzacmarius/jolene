@@ -52,9 +52,15 @@ const batchWorker = await component(
   ),
 );
 
-/** A fresh test deployment, with the rate limiter the app's functions use. */
-export function testConvex() {
-  const t = convexTest(schema, modules);
+/**
+ * A fresh test deployment, with the rate limiter the app's functions use.
+ * `replacing` loads some of the app's modules another way, by their path,
+ * such as "./auth.ts".
+ */
+export function testConvex(
+  replacing: Record<string, () => Promise<unknown>> = {},
+) {
+  const t = convexTest(schema, { ...modules, ...replacing });
   t.registerComponent("rateLimiter", rateLimiter.schema, rateLimiter.modules);
   t.registerComponent(
     "rateLimiter/batchWorker",

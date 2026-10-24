@@ -13,11 +13,16 @@ function workshopEmails() {
   );
 }
 
+/** Whether an address is on the workshop's list, however it's written. */
+export function onWorkshopList(email: string) {
+  return workshopEmails().has(email.trim().toLowerCase());
+}
+
 /**
  * Who the workshop sees signed in: no one with an account, as for a couple
  * designing without one, or an account and whether it's one of the
- * workshop's. Accounts sign in with a code sent to their address (auth.ts),
- * which proves it's theirs.
+ * workshop's. Accounts sign in with a code sent to their address, or the
+ * team's with Google (auth.ts), either of which proves it's theirs.
  */
 export async function workshopAccess(ctx: QueryCtx) {
   const userId = await getAuthUserId(ctx);
@@ -27,8 +32,7 @@ export async function workshopAccess(ctx: QueryCtx) {
     signedIn: true as const,
     email: user.email,
     allowed:
-      user.emailVerificationTime !== undefined &&
-      workshopEmails().has(user.email.toLowerCase()),
+      user.emailVerificationTime !== undefined && onWorkshopList(user.email),
   };
 }
 

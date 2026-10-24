@@ -421,7 +421,7 @@ export default {
     title: "Workshop",
     lead: "Every order couples paid for, newest first. Open one for its proofs, what the customer chose and where it goes, and to move it on.",
     signInLead:
-      "The workshop is for Jolene's team: sign in with your email and we'll send you a code.",
+      "The workshop is for Jolene's team: sign in with an address on its list.",
     notAllowed:
       "{email} isn't on the workshop's list. Sign in with another email, or ask for this one to be added.",
     empty: "No orders yet. They show here as soon as a customer pays.",
@@ -1072,6 +1072,10 @@ export default {
     emailPlaceholder: "name@example.com",
     sendCode: "Email me a code",
     sending: "Sending…",
+    google: "Continue with Google",
+    orByEmail: "or with a code by email",
+    googleRefused:
+      "The workshop didn't open with that Google account: only the addresses on its list can sign in with Google. Choose another account, or sign in with a code by email.",
     legal:
       "By continuing, you accept the {terms} and confirm you've read the {privacy}.",
     terms: "terms and conditions",
