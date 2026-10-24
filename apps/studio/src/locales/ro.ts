@@ -423,7 +423,7 @@ export default {
     title: "Atelier",
     lead: "Toate comenzile plătite, cele mai noi întâi. Deschideți una ca să vedeți bunurile de tipar, ce a ales clientul și unde merge, și ca s-o duceți mai departe.",
     signInLead:
-      "Atelierul e pentru echipa Jolene: vă trimitem un cod pe email ca să intrați.",
+      "Atelierul e pentru echipa Jolene: conectați-vă cu o adresă de pe lista lui.",
     notAllowed:
       "Adresa {email} nu e pe lista atelierului. Conectați-vă cu alt email sau cereți să fie adăugată.",
     empty: "Nicio comandă încă. Apar aici imediat ce plătește un client.",
@@ -1075,6 +1075,10 @@ export default {
     emailPlaceholder: "nume@exemplu.ro",
     sendCode: "Trimiteți-mi un cod",
     sending: "Se trimite…",
+    google: "Continuați cu Google",
+    orByEmail: "sau cu un cod pe email",
+    googleRefused:
+      "Atelierul nu s-a deschis cu acel cont Google: doar adresele de pe lista lui se pot conecta cu Google. Alegeți alt cont sau conectați-vă cu un cod pe email.",
     legal:
       "Continuând, acceptați {terms} și confirmați că ați citit {privacy}.",
     terms: "termenii și condițiile",

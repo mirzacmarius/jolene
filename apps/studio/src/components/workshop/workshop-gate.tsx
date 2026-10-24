@@ -7,21 +7,24 @@ import { Skeleton } from "@jolene/ui/skeleton";
 import { useConvexAuth, useQuery } from "convex/react";
 import type { ReactNode } from "react";
 import { SignInForm } from "@/components/account/sign-in-form";
+import { useSignInReturn } from "@/components/account/sign-in-return";
 import { useI18n } from "@/locales/client";
 
 /**
  * The workshop's pages, for the accounts on its list (WORKSHOP_EMAILS):
- * anyone else signs in with a code sent to their email, or is told their
- * account isn't on it.
+ * anyone else signs in with their Google account or a code sent to their
+ * email, or is told their account isn't on it.
  */
 export function WorkshopGate({ children }: { children: ReactNode }) {
   const t = useI18n();
   const { isLoading } = useConvexAuth();
   const { signOut } = useAuthActions();
+  const returned = useSignInReturn();
   const access = useQuery(api.workshop.access, isLoading ? "skip" : {});
-  if (access === undefined)
+  if (access === undefined || returned === "signing-in")
     return <Skeleton className="h-48 max-w-md rounded-3xl" />;
-  if (!access.signedIn) return <SignInForm lead={t("workshop.signInLead")} />;
+  if (!access.signedIn)
+    return <SignInForm lead={t("workshop.signInLead")} google />;
   if (!access.allowed)
     return (
       <div className="flex max-w-xl flex-col items-start gap-4 rounded-3xl border border-dashed p-10">

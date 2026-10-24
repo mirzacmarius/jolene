@@ -281,7 +281,7 @@ The couple's agreement, ticked in the cart before they pay for a digital invitat
 _Avoid_: Waiver, consent
 
 **Account** (ro: cont):
-What a couple signs in to with a code sent to their email, to keep a guest list and share their event. Designing needs none.
+What a couple signs in to with a code sent to their email, to keep a guest list and share their event. Designing needs none. The workshop's team may sign in to theirs with their Google account instead.
 _Avoid_: Profile, login
 
 **Partner** (ro: partener):
